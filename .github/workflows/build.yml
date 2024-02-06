@@ -29,16 +29,16 @@ env:
 
 jobs:
 
-  build-and-push-application:
-    permissions:
-      id-token: write
+  build-and-push-application:    
     runs-on: ubuntu-latest        
     strategy:
       matrix:
         dotnet-version: ['8.0.x']
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: '0'
       - id: ChannelName
         name: Set Channel Name
         run: |
