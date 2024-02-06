@@ -50,7 +50,7 @@ jobs:
 
           if ($branchName -ne "main")
           {
-              Write-Host "The branch is not the main branch, using the feature branch settings instead."
+              Write-Host "The branch is not the main branch, using the feature branch channel instead."
               
               $channelName = "${env:OCTOPUS_FEATURE_BRANCH_CHANNEL}"
               Write-Host "The channel name is now $channelName"                                                        
