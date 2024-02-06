@@ -4,9 +4,11 @@ on:
   push:
     branches: 
       - main
+      - 'feature/**'
     paths:
       - 'src/**'
       - 'db/**'
+      - '.github/workflows/build.yml'
   pull_request:
     types:
       - opened
@@ -22,7 +24,7 @@ env:
   OCTOPUS_FEATURE_BRANCH_CHANNEL: Default  
   OCTOPUS_RELEASE_CHANNEL: Release   
   OCTOPUS_SPACE: Default
-  OCTOPUS_SERVICE_ACCOUNT_ID: 31344c87-8630-460b-9b4a-86be9abbd557
+  OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
   OCTOPUS_URL: http://bobjwalker.octopus.app
 
 jobs:
@@ -118,17 +120,11 @@ jobs:
         run: | 
             docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.semVer }} --tag bobjwalker99/trident:${{ steps.determine_version.outputs.semVer }} --tag bobjwalker99/trident:latest .                                   
 
-      - name: Login to Octopus Deploy 
-        uses: OctopusDeploy/login@v1
-        with: 
-           server: ${{ env.OCTOPUS_URL }}
-           service_account_id: ${{ env.OCTOPUS_SERVICE_ACCOUNT_ID }} 
-
       - name: push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3
         with:
           packages: |
-            packaged/**/*.zip
+            packaged/**/*.zip          
             
       - name: push build information to Octopus
         uses: OctopusDeploy/push-build-information-action@v3
