@@ -143,4 +143,4 @@ jobs:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
           channel: ${{ steps.ChannelName.outputs.OCTOPUS_CHANNEL }}
           release_number: "${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}${{ env.GitVersion_PreReleaseLabelWithDash }}"
-          package_version: ${{ steps.determine_version.outputs.semVer }}      
+          package_version: "${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}${{ env.GitVersion_PreReleaseLabelWithDash }}"      
