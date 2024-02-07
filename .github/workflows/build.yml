@@ -122,7 +122,7 @@ jobs:
       - name: build and push website container
         working-directory: src
         run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.semVer }} --tag bobjwalker99/trident:${{ steps.determine_version.outputs.semVer }} --tag bobjwalker99/trident:latest .                                   
+            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.semVer }} --tag bobjwalker99/trident:${{ steps.determine_version.outputs.semVer }} --tag bobjwalker99/trident:latest .                                   
 
       - name: push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3
