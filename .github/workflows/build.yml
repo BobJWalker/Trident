@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 env:  
-  OCTOPUS_PROJECT_NAME: "Trident Manifest File"
+  OCTOPUS_PROJECT_NAME: "Trident"
   OCTOPUS_FEATURE_BRANCH_CHANNEL: Default  
   OCTOPUS_RELEASE_CHANNEL: Release   
   OCTOPUS_SPACE: Default
