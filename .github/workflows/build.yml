@@ -88,13 +88,13 @@ jobs:
           mkdir "$GITHUB_WORKSPACE/artifacts/web"                       
       - name: build website           
         working-directory: src/Trident.Web
-        run: dotnet publish --output "$GITHUB_WORKSPACE/artifacts/web" -c Release --runtime win-x64 --sc false --p:Version=${{ steps.determine_version.outputs.semVer }}                
+        run: dotnet publish --output "$GITHUB_WORKSPACE/artifacts/web" -c Release --runtime win-x64 --sc false --p:Version=${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}                
       - name: package website
         id: "website_package"
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
           package_id: Trident.Web
-          version: ${{ steps.determine_version.outputs.semVer }}  
+          version: "${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}${{ env.GitVersion_PreReleaseLabelWithDash }}"  
           base_path: "artifacts/web"
           files: "**/*"
           output_folder: packaged            
@@ -103,7 +103,7 @@ jobs:
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
           package_id: Trident.Database
-          version: ${{ steps.determine_version.outputs.semVer }}  
+          version: "${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}${{ env.GitVersion_PreReleaseLabelWithDash }}"  
           base_path: "db"          
           files: "**/*"
           output_folder: packaged      
