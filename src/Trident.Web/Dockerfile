@@ -7,15 +7,16 @@ EXPOSE 8080
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG TARGETARCH
+ARG APP_VERSION="0.0.1"
 WORKDIR /src
 COPY ["Trident.Web/Trident.Web.csproj", "Trident.Web/"]
 RUN dotnet restore "Trident.Web/Trident.Web.csproj"
 COPY . .
 WORKDIR "/src/Trident.Web"
-RUN dotnet build "Trident.Web.csproj" -c Release -o /app/build -a $TARGETARCH
+RUN dotnet build "Trident.Web.csproj" -c Release -o /app/build /p:Version=$APP_VERSION -a $TARGETARCH
 
 FROM build AS publish
-RUN dotnet publish "Trident.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false -a $TARGETARCH
+RUN dotnet publish "Trident.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false /p:Version=$APP_VERSION -a $TARGETARCH
 
 FROM base AS final
 WORKDIR /app
