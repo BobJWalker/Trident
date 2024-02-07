@@ -12,11 +12,16 @@ on:
   pull_request:
     types:
       - opened
-      - reopened      
+      - reopened
+      - synchronize
     paths:
       - 'src/**'
       - 'db/**'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:  
   OCTOPUS_PROJECT_NAME: "Trident Manifest File"
