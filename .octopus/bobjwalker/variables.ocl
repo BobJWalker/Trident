@@ -1,7 +1,3 @@
-variable "Project.Connection.String" {
-    value "Server=#{Project.Database.Server.Name};Database=#{Project.Database.Name};User Id=#{Project.Database.User.Name};Password=#{Project.Database.User.Password};trustServerCertificate=true;" {}
-}
-
 variable "Project.Database.Check.Name" {
     value "Trident_#{Octopus.Environment.Name}_Check" {}
 }
@@ -95,4 +91,8 @@ variable "spec:template:spec:containers:0:image" {
 
 variable "stringData:connectionString" {
     value "#{Project.Connection.String}" {}
+}
+
+variable "Project.Connection.String" {
+    value "Server=#{Project.Database.Server.Name},1433;Database=#{Project.Database.Name};User Id=#{Project.Database.User.Name};Password=#{Project.Database.User.Password};trustServerCertificate=true;" {}
 }
