@@ -38,7 +38,8 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; @DateTime.Now.Year - Trident
+            &copy; @DateTime.Now.Year - Trident -
+            Version: @typeof(Trident.Web.Core.Models.BaseModel).Assembly.GetName().Version -
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
