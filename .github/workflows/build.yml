@@ -81,23 +81,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}
-      - name: create artifacts folder
-        run: |
-          mkdir "$GITHUB_WORKSPACE/artifacts"
-          mkdir "$GITHUB_WORKSPACE/artifacts/web"                       
-      - name: build website           
-        working-directory: src/Trident.Web
-        run: dotnet publish --output "$GITHUB_WORKSPACE/artifacts/web" -c Release --runtime win-x64 --sc false --p:Version=${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}                
-      - name: package website
-        id: "website_package"
-        uses: OctopusDeploy/create-zip-package-action@v3
-        with:
-          package_id: Trident.Web
-          version: "${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}${{ env.GitVersion_PreReleaseLabelWithDash }}"  
-          base_path: "artifacts/web"
-          files: "**/*"
-          output_folder: packaged            
+          dotnet-version: ${{ matrix.dotnet-version }}                  
       - name: package database
         id: "database_package"
         uses: OctopusDeploy/create-zip-package-action@v3
@@ -127,16 +111,14 @@ jobs:
         uses: OctopusDeploy/push-package-action@v3
         with:
           packages: |
-            packaged/**/*.zip          
-            
+            packaged/**/*.zip                      
       - name: push build information to Octopus
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |
             Trident.Database
-            Trident.Web            
-          version: "${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}"
-            
+            Trident            
+          version: "${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}"            
       - name: create release
         uses: OctopusDeploy/create-release-action@v3
         with:
