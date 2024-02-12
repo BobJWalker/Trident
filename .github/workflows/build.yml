@@ -30,27 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         with:
-          fetch-depth: '0'
-      - id: ChannelName
-        name: Set Channel Name
-        run: |
-          $branchName = (((${env:GITHUB_REF} -replace "refs/heads/", "") -replace "feature/", "") -replace "bugfix/", "") -replace " ", ""
-          Write-Host "The Branch Name is: $branchName"
-
-          $channelName = "${env:OCTOPUS_RELEASE_CHANNEL}"
-          Write-Host "The channel name is now $channelName"                    
-
-          if ($branchName -ne "main")
-          {
-              Write-Host "The branch is not the main branch, using the feature branch channel instead."
-              
-              $channelName = "${env:OCTOPUS_FEATURE_BRANCH_CHANNEL}"
-              Write-Host "The channel name is now $channelName"                                                        
-          }
-
-          Write-Host "Setting the Output Variable OCTOPUS_CHANNEL to $channelName"
-          Write-Output "OCTOPUS_CHANNEL=$channelName" >> $Env:GITHUB_OUTPUT
-        shell: pwsh
+          fetch-depth: '0'      
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v0.9.14
         with:
@@ -112,7 +92,7 @@ jobs:
         uses: OctopusDeploy/create-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
-          channel: ${{ steps.ChannelName.outputs.OCTOPUS_CHANNEL }}
+          channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
           release_number: "${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}${{ env.GitVersion_PreReleaseLabelWithDash }}"
           package_version: "${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag }}${{ env.GitVersion_PreReleaseLabelWithDash }}"      
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
