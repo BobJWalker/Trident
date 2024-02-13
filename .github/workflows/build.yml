@@ -45,7 +45,8 @@ jobs:
         with:
           tag_name: ${{ env.GitVersion_MajorMinorPatch }}.${{ env.GitVersion_PreReleaseNumber || env.GitVersion_PreReleaseTag || github.run_number }}${{ env.GitVersion_PreReleaseLabelWithDash }}
         env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}             
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: github.ref == 'refs/heads/main'             
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
