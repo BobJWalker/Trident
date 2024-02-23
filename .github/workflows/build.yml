@@ -20,7 +20,6 @@ env:
   OCTOPUS_URL: http://bobjwalker.octopus.app
 
 jobs:
-
   build-and-push-application:    
     runs-on: ubuntu-latest        
     strategy:
