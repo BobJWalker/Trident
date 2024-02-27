@@ -2,22 +2,12 @@ step "calculate-deployment-mode" {
     name = "Calculate Deployment Mode"
 
     action {
-        notes = <<-EOT
-                **Always Runs**
-                
-                Determines if we are doing a deployment, rollback, or redeployment.
-                EOT
         properties = {
-            Octopus.Action.Template.Id = "ActionTemplates-181"
-            Octopus.Action.Template.Version = "5"
-            OctopusUseBundledTooling = "False"
+            Octopus.Action.RunOnServer = "true"
+            Octopus.Action.Template.Id = "ActionTemplates-441"
+            Octopus.Action.Template.Version = "0"
         }
-        worker_pool = "hosted-ubuntu"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.Flyway}"
-        }
+        worker_pool_variable = ""
     }
 }
 
