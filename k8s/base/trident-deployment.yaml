@@ -15,10 +15,6 @@ spec:
       containers:
         - name: trident-web
           image: bobjwalker99/trident:3.5.1.360
-          resources:
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
           imagePullPolicy: "Always"
           ports:
            - containerPort: 8080
