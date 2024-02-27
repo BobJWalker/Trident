@@ -16,9 +16,6 @@ spec:
         - name: trident-web
           image: bobjwalker99/trident:3.5.1.360
           resources:
-            requests:
-              memory: "64Mi"
-              cpu: "50m"
             limits:
               memory: "128Mi"
               cpu: "150m"
