@@ -13,8 +13,5 @@ connectivity_policy {
 }
 
 versioning_strategy {
-    donor_package {
-        package = "Flyway.Package.Value"
-        step = "deploy-trident-database"
-    }
+    template = "#{Octopus.Version.LastMajor}.#{Octopus.Version.LastMinor}.#{Octopus.Version.LastPatch}.i"
 }
