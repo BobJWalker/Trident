@@ -113,13 +113,13 @@ step "notify-dbas-of-pending-approval" {
     condition = "Variable"
     name = "Notify DBAs of Pending Changes"
     properties = {
-        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
+        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.NoTriggerWithDeploy}#{/unless}"
     }
 
     action {
         environments = ["staging"]
         notes = <<-EOT
-                **Runs on Deployments Only**
+                **Runs on Deployments Only when not triggered by a scheduled trigger**
                 
                 Notifies the DBA of a pending changes so they can review them prior to the migration running. 
                 EOT
@@ -148,7 +148,7 @@ step "dba-review-migration" {
     condition = "Variable"
     name = "DBA Review Migration"
     properties = {
-        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
+        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.NoTriggerWithDeploy}#{/unless}"
     }
     start_trigger = "StartWithPrevious"
 
@@ -156,7 +156,7 @@ step "dba-review-migration" {
         action_type = "Octopus.Manual"
         environments = ["staging"]
         notes = <<-EOT
-                **Runs on Deployments Only**
+                **Runs on Deployments Only when not triggered by a scheduled trigger**
                 
                 Pauses the deployment so the DBA can review the migration report.  
                 EOT
