@@ -117,7 +117,7 @@ step "notify-dbas-of-pending-approval" {
     condition = "Variable"
     name = "Notify DBAs of Pending Changes"
     properties = {
-        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeployWithNoTrigger}#{/unless}"
+        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
     }
 
     action {
@@ -152,7 +152,7 @@ step "dba-review-migration" {
     condition = "Variable"
     name = "DBA Review Migration"
     properties = {
-        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeployWithNoTrigger}#{/unless}"
+        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
     }
     start_trigger = "StartWithPrevious"
 
