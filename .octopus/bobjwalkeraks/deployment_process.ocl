@@ -10,7 +10,7 @@ step "calculate-deployment-mode" {
         properties = {
             Octopus.Action.RunOnServer = "true"
             Octopus.Action.Template.Id = "ActionTemplates-441"
-            Octopus.Action.Template.Version = "2"
+            Octopus.Action.Template.Version = "3"
         }
         worker_pool_variable = ""
     }
