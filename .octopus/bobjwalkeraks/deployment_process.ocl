@@ -8,11 +8,10 @@ step "calculate-deployment-mode" {
                 Determines if the deployment is a deployment, rollback, or redeploy.
                 EOT
         properties = {
-            Octopus.Action.RunOnServer = "true"
             Octopus.Action.Template.Id = "ActionTemplates-441"
             Octopus.Action.Template.Version = "3"
         }
-        worker_pool_variable = ""
+        worker_pool = "hosted-ubuntu"
     }
 }
 
