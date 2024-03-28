@@ -221,39 +221,31 @@ step "deploy-trident-database" {
     }
 }
 
-step "deploy-trident-website" {
-    name = "Deploy Trident Website"
+step "deploy-website-via-kustomize" {
+    name = "Deploy Website via Kustomize"
     properties = {
         Octopus.Action.TargetRoles = "trident-web"
     }
 
     action {
-        action_type = "Octopus.KubernetesDeployRawYaml"
+        action_type = "Octopus.Kubernetes.Kustomize"
         notes = <<-EOT
                 **Always Runs**
                 
                 Deploys the website container to the Kubernetes Cluster using a manifest file.
                 EOT
         properties = {
-            Octopus.Action.AutoRetry.MaximumCount = "3"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.Kustomize.OverlayPath = "k8s/overlays/#{Octopus.Environment.Name | toLower}"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-deployment.yaml"
-            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
-            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
+            Octopus.Action.RunOnServer = "false"
             Octopus.Action.Script.ScriptSource = "GitRepository"
-            OctopusUseBundledTooling = "False"
+            Octopus.Action.SubstituteInFiles.TargetFiles = "k8s/base/kustomization.yaml"
         }
-        worker_pool = "hosted-ubuntu"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
+        worker_pool_variable = ""
 
         git_dependencies {
-            default_branch = "main"
-            file_path_filters = ["k8s/base/trident-deployment.yaml"]
+            default_branch = "feature/kubecon"
             git_credential_id = "GitCredentials-21"
             git_credential_type = "Library"
             repository_uri = "https://github.com/BobJWalker/Trident.git"

@@ -3,3 +3,8 @@ kind: Kustomization
 
 resources:
 - trident-deployment.yaml
+
+images:
+ - name: bobjwalker99/trident
+   newName: bobjwalker99/trident
+   newTag: "#{Project.K8s.Image.VersionTag}"

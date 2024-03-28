@@ -10,6 +10,8 @@ on:
       - 'db/**'
       - '.github/workflows/build.yml'
   workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
 
 env:  
   OCTOPUS_PROJECT_NAME: "Trident"
