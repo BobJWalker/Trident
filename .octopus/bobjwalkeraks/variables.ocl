@@ -32,10 +32,6 @@ variable "Project.ExecutionContainer.K8s" {
     value "octopuslabs/k8s-workertools:1.28" {}
 }
 
-variable "Project.K8s.Namespace" {
-    value "#{Octopus.Environment.Name | ToLower }" {}
-}
-
 variable "Project.ScriptToRun.Text" {
     value {
         process = ["runbook/run-adhoc-data-script"]
@@ -102,4 +98,8 @@ variable "Octopus.ServiceNow.ChangeRequest.Number" {
             label = "Service Now Change Request Number"
         }
     }
+}
+
+variable "Project.K8s.Namespace" {
+    value "trident_#{Octopus.Environment.Name | ToLower }" {}
 }
