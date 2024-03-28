@@ -32,10 +32,6 @@ variable "Project.ExecutionContainer.K8s" {
     value "octopuslabs/k8s-workertools:1.28" {}
 }
 
-variable "Project.K8s.Namespace" {
-    value "#{Octopus.Environment.Name | ToLower }" {}
-}
-
 variable "Project.ScriptToRun.Text" {
     value {
         process = ["runbook/run-adhoc-data-script"]
@@ -73,10 +69,6 @@ variable "spec:template:spec:containers:0:image" {
     value "bobjwalker99/trident:#{Octopus.Action.Package[Trident].PackageVersion}" {}
 }
 
-variable "stringData:connectionString" {
-    value "#{Project.Connection.String}" {}
-}
-
 variable "Project.Connection.String" {
     value "Server=tcp:#{SQLServer.Server.Name},1433;Database=#{Project.Database.Name};User Id=#{SQLServer.User.Name};Password=#{SQLServer.User.Password};trustServerCertificate=true;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;" {}
 }
@@ -101,5 +93,15 @@ variable "Octopus.ServiceNow.ChangeRequest.Number" {
             }
             label = "Service Now Change Request Number"
         }
+    }
+}
+
+variable "Project.K8s.Namespace" {
+    value "trident-#{Octopus.Environment.Name | ToLower }" {}
+}
+
+variable "stringData:connectionString" {
+    value "#{Project.Connection.String}" {
+        process = ["runbook/configure-database"]
     }
 }

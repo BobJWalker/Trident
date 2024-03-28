@@ -8,17 +8,16 @@ step "calculate-deployment-mode" {
                 Determines if the deployment is a deployment, rollback, or redeploy.
                 EOT
         properties = {
-            Octopus.Action.RunOnServer = "true"
             Octopus.Action.Template.Id = "ActionTemplates-441"
             Octopus.Action.Template.Version = "3"
         }
-        worker_pool_variable = ""
+        worker_pool = "hosted-ubuntu"
     }
 }
 
 step "configure-database-server" {
     condition = "Variable"
-    name = "Configure Database Server"
+    name = "Configure Infrastructure"
     properties = {
         Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
     }
@@ -27,7 +26,7 @@ step "configure-database-server" {
         notes = <<-EOT
                 **Runs on Deployments Only**
                 
-                Runs a runbook to verify the database for the customer exists.  If it doesn't exist, it will create it automatically.
+                Runs a runbook to verify all the required infrastructure exists.  If it doesn't exist, it will create it automatically.
                 EOT
         properties = {
             Octopus.Action.AutoRetry.MaximumCount = "3"
@@ -43,7 +42,7 @@ step "configure-database-server" {
             Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
             Run.Runbook.Machines = "N/A"
             Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
-            Run.Runbook.Name = "Configure Database"
+            Run.Runbook.Name = "Configure Application Infrastructure"
             Run.Runbook.Project.Name = "#{Octopus.Project.Name}"
             Run.Runbook.Space.Name = "#{Octopus.Space.Name}"
             Run.Runbook.UsePublishedSnapShot = "True"
@@ -218,46 +217,6 @@ step "deploy-trident-database" {
                 PackageParameterName = "Flyway.Package.Value"
                 SelectionMode = "deferred"
             }
-        }
-    }
-}
-
-step "create-connectionstring-secret" {
-    name = "Create ConnectionString Secret"
-    properties = {
-        Octopus.Action.TargetRoles = "trident-web"
-    }
-
-    action {
-        action_type = "Octopus.KubernetesDeployRawYaml"
-        notes = <<-EOT
-                **Always Runs**
-                
-                Ensures the connection string secret has been properly created.
-                EOT
-        properties = {
-            Octopus.Action.AutoRetry.MaximumCount = "3"
-            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
-            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-app-secrets.yaml"
-            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
-            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-            OctopusUseBundledTooling = "False"
-        }
-        worker_pool = "hosted-ubuntu"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
-
-        git_dependencies {
-            default_branch = "main"
-            file_path_filters = ["k8s/base/trident-app-secrets.yaml"]
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/BobJWalker/Trident.git"
         }
     }
 }
