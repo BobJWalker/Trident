@@ -107,5 +107,5 @@ variable "stringData:connectionString" {
 }
 
 variable "Project.K8s.Image.VersionTag" {
-    value "#{Octopus.Action.Package[Trident].PackageVersion}" {}
+    value "#{Octopus.Action.Package[trident].PackageVersion}" {}
 }
