@@ -236,7 +236,7 @@ step "deploy-website-via-kustomize" {
                 EOT
         properties = {
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
-            Octopus.Action.Kubernetes.Kustomize.OverlayPath = "k8s/overlays/#{Octopus.Environment.Name}"
+            Octopus.Action.Kubernetes.Kustomize.OverlayPath = "k8s/overlays/#{Octopus.Environment.Name | toLower}"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
             Octopus.Action.RunOnServer = "false"
             Octopus.Action.Script.ScriptSource = "GitRepository"
