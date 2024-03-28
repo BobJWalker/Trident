@@ -101,5 +101,5 @@ variable "Octopus.ServiceNow.ChangeRequest.Number" {
 }
 
 variable "Project.K8s.Namespace" {
-    value "trident_#{Octopus.Environment.Name | ToLower }" {}
+    value "trident-#{Octopus.Environment.Name | ToLower }" {}
 }
