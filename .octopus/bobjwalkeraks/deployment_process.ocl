@@ -238,11 +238,10 @@ step "deploy-website-via-kustomize" {
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
             Octopus.Action.Kubernetes.Kustomize.OverlayPath = "k8s/overlays/#{Octopus.Environment.Name | toLower}"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.RunOnServer = "false"
             Octopus.Action.Script.ScriptSource = "GitRepository"
             Octopus.Action.SubstituteInFiles.TargetFiles = "k8s/base/kustomization.yaml"
         }
-        worker_pool_variable = ""
+        worker_pool = "hosted-ubuntu"
 
         git_dependencies {
             default_branch = "feature/kubecon"
