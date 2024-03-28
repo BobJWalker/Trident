@@ -244,7 +244,7 @@ step "deploy-website-via-kustomize" {
         worker_pool = "hosted-ubuntu"
 
         git_dependencies {
-            default_branch = "feature/kubecon"
+            default_branch = "main"
             git_credential_id = "GitCredentials-21"
             git_credential_type = "Library"
             repository_uri = "https://github.com/BobJWalker/Trident.git"
