@@ -105,3 +105,7 @@ variable "stringData:connectionString" {
         process = ["runbook/configure-database"]
     }
 }
+
+variable "Project.K8s.Image.VersionTag" {
+    value "#{Octopus.Action.Package[Trident].PackageVersion}" {}
+}
