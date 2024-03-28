@@ -1,21 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: staging
+namespace: trident-staging
 resources:
 - ../../base
-
-secretGenerator:
-  - name: trident-credentials
-    literals:
-      - connectionString="blah"
-
-images:
- - name: bobjwalker99/trident
-   newName: bobjwalker99/trident
-   newTag: "3.5.1.360"
 
 patches:
  - target:
     kind: Ingress
     name: trident-ingress-nginx
-   path: trident-ingress-nginx.yaml
+   patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: tridentstaging.local
