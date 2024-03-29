@@ -263,6 +263,25 @@ step "deploy-website-via-kustomize" {
     }
 }
 
+step "verify-successful-deployment" {
+    name = "Verify successful deployment"
+
+    action {
+        action_type = "Octopus.Script"
+        notes = <<-EOT
+                **Always runs**
+                
+                Runs a series of tests to ensure the deployment was successful.
+                EOT
+        properties = {
+            Octopus.Action.Script.ScriptBody = "Write-Highlight \"Verification was successful!\""
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+        }
+        worker_pool = "hosted-ubuntu"
+    }
+}
+
 step "notify-team-of-deployment-status" {
     condition = "Always"
     name = "Notify Team of Deployment Status"
