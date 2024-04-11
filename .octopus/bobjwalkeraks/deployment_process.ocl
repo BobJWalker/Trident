@@ -221,33 +221,38 @@ step "deploy-trident-database" {
     }
 }
 
-step "deploy-website-via-kustomize" {
-    name = "Deploy Website via Kustomize"
+step "deploy-website-via-helm" {
+    name = "Deploy Website via Helm"
     properties = {
         Octopus.Action.TargetRoles = "trident-web"
     }
 
     action {
-        action_type = "Octopus.Kubernetes.Kustomize"
+        action_type = "Octopus.HelmChartUpgrade"
         notes = <<-EOT
+                Notes
+                
                 **Always Runs**
                 
-                Deploys the website container to the Kubernetes Cluster using a manifest file.
+                Deploys the website container to the Kubernetes Cluster using a Helm chart.
+                
                 EOT
         properties = {
-            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
-            Octopus.Action.Kubernetes.Kustomize.OverlayPath = "k8s/overlays/#{Octopus.Environment.Name | toLower}"
-            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Helm.ChartDirectory = "k8s/chart"
+            Octopus.Action.Helm.ClientVersion = "V3"
+            Octopus.Action.Helm.KeyValues = "{\"trident.connectionString\":\"#{Project.Connection.String}\",\"trident.image.tag\":\"#{Project.K8s.Image.VersionTag}\"}"
+            Octopus.Action.Helm.Namespace = "#{Project.K8s.Namespace}"
+            Octopus.Action.Helm.ReleaseName = "#{Octopus.Action.Name | ToLower}-#{Octopus.Envrionment.Name | ToLower}"
+            Octopus.Action.Helm.ResetValues = "True"
             Octopus.Action.Script.ScriptSource = "GitRepository"
-            Octopus.Action.SubstituteInFiles.TargetFiles = "k8s/base/kustomization.yaml"
+            OctopusUseBundledTooling = "False"
         }
         worker_pool = "hosted-ubuntu"
 
-        git_dependencies {
-            default_branch = "main"
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/BobJWalker/Trident.git"
+        container {
+            feed = "dockerhub"
+            image = "#{Project.K8s.Namespace}"
         }
 
         packages "trident" {
@@ -256,7 +261,7 @@ step "deploy-website-via-kustomize" {
             package_id = "bobjwalker99/trident"
             properties = {
                 Extract = "False"
-                Purpose = ""
+                Purpose = "DockerImageReference"
                 SelectionMode = "immediate"
             }
         }
