@@ -1,0 +1,4 @@
+trident:
+  connectionString: "blah"
+  image:
+    tag: "0.1.88"
