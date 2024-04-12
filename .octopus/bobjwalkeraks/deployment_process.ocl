@@ -243,7 +243,7 @@ step "deploy-website-via-helm" {
             Octopus.Action.Helm.ClientVersion = "V3"
             Octopus.Action.Helm.KeyValues = "{\"trident.connectionString\":\"#{Project.Connection.String}\",\"trident.image.tag\":\"#{Project.K8s.Image.VersionTag}\"}"
             Octopus.Action.Helm.Namespace = "#{Project.K8s.Namespace}"
-            Octopus.Action.Helm.ReleaseName = "#{ Octopus.Action.Name | ToLower }-#{ Octopus.Environment.Name | ToLower }"
+            Octopus.Action.Helm.ReleaseName = "#{Project.K8s.Namespace}"
             Octopus.Action.Helm.ResetValues = "True"
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
