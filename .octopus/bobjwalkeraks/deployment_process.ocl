@@ -221,6 +221,49 @@ step "deploy-trident-database" {
     }
 }
 
+step "create-connection-string-secret" {
+    name = "Create Connection String Secret"
+    properties = {
+        Octopus.Action.TargetRoles = "trident-web"
+    }
+
+    action {
+        action_type = "Octopus.KubernetesDeployRawYaml"
+        notes = <<-EOT
+                **Always Runs**
+                
+                Deploys the secret to the Kubernetes Cluster using a manifest file.
+                EOT
+        properties = {
+            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-app-secrets.yaml"
+            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-app-secrets.yaml"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
+            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
+            Octopus.Action.RunOnServer = "true"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool_variable = ""
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
+
+        git_dependencies {
+            default_branch = "main"
+            git_credential_id = "GitCredentials-21"
+            git_credential_type = "Library"
+            repository_uri = "https://github.com/BobJWalker/Trident.git"
+        }
+    }
+}
+
 step "deploy-website-via-kustomize" {
     name = "Deploy Website via Kustomize"
     properties = {
@@ -232,9 +275,10 @@ step "deploy-website-via-kustomize" {
         notes = <<-EOT
                 **Always Runs**
                 
-                Deploys the website container to the Kubernetes Cluster using a manifest file.
+                Deploys the website container to the Kubernetes Cluster using Kustomize.
                 EOT
         properties = {
+            Octopus.Action.GitRepository.Source = "External"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
             Octopus.Action.Kubernetes.Kustomize.OverlayPath = "k8s/overlays/#{Octopus.Environment.Name | toLower}"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
