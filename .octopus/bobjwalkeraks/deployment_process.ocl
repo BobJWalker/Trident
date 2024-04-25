@@ -230,8 +230,6 @@ step "deploy-website-via-helm" {
     action {
         action_type = "Octopus.HelmChartUpgrade"
         notes = <<-EOT
-                Notes
-                
                 **Always Runs**
                 
                 Deploys the website container to the Kubernetes Cluster using a Helm chart.
@@ -287,6 +285,28 @@ step "verify-successful-deployment" {
                 EOT
         properties = {
             Octopus.Action.Script.ScriptBody = "Write-Highlight \"Verification was successful!\""
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+        }
+        worker_pool = "hosted-ubuntu"
+    }
+}
+
+step "update-load-balancer" {
+    name = "Update Load Balancer"
+
+    action {
+        action_type = "Octopus.Script"
+        notes = <<-EOT
+                **Always Runs**
+                
+                When the verification is successful, the script will update the load balancer to point to the new version of the application. 
+                EOT
+        properties = {
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                Write-Host "Updating Load Balancer"
+                Write-Host "Load Balancer SUccessfully Updated"
+                EOT
             Octopus.Action.Script.ScriptSource = "Inline"
             Octopus.Action.Script.Syntax = "PowerShell"
         }
