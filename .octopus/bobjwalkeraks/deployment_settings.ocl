@@ -13,5 +13,8 @@ connectivity_policy {
 }
 
 versioning_strategy {
-    template = "#{Octopus.Version.LastMajor}.#{Octopus.Version.LastMinor}.#{Octopus.Version.LastPatch}.i"
+    donor_package {
+        package = "trident"
+        step = "deploy-website-via-kustomize"
+    }
 }
