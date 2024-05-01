@@ -221,8 +221,8 @@ step "deploy-trident-database" {
     }
 }
 
-step "create-connection-string-secret" {
-    name = "Create Connection String Secret"
+step "deploy-connection-string-secret" {
+    name = "Deploy Connection String Secret"
     properties = {
         Octopus.Action.TargetRoles = "trident-web"
     }
@@ -232,34 +232,26 @@ step "create-connection-string-secret" {
         notes = <<-EOT
                 **Always Runs**
                 
-                Deploys the secret to the Kubernetes Cluster using a manifest file.
+                Ensures the connection string secret is up to date with the encrypted value from Octopus.
                 EOT
         properties = {
-            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-app-secrets.yaml"
-            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.GitRepository.FilePathFilters = "k8s\\base\\trident-app-secrets.yaml"
+            Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
             Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
             Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
-            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-app-secrets.yaml"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s\\base\\trident-app-secrets.yaml"
             Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
             Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
-            Octopus.Action.RunOnServer = "true"
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool_variable = ""
+        worker_pool = "hosted-ubuntu"
 
         container {
             feed = "dockerhub"
             image = "#{Project.ExecutionContainer.K8s}"
-        }
-
-        git_dependencies {
-            default_branch = "main"
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/BobJWalker/Trident.git"
         }
     }
 }
@@ -275,25 +267,24 @@ step "deploy-website-via-kustomize" {
         notes = <<-EOT
                 **Always Runs**
                 
-                Deploys the website container to the Kubernetes Cluster using Kustomize.
+                Deploys the website container to the Kubernetes Cluster using a manifest file.
                 EOT
         properties = {
-            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
             Octopus.Action.Kubernetes.Kustomize.OverlayPath = "k8s/overlays/#{Octopus.Environment.Name | toLower}"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
-            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
             Octopus.Action.Script.ScriptSource = "GitRepository"
             Octopus.Action.SubstituteInFiles.TargetFiles = "k8s/base/kustomization.yaml"
+            OctopusUseBundledTooling = "False"
         }
         worker_pool = "hosted-ubuntu"
 
-        git_dependencies {
-            default_branch = "main"
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/BobJWalker/Trident.git"
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
         }
 
         packages "trident" {
@@ -302,7 +293,7 @@ step "deploy-website-via-kustomize" {
             package_id = "bobjwalker99/trident"
             properties = {
                 Extract = "False"
-                Purpose = ""
+                Purpose = "DockerImageReference"
                 SelectionMode = "immediate"
             }
         }
@@ -321,6 +312,28 @@ step "verify-successful-deployment" {
                 EOT
         properties = {
             Octopus.Action.Script.ScriptBody = "Write-Highlight \"Verification was successful!\""
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+        }
+        worker_pool = "hosted-ubuntu"
+    }
+}
+
+step "update-load-balancer" {
+    name = "Update Load Balancer"
+
+    action {
+        action_type = "Octopus.Script"
+        notes = <<-EOT
+                **Always Runs**
+                
+                When the verification is successful, the script will update the load balancer to point to the new version of the application. 
+                EOT
+        properties = {
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                Write-Host "Updating Load Balancer"
+                Write-Host "Load Balancer SUccessfully Updated"
+                EOT
             Octopus.Action.Script.ScriptSource = "Inline"
             Octopus.Action.Script.Syntax = "PowerShell"
         }

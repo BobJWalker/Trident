@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trident-deployment  
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      component: trident-web
+  template:
+    metadata:
+      labels:
+        component: trident-web
+    spec:
+      containers:
+        - name: trident-web
+          image: bobjwalker99/trident:{{ .Values.trident.image.tag }}
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          imagePullPolicy: "Always"
+          ports:
+           - containerPort: 8080
+             name: http-port
+          env:
+           - name: TRIDENT_CONNECTION_STRING
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: connectionString          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trident-app-cluster-ip-service  
+spec:
+  type: ClusterIP
+  selector:
+    component: trident-web
+  ports:
+    - port: 6800
+      targetPort: 8080  
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trident-ingress-nginx  
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: trident.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: trident-app-cluster-ip-service
+                port:
+                  number: 6800
