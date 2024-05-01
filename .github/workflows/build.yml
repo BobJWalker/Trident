@@ -12,10 +12,7 @@ on:
       - '.github/workflows/build.yml'
   workflow_dispatch:
 
-env:  
-  OCTOPUS_PROJECT_NAME: "Trident"
-  OCTOPUS_FEATURE_BRANCH_CHANNEL: Default  
-  OCTOPUS_RELEASE_CHANNEL: Release   
+env:    
   OCTOPUS_SPACE: Default
   OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
   OCTOPUS_URL: http://bobjwalker.octopus.app
@@ -89,12 +86,3 @@ jobs:
             Trident.Database
             Trident            
           version: "${{ env.GitVersion_SemVer }}"            
-      - name: create release
-        uses: OctopusDeploy/create-release-action@v3
-        with:
-          project: ${{ env.OCTOPUS_PROJECT_NAME }}
-          channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
-          release_number: "${{ env.GitVersion_SemVer }}"
-          package_version: "${{ env.GitVersion_SemVer }}"      
-          git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
-          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}
