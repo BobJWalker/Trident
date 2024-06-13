@@ -98,6 +98,11 @@ variable "Octopus.ServiceNow.ChangeRequest.Number" {
 
 variable "Project.K8s.Namespace" {
     value "trident-#{Octopus.Environment.Name | ToLower }" {}
+
+    value "trident-#{Octopus.Release.Branch.Name}-dev" {
+        description = ""
+        environment = ["development"]
+    }
 }
 
 variable "stringData:connectionString" {
@@ -108,4 +113,8 @@ variable "stringData:connectionString" {
 
 variable "Project.K8s.Image.VersionTag" {
     value "#{Octopus.Action.Package[trident].PackageVersion}" {}
+}
+
+variable "Project.Release.Branch.Name" {
+    value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower}" {}
 }
