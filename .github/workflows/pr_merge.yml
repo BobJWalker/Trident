@@ -24,5 +24,4 @@ jobs:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}          
           runbook: "${{ env.OCTOPUS_RUNBOOK_NAME }}"
           environments: "${{ env.OCTOPUS_ENVIRONMENT_NAME }}"  
-          variables: |
-            - Project.Release.Branch.Name:${{ github.head_ref }}
+          variables: "Project.Release.Branch.Name:${{ github.head_ref }}"
