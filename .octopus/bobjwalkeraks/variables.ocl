@@ -116,7 +116,7 @@ variable "Project.Release.Branch.Name" {
 
     value "main" {
         description = ""
-        process = ["runbook/configure-database"]
+        process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
 
         prompt {
             description = ""
