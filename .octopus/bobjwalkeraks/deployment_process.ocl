@@ -278,7 +278,10 @@ step "deploy-website-via-kustomize" {
             Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
             Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
             Octopus.Action.Script.ScriptSource = "GitRepository"
-            Octopus.Action.SubstituteInFiles.TargetFiles = "k8s/base/kustomization.yaml"
+            Octopus.Action.SubstituteInFiles.TargetFiles = <<-EOT
+                k8s/base/kustomization.yaml
+                k8s/overlays/development/kustomization.yaml
+                EOT
             OctopusUseBundledTooling = "False"
         }
         worker_pool = "hosted-ubuntu"
