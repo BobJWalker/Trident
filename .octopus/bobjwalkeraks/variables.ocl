@@ -140,5 +140,5 @@ variable "Project.Database.Check.Name" {
 }
 
 variable "Project.Formatted.Branch.Name" {
-    value "#{Project.Release.Branch.Name | Replace \"/\" \"-\" | ToLower}" {}
+    value "#{Project.Release.Branch.Name | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {}
 }
