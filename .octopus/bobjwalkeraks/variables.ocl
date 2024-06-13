@@ -15,7 +15,7 @@ variable "Project.Database.Name" {
         environment = ["production"]
     }
 
-    value "Trident_Dev_#{Project.Release.Branch.Name}" {
+    value "Trident_Dev_#{Project.Formatted.Branch.Name}" {
         environment = ["development"]
     }
 }
@@ -95,7 +95,7 @@ variable "Octopus.ServiceNow.ChangeRequest.Number" {
 variable "Project.K8s.Namespace" {
     value "trident-#{Octopus.Environment.Name | ToLower }" {}
 
-    value "trident-#{Project.Release.Branch.Name}-dev" {
+    value "trident-#{Project.Formatted.Branch.Name}-dev" {
         description = ""
         environment = ["development"]
     }
@@ -112,11 +112,9 @@ variable "Project.K8s.Image.VersionTag" {
 }
 
 variable "Project.Release.Branch.Name" {
-    value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower}" {}
-
     value "main" {
         description = ""
-        process = ["runbook/configure-database"]
+        process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
 
         prompt {
             description = ""
@@ -127,14 +125,20 @@ variable "Project.Release.Branch.Name" {
             required = true
         }
     }
+
+    value "#{Octopus.Release.Git.BranchName}" {}
 }
 
 variable "Project.Database.Check.Name" {
-    value "Trident_#{Octopus.Environment.Name}_#{Project.Release.Branch.Name}_Check" {
-        environment = ["development"]
-    }
-
     value "Trident_#{Octopus.Environment.Name}_Check" {
         description = ""
     }
+
+    value "Trident_#{Octopus.Environment.Name}_#{Project.Formatted.Branch.Name}_Check" {
+        environment = ["development"]
+    }
+}
+
+variable "Project.Formatted.Branch.Name" {
+    value "#{Project.Release.Branch.Name | Replace \"/\" \"-\" | ToLower}" {}
 }
