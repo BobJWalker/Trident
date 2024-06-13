@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - 'features/**'
+      - 'feature/**'
   workflow_dispatch:
 
 env:    
@@ -25,4 +25,4 @@ jobs:
           runbook: "${{ env.OCTOPUS_RUNBOOK_NAME }}"
           environments: "${{ env.OCTOPUS_ENVIRONMENT_NAME }}"  
           variables: |
-            - 'Project.Release.Branch.Name:${{ github.head_ref }}'
+            - Project.Release.Branch.Name:${{ github.head_ref }}
