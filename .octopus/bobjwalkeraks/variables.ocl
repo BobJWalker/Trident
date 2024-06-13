@@ -99,7 +99,7 @@ variable "Octopus.ServiceNow.ChangeRequest.Number" {
 variable "Project.K8s.Namespace" {
     value "trident-#{Octopus.Environment.Name | ToLower }" {}
 
-    value "trident-#{Octopus.Release.Branch.Name}-dev" {
+    value "trident-#{Project.Release.Branch.Name}-dev" {
         description = ""
         environment = ["development"]
     }
