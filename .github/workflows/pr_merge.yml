@@ -15,8 +15,7 @@ env:
   OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
   OCTOPUS_URL: http://bobjwalker.octopus.app
 jobs:
-  destroy-feature-branch:   
-    if: github.event.pull_request.merged == true
+  destroy-feature-branch:       
     runs-on: ubuntu-latest        
     steps:
       - name: run destroy infrastructure runbook
