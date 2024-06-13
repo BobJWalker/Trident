@@ -8,3 +8,5 @@ images:
  - name: bobjwalker99/trident
    newName: bobjwalker99/trident
    newTag: "#{Project.K8s.Image.VersionTag}"
+
+namespace: "#{Project.K8s.Namespace}"
