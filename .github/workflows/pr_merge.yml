@@ -1,0 +1,29 @@
+name: PR Closed
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - 'features/**'
+  workflow_dispatch:
+
+env:    
+  OCTOPUS_PROJECT_NAME: "Trident"
+  OCTOPUS_RUNBOOK_NAME: "Destroy Application Infrastructure"
+  OCTOPUS_ENVIRONMENT_NAME: "Development"
+  OCTOPUS_SPACE: Default
+  OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
+  OCTOPUS_URL: http://bobjwalker.octopus.app
+jobs:
+  destroy-feature-branch:   
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest        
+    steps:
+      - name: run destroy infrastructure runbook
+        uses: OctopusDeploy/run-runbook-action@v3
+        with:
+          project: ${{ env.OCTOPUS_PROJECT_NAME }}          
+          runbook: "${{ env.OCTOPUS_RUNBOOK_NAME }}"
+          environments: "${{ env.OCTOPUS_ENVIRONMENT_NAME }}"  
+          variables: |
+            - 'Project.Release.Branch.Name:${{ github.head_ref }}'
