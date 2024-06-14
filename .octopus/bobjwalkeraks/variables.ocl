@@ -43,24 +43,6 @@ variable "Project.ScriptToRun.Text" {
     }
 }
 
-variable "spec:rules:0:host" {
-    value "tridentdev.local" {
-        environment = ["development"]
-    }
-
-    value "tridenttest.local" {
-        environment = ["test"]
-    }
-
-    value "tridentstaging.local" {
-        environment = ["staging"]
-    }
-
-    value "tridentprod.local" {
-        environment = ["production"]
-    }
-}
-
 variable "spec:template:spec:containers:0:image" {
     value "bobjwalker99/trident:#{Octopus.Action.Package[Trident].PackageVersion}" {}
 }
@@ -141,4 +123,8 @@ variable "Project.Database.Check.Name" {
 
 variable "Project.Formatted.Branch.Name" {
     value "#{Project.Release.Branch.Name | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {}
+}
+
+variable "Project.URL.Local" {
+    value "tridentdev#{Project.Formatted.Branch.Name}.local" {}
 }
