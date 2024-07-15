@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:    
-  OCTOPUS_PROJECT_NAME: "Trident"
+  OCTOPUS_PROJECT_NAME: "TridentAI"
   OCTOPUS_RUNBOOK_NAME: "Destroy Application Infrastructure"
   OCTOPUS_ENVIRONMENT_NAME: "Development"
   OCTOPUS_SPACE: Default
@@ -22,4 +22,4 @@ jobs:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}          
           runbook: "${{ env.OCTOPUS_RUNBOOK_NAME }}"
           environments: "${{ env.OCTOPUS_ENVIRONMENT_NAME }}"  
-          variables: "Project.Release.Branch.Name:${{ github.head_ref || github.ref }}"
+##          variables: "Project.Release.Branch.Name:${{ github.head_ref || github.ref }}"
