@@ -18,7 +18,8 @@ env:
   OCTOPUS_RELEASE_CHANNEL: Release 
   OCTOPUS_SPACE: Default
   OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
-  OCTOPUS_URL: http://bobjwalker.octopus.app
+  OCTOPUS_URL: ${{ secrets.OCTOPUS_SERVER_URL }}
+  DOCKER_REPO: bobjwalker99/trident-ai
 jobs:
   build-and-push-application:    
     runs-on: ubuntu-latest        
@@ -67,7 +68,7 @@ jobs:
       - name: build and push website container
         working-directory: src
         run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ env.GitVersion_SemVer }} --tag bobjwalker99/trident-ai:${{ env.GitVersion_SemVer }} --tag bobjwalker99/trident-ai:latest .                                   
+            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ env.GitVersion_SemVer }} --tag ${{ env.DOCKER_REPO }}:${{ env.GitVersion_SemVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
 
       - name: push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3

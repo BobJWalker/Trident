@@ -11,7 +11,7 @@ env:
   OCTOPUS_ENVIRONMENT_NAME: "Development"
   OCTOPUS_SPACE: Default
   OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
-  OCTOPUS_URL: http://bobjwalker.octopus.app
+  OCTOPUS_URL: ${{ secrets.OCTOPUS_SERVER_URL }}
 jobs:
   destroy-feature-branch:       
     runs-on: ubuntu-latest        
