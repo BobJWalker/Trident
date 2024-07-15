@@ -38,14 +38,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v0.9.14
         with:
-            additionalArguments: /overrideconfig mode=Mainline 
-      - name: update tag
-        uses: richardsimko/update-tag@v1
-        with:
-          tag_name: ${{ env.GitVersion_SemVer }}
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: github.ref == 'refs/heads/main'             
+            additionalArguments: /overrideconfig mode=Mainline            
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
