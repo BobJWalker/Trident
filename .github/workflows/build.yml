@@ -88,18 +88,4 @@ jobs:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
           channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
           release_number: "${{ env.GitVersion_SemVer }}"
-          package_version: "${{ env.GitVersion_SemVer }}"   
-          
-      - name: Create Release for GitHub
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ env.GitVersion_SemVer }}
-          release_name: Release ${{ env.GitVersion_SemVer }}
-          body: |
-            Changes in this Release
-            ${{ github.event.head_commit.message }}
-          draft: false
-          prerelease:  ${{ github.ref == 'refs/heads/main' && true || false }}
+          package_version: "${{ env.GitVersion_SemVer }}"           
