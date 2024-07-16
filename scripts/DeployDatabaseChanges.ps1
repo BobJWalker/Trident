@@ -5,7 +5,7 @@ param (
     $environmentName
 )
 
-$ExecutionLocation = "$extractedPath/Trident.Database.DbUp.exe"
+$ExecutionLocation = "$extractedPath/Trident.Database.DbUp.dll"
 
 if ([string]::IsNullOrWhiteSpace($changeReportDirectory) -eq $true)
 {
