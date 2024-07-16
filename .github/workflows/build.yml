@@ -14,13 +14,13 @@ on:
   workflow_dispatch:
 
 env:    
-  OCTOPUS_PROJECT_NAME: "TridentAI"
+  OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}
   OCTOPUS_FEATURE_BRANCH_CHANNEL: Default  
   OCTOPUS_RELEASE_CHANNEL: Release 
-  OCTOPUS_SPACE: Default
+  OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}
   OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
   OCTOPUS_URL: ${{ secrets.OCTOPUS_SERVER_URL }}
-  DOCKER_REPO: bobjwalker99/trident-ai
+  DOCKER_REPO: ${{ vars.DOCKER_HUB_REPO }}
 jobs:
   build-and-push-application:    
     runs-on: ubuntu-latest        

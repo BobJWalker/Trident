@@ -14,7 +14,6 @@ namespace Trident.Database.DbUp
         static void Main(string[] args)
         {
             var connectionString = args.FirstOrDefault(x => x.StartsWith("--ConnectionString", StringComparison.OrdinalIgnoreCase));
-
             connectionString = connectionString.Substring(connectionString.IndexOf("=") + 1).Replace(@"""", string.Empty);
 
             var executingPath = Assembly.GetExecutingAssembly().Location.Replace("Trident.Database.DbUp", "").Replace(".dll", "").Replace(".exe", "");
