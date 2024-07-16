@@ -58,7 +58,7 @@ jobs:
         with:
           package_id: TridentAI.Database.DbUp
           version: "${{ env.GitVersion_SemVer }}"  
-          base_path: "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp"          
+          base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
           output_folder: packaged      
 
