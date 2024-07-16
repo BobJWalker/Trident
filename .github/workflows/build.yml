@@ -10,6 +10,7 @@ on:
       - 'db/**'
       - 'k8s/**'
       - '.github/workflows/build.yml'
+      - 'scripts/**'
   workflow_dispatch:
 
 env:    
