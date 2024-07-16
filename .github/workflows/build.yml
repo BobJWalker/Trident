@@ -111,4 +111,4 @@ jobs:
             Changes in this Release
             ${{ github.event.head_commit.message }}
           draft: false
-          prerelease:  ${{ github.ref == 'refs/heads/main' && true || false }}
+          prerelease:  ${{ github.ref == 'refs/heads/main' && false || true }}
