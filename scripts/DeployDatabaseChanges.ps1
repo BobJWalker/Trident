@@ -10,7 +10,7 @@ $ExecutionLocation = "$extractedPath/Trident.Database.DbUp.exe"
 if ([string]::IsNullOrWhiteSpace($changeReportDirectory) -eq $true)
 {
     Write-Host "Doing a regular migration - executing $executionLocation"
-    & $ExecutionLocation --ConnectionString="$connectionString"
+    dotnet $ExecutionLocation --ConnectionString="$connectionString"
 }
 else
 {
@@ -21,7 +21,7 @@ else
         New-Item $changeReportDirectory -ItemType "directory"
     }
 
-    & $ExecutionLocation --ConnectionString="$connectionString" --PreviewReportPath="$changeReportDirectory"
+    dotnet $ExecutionLocation --ConnectionString="$connectionString" --PreviewReportPath="$changeReportDirectory"
 
     $generatedReport = "$changeReportDirectory/UpgradeReport.html"
     New-OctopusArtifact -Path "$generatedReport" -Name "$environmentName.UpgradeReport.html"
