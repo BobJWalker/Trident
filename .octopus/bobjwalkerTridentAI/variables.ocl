@@ -1,0 +1,78 @@
+variable "Project.ChangeReport.Path" {
+    value "../../#{Octopus.Project.Name}/#{Octopus.Release.Number}/#{Octopus.Environment.Name}" {}
+}
+
+variable "Project.Connection.String" {
+    value "Server=tcp:#{SQLServer.Server.Name},1433;Database=#{Project.Database.Name};User Id=#{SQLServer.User.Name};Password=#{SQLServer.User.Password};trustServerCertificate=true;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;" {}
+}
+
+variable "Project.Database.MigrationLocation" {
+    value "filesystem:#{Octopus.Action.Package[Flyway.Package.Value].ExtractedPath}/migrations" {}
+}
+
+variable "Project.Database.Name" {
+    value "TridentAI_Dev" {
+        environment = ["development"]
+    }
+
+    value "TridentAI_Test" {
+        environment = ["test"]
+    }
+
+    value "TridentAI_Stg" {
+        environment = ["staging"]
+    }
+
+    value "TridentAI_Prod" {
+        environment = ["production"]
+    }
+}
+
+variable "Project.ExecutionContainer.K8s" {
+    value "octopuslabs/k8s-workertools:1.29.0" {}
+}
+
+variable "Project.K8s.Namespace" {
+    value "tridentai-#{Octopus.Environment.Name | ToLower }" {}
+}
+
+variable "Project.ScriptToRun.Text" {
+    value {
+        process = ["runbook/run-adhoc-data-script"]
+
+        prompt {
+            description = "Please enter the SQL Script you wish to run."
+            display_settings = {
+                Octopus.ControlType = "MultiLineText"
+            }
+            label = "SQL Script To Run"
+            required = true
+        }
+    }
+}
+
+variable "spec:rules:0:host" {
+    value "tridentdev.local" {
+        environment = ["development"]
+    }
+
+    value "tridenttest.local" {
+        environment = ["test"]
+    }
+
+    value "tridentstaging.local" {
+        environment = ["staging"]
+    }
+
+    value "tridentprod.local" {
+        environment = ["production"]
+    }
+}
+
+variable "spec:template:spec:containers:0:image" {
+    value "bobjwalker99/trident-ai:#{Octopus.Action.Package[trident-ai].PackageVersion}" {}
+}
+
+variable "stringData:connectionString" {
+    value "#{Project.Connection.String}" {}
+}

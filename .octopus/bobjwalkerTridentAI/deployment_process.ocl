@@ -1,0 +1,363 @@
+step "calculate-deployment-mode" {
+    name = "Calculate Deployment Mode"
+
+    action {
+        notes = <<-EOT
+                **Always Runs**
+                
+                Step to determine if this run is a deployment, rollback, or re-deployment.
+                EOT
+        properties = {
+            Octopus.Action.RunOnServer = "true"
+            Octopus.Action.Template.Id = "ActionTemplates-441"
+            Octopus.Action.Template.Version = "3"
+        }
+        worker_pool_variable = ""
+    }
+}
+
+step "configure-database-server" {
+    condition = "Variable"
+    name = "Configure Infrastructure"
+    properties = {
+        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
+    }
+
+    action {
+        notes = <<-EOT
+                **Runs on Deployments Only**
+                
+                Runs a runbook to verify the database and namespace application / environment exists.  If it doesn't exist, it will create it automatically.
+                EOT
+        properties = {
+            Octopus.Action.Template.Id = "ActionTemplates-141"
+            Octopus.Action.Template.Version = "14"
+            OctopusUseBundledTooling = "False"
+            Run.Runbook.Api.Key = "#{Project.Runbook.Api.Key}"
+            Run.Runbook.AutoApproveManualInterventions = "No"
+            Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
+            Run.Runbook.CancelInSeconds = "1800"
+            Run.Runbook.DateTime = "N/A"
+            Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
+            Run.Runbook.Machines = "N/A"
+            Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
+            Run.Runbook.Name = "Create Application Infrastructure"
+            Run.Runbook.Project.Name = "#{Octopus.Project.Name}"
+            Run.Runbook.Space.Name = "#{Octopus.Space.Name}"
+            Run.Runbook.UsePublishedSnapShot = "True"
+            Run.Runbook.Waitforfinish = "True"
+        }
+        worker_pool = "hosted-ubuntu"
+    }
+}
+
+step "build-delta-report" {
+    condition = "Variable"
+    name = "Build Delta Report"
+    properties = {
+        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
+    }
+
+    action {
+        action_type = "Octopus.Script"
+        notes = <<-EOT
+                **Runs on Deployments Only**
+                
+                Generates a delta report as an artifact so DBAs and others can review what changes are going to go out.
+                EOT
+        properties = {
+            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
+            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[TridentAI.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\" -changeReportDirectory \"#{Project.ChangeReport.Path}\""
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        git_dependencies {
+            default_branch = "main"
+            git_credential_id = "GitCredentials-21"
+            git_credential_type = "Library"
+            repository_uri = "https://github.com/OctopusSolutionsEngineering/Trident.git"
+        }
+
+        packages "TridentAI.Database.DbUp" {
+            acquisition_location = "Server"
+            feed = "octopus-server-built-in"
+            package_id = "TridentAI.Database.DbUp"
+            properties = {
+                Extract = "True"
+                Purpose = ""
+                SelectionMode = "immediate"
+            }
+        }
+    }
+}
+
+step "notify-dbas-of-pending-approval" {
+    condition = "Variable"
+    name = "Notify DBAs of Pending Changes"
+    properties = {
+        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
+    }
+
+    action {
+        environments = ["staging"]
+        notes = <<-EOT
+                **Runs on Deployments Only**
+                
+                Notifies the DBA of a pending changes so they can review them prior to the migration running. 
+                EOT
+        properties = {
+            Octopus.Action.Template.Id = "ActionTemplates-101"
+            Octopus.Action.Template.Version = "15"
+            OctopusUseBundledTooling = "False"
+            ssn_Channel = "trident-approvals"
+            ssn_Color = "warning"
+            ssn_HookUrl = "#{Notification.Slack.Webhook.Url}"
+            ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
+            ssn_Message = "#{Notification.Body.Text}"
+            ssn_Title = "#{Notification.ManualIntervention.Subject.Text}"
+            ssn_Username = "Octopus Deploy"
+        }
+        worker_pool = "hosted-ubuntu"
+    }
+}
+
+step "dba-review-migration" {
+    condition = "Variable"
+    name = "DBA Review Migration"
+    properties = {
+        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
+    }
+    start_trigger = "StartWithPrevious"
+
+    action {
+        action_type = "Octopus.Manual"
+        environments = ["staging"]
+        notes = <<-EOT
+                **Runs on Deployments Only**
+                
+                Pauses the deployment so the DBA can review the migration report.  
+                EOT
+        properties = {
+            Octopus.Action.Manual.BlockConcurrentDeployments = "False"
+            Octopus.Action.Manual.Instructions = "Please review the migration report generated by Flyway"
+            Octopus.Action.Manual.ResponsibleTeamIds = "global/octopus-managers"
+        }
+    }
+}
+
+step "deploy-database-changes" {
+    condition = "Variable"
+    name = "Deploy Database Changes"
+    properties = {
+        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
+    }
+
+    action {
+        action_type = "Octopus.Script"
+        environments = ["staging"]
+        notes = <<-EOT
+                **Runs on Deployments Only**
+                
+                Deploys all the pending database changes to the target environment
+                EOT
+        properties = {
+            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
+            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[TridentAI.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\""
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        git_dependencies {
+            default_branch = "main"
+            git_credential_id = "GitCredentials-21"
+            git_credential_type = "Library"
+            repository_uri = "https://github.com/OctopusSolutionsEngineering/Trident.git"
+        }
+
+        packages "TridentAI.Database.DbUp" {
+            acquisition_location = "Server"
+            feed = "octopus-server-built-in"
+            package_id = "TridentAI.Database.DbUp"
+            properties = {
+                Extract = "True"
+                Purpose = ""
+                SelectionMode = "immediate"
+            }
+        }
+    }
+}
+
+step "create-connectionstring-secret" {
+    name = "Create ConnectionString Secret"
+    properties = {
+        Octopus.Action.TargetRoles = "trident-web"
+    }
+
+    action {
+        action_type = "Octopus.KubernetesDeployRawYaml"
+        notes = <<-EOT
+                **Always Runs**
+                
+                Ensures the connection string secret has been properly created.
+                EOT
+        properties = {
+            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-app-secrets.yaml"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
+            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
+
+        git_dependencies {
+            default_branch = "main"
+            file_path_filters = ["k8s/base/trident-app-secrets.yaml"]
+            git_credential_id = "GitCredentials-21"
+            git_credential_type = "Library"
+            repository_uri = "https://github.com/OctopusSolutionsEngineering/Trident.git"
+        }
+    }
+}
+
+step "deploy-trident-website" {
+    name = "Deploy Trident Website"
+    properties = {
+        Octopus.Action.TargetRoles = "trident-web"
+    }
+
+    action {
+        action_type = "Octopus.KubernetesDeployRawYaml"
+        notes = <<-EOT
+                **Always Runs**
+                
+                Deploys the website container to the Kubernetes Cluster using a manifest file.
+                EOT
+        properties = {
+            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-deployment.yaml"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
+            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
+
+        git_dependencies {
+            default_branch = "main"
+            file_path_filters = ["k8s/base/trident-deployment.yaml"]
+            git_credential_id = "GitCredentials-21"
+            git_credential_type = "Library"
+            repository_uri = "https://github.com/OctopusSolutionsEngineering/Trident.git"
+        }
+
+        packages "trident-ai" {
+            acquisition_location = "NotAcquired"
+            feed = "dockerhub"
+            package_id = "bobjwalker99/trident-ai"
+            properties = {
+                Extract = "False"
+                Purpose = "DockerImageReference"
+                SelectionMode = "immediate"
+            }
+        }
+    }
+}
+
+step "verify-deployment" {
+    name = "Verify Deployment"
+
+    action {
+        action_type = "Octopus.Script"
+        notes = <<-EOT
+                **Always runs**
+                
+                Runs a series of tests to ensure the deployment was successful.
+                EOT
+        properties = {
+            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.Script.ScriptFileName = "scripts/VerifySuccessfulDeployment.ps1"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        git_dependencies {
+            default_branch = "main"
+            git_credential_id = "GitCredentials-21"
+            git_credential_type = "Library"
+            repository_uri = "https://github.com/OctopusSolutionsEngineering/Trident.git"
+        }
+    }
+}
+
+step "update-load-balancer" {
+    name = "Update Load Balancer"
+
+    action {
+        action_type = "Octopus.Script"
+        notes = <<-EOT
+                **Always Runs**
+                
+                When the verification is successful, the script will update the load balancer to point to the new version of the application. 
+                EOT
+        properties = {
+            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.Script.ScriptFileName = "scripts/UpdateLoadBalancer.ps1"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        git_dependencies {
+            default_branch = "main"
+            git_credential_id = "GitCredentials-21"
+            git_credential_type = "Library"
+            repository_uri = "https://github.com/OctopusSolutionsEngineering/Trident.git"
+        }
+    }
+}
+
+step "notify-team-of-deployment-status" {
+    condition = "Always"
+    name = "Notify Team of Deployment Status"
+
+    action {
+        channels = ["release"]
+        notes = <<-EOT
+                **Always Runs**
+                
+                Notifies the team of the deployment status of the application.
+                EOT
+        properties = {
+            Octopus.Action.Template.Id = "ActionTemplates-101"
+            Octopus.Action.Template.Version = "15"
+            OctopusUseBundledTooling = "False"
+            ssn_Channel = "trident-status"
+            ssn_Color = "#{unless Octopus.Deployment.Error}good#{else}danger#{/unless}"
+            ssn_HookUrl = "#{Notification.Slack.Webhook.Url}"
+            ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
+            ssn_Message = "#{Notification.Body.Text}"
+            ssn_Title = "#{Notification.DeploymentStatus.Subject.Text}"
+            ssn_Username = "Octopus Deploy"
+        }
+        worker_pool = "hosted-ubuntu"
+    }
+}
