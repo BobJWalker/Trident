@@ -44,14 +44,21 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}                  
+          dotnet-version: ${{ matrix.dotnet-version }}       
+      - name: Create artifacts folder
+        run: |
+            mkdir "$GITHUB_WORKSPACE/artifacts"
+            mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp"   
+      - name: Publish Database
+        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp"       
+                           
       - name: package database
         id: "database_package"
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
-          package_id: TridentAI.Database
+          package_id: TridentAI.Database.DbUp
           version: "${{ env.GitVersion_SemVer }}"  
-          base_path: "db"          
+          base_path: "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp"          
           files: "**/*"
           output_folder: packaged      
 
@@ -79,7 +86,7 @@ jobs:
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |
-            TridentAI.Database
+            TridentAI.Database.DbUp
             TridentAI            
           version: "${{ env.GitVersion_SemVer }}"
 
