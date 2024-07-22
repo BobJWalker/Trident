@@ -1,8 +1,6 @@
-using NUnit.Framework;
 using Trident.Web.BusinessLogic.Converters;
 using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.OctopusServerModels;
-using System.Collections.Generic;
 
 namespace Trident.Web.BusinessLogic.Tests.Converters
 {
@@ -62,6 +60,44 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             Assert.AreEqual(deploymentOctopusTaskModel.StartTime, result.StartTime);
             Assert.AreEqual(deploymentOctopusTaskModel.CompletedTime, result.CompletedTime);
             Assert.AreEqual(deploymentOctopusTaskModel.State, result.DeploymentState);
+        }
+
+        [Test]
+        public void ConvertFromOctopusToSpaceModel_ShouldReturnSpaceModelWithCorrectProperties()
+        {
+            // Arrange
+            var nameOnlyOctopusModel = new NameOnlyOctopusModel
+            {
+                Id = "spaces-1",
+                Name = "Test Space"
+            };
+
+            // Act
+            var spaceModel = _converter.ConvertFromOctopusToSpaceModel(nameOnlyOctopusModel);
+
+            // Assert
+            Assert.AreEqual(nameOnlyOctopusModel.Id, spaceModel.OctopusId);
+            Assert.AreEqual(nameOnlyOctopusModel.Name, spaceModel.Name);
+        }
+
+        [Test]
+        public void ConvertFromOctopusToProjectModel_ShouldReturnCorrectProjectModel()
+        {
+            // Arrange
+            var projectOctopusModel = new NameOnlyOctopusModel
+            {
+                Id = "Projects-1",
+                Name = "Test Project"
+            };
+            var spaceId = 10;
+
+            // Act
+            var result = _converter.ConvertFromOctopusToProjectModel(projectOctopusModel, spaceId);
+
+            // Assert
+            Assert.AreEqual(projectOctopusModel.Name, result.Name);
+            Assert.AreEqual(projectOctopusModel.Id, result.OctopusId);
+            Assert.AreEqual(spaceId, result.SpaceId);
         }
     }
 }
