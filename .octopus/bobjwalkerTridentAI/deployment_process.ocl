@@ -156,7 +156,6 @@ step "deploy-database-changes" {
 
     action {
         action_type = "Octopus.Script"
-        environments = ["staging"]
         notes = <<-EOT
                 **Runs on Deployments Only**
                 

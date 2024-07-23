@@ -99,5 +99,25 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             Assert.AreEqual(projectOctopusModel.Id, result.OctopusId);
             Assert.AreEqual(spaceId, result.SpaceId);
         }
+
+        [Test]
+        public void ConvertFromOctopusToEnvironmentModel_ShouldReturnEnvironmentModelWithCorrectProperties()
+        {
+            // Arrange
+            var octopusModel = new NameOnlyOctopusModel
+            {
+                Id = "Environments-1",
+                Name = "Test Environment"
+            };
+            var spaceId = 2;
+
+            // Act
+            var result = _converter.ConvertFromOctopusToEnvironmentModel(octopusModel, spaceId);
+
+            // Assert
+            Assert.AreEqual(octopusModel.Name, result.Name);
+            Assert.AreEqual(octopusModel.Id, result.OctopusId);
+            Assert.AreEqual(spaceId, result.SpaceId);
+        }
     }
 }
