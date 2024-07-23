@@ -119,5 +119,26 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             Assert.AreEqual(octopusModel.Id, result.OctopusId);
             Assert.AreEqual(spaceId, result.SpaceId);
         }
+
+        [Test]
+        public void ConvertFromOctopusToTenantModel_ShouldReturnCorrectTenantModel()
+        {
+            // Arrange
+            var tenantOctopusModel = new NameOnlyOctopusModel
+            {
+                Id = "Tenants-1",
+                Name = "Test Tenant"
+            };
+            var spaceId = 2;
+
+            // Act
+            var result = _converter.ConvertFromOctopusToTenantModel(tenantOctopusModel, spaceId);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(tenantOctopusModel.Name, result.Name);
+            Assert.AreEqual(tenantOctopusModel.Id, result.OctopusId);
+            Assert.AreEqual(spaceId, result.SpaceId);
+        }
     }
 }
