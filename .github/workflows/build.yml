@@ -62,7 +62,7 @@ jobs:
             mkdir "$GITHUB_WORKSPACE/artifacts"
             mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp"   
       - name: Publish Database
-        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "linux/amd64"      
+        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "linux-x64"      
                            
       - name: package database
         id: "database_package"
