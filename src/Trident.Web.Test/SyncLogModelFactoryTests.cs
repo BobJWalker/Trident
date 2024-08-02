@@ -30,5 +30,21 @@ namespace Trident.Web.BusinessLogic.Tests.Factories
             Assert.AreEqual(message, result.Message);
             Assert.AreEqual(syncId, result.SyncId);
         }
+
+        [Test]
+        public void MakeErrorLog_ShouldReturnSyncLogModelWithErrorLogType()
+        {
+            // Arrange
+            string message = "Error log message";
+            int syncId = 1;
+
+            // Act
+            SyncLogModel result = _syncLogModelFactory.MakeErrorLog(message, syncId);
+
+            // Assert
+            Assert.AreEqual(syncId, result.SyncId);
+            Assert.AreEqual(message, result.Message);
+            Assert.AreEqual(LogType.Error, result.Type);
+        }
     }
 }
