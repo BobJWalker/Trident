@@ -31,14 +31,14 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         with:
-          fetch-depth: '0'      
+          fetch-depth: '0'            
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v0.9.14
+        uses: gittools/actions/gitversion/setup@v1
         with:
             versionSpec: 5.x
       - id: determine_version
         name: Determine Version
-        uses: gittools/actions/gitversion/execute@v0.9.14
+        uses: gittools/actions/gitversion/execute@v1
         with:
             additionalArguments: /overrideconfig mode=Mainline            
       
@@ -46,12 +46,23 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet-version }}       
+      - name: Install dependencies
+        run: dotnet restore src/Trident.sln
+      
+      - name: Run unit tests
+        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults
+      - name: Upload unit tests results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: /tmp/testresults
+      
       - name: Create artifacts folder
         run: |
             mkdir "$GITHUB_WORKSPACE/artifacts"
             mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp"   
       - name: Publish Database
-        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp"       
+        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"      
                            
       - name: package database
         id: "database_package"
