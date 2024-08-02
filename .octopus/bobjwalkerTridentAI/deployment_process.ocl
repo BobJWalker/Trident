@@ -10,7 +10,7 @@ step "calculate-deployment-mode" {
         properties = {
             Octopus.Action.RunOnServer = "true"
             Octopus.Action.Template.Id = "ActionTemplates-441"
-            Octopus.Action.Template.Version = "3"
+            Octopus.Action.Template.Version = "4"
         }
         worker_pool_variable = ""
     }
@@ -143,6 +143,7 @@ step "dba-review-migration" {
             Octopus.Action.Manual.BlockConcurrentDeployments = "False"
             Octopus.Action.Manual.Instructions = "Please review and verify the migration database report matches your expectations."
             Octopus.Action.Manual.ResponsibleTeamIds = "global/octopus-managers"
+            Octopus.Action.RunOnServer = "false"
         }
     }
 }
