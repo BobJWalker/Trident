@@ -26,9 +26,9 @@ namespace Trident.Web.BusinessLogic.Tests.Factories
             SyncLogModel result = _syncLogModelFactory.MakeInformationLog(message, syncId);
 
             // Assert
-            Assert.AreEqual(LogType.Normal, result.Type);
-            Assert.AreEqual(message, result.Message);
-            Assert.AreEqual(syncId, result.SyncId);
+            Assert.That(result.Type, Is.EqualTo(LogType.Normal));
+            Assert.That(result.Message, Is.EqualTo(message));
+            Assert.That(result.SyncId, Is.EqualTo(syncId));
         }
 
         [Test]
@@ -42,9 +42,9 @@ namespace Trident.Web.BusinessLogic.Tests.Factories
             SyncLogModel result = _syncLogModelFactory.MakeErrorLog(message, syncId);
 
             // Assert
-            Assert.AreEqual(syncId, result.SyncId);
-            Assert.AreEqual(message, result.Message);
-            Assert.AreEqual(LogType.Error, result.Type);
+            Assert.That(result.SyncId, Is.EqualTo(syncId));
+            Assert.That(result.Message, Is.EqualTo(message));
+            Assert.That(result.Type, Is.EqualTo(LogType.Error));
         }
     }
 }

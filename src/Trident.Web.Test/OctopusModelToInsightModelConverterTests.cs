@@ -51,15 +51,15 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             var result = _converter.ConvertFromOctopusToDeploymentModel(deploymentOctopusModel, deploymentOctopusTaskModel, releaseId, environmentDictionary, tenantDictionary);
 
             // Assert
-            Assert.AreEqual(deploymentOctopusModel.Id, result.OctopusId);
-            Assert.AreEqual(releaseId, result.ReleaseId);
-            Assert.AreEqual(deploymentOctopusModel.Name, result.Name);
-            Assert.AreEqual(environmentDictionary[deploymentOctopusModel.EnvironmentId].Id, result.EnvironmentId);
-            Assert.AreEqual(tenantDictionary[deploymentOctopusModel.TenantId].Id, result.TenantId);
-            Assert.AreEqual(deploymentOctopusTaskModel.QueueTime, result.QueueTime);
-            Assert.AreEqual(deploymentOctopusTaskModel.StartTime, result.StartTime);
-            Assert.AreEqual(deploymentOctopusTaskModel.CompletedTime, result.CompletedTime);
-            Assert.AreEqual(deploymentOctopusTaskModel.State, result.DeploymentState);
+            Assert.That(result.OctopusId, Is.EqualTo(deploymentOctopusModel.Id));
+            Assert.That(result.ReleaseId, Is.EqualTo(releaseId));
+            Assert.That(result.Name, Is.EqualTo(deploymentOctopusModel.Name));
+            Assert.That(result.EnvironmentId, Is.EqualTo(environmentDictionary[deploymentOctopusModel.EnvironmentId].Id));
+            Assert.That(result.TenantId, Is.EqualTo(tenantDictionary[deploymentOctopusModel.TenantId].Id));
+            Assert.That(result.QueueTime, Is.EqualTo(deploymentOctopusTaskModel.QueueTime));
+            Assert.That(result.StartTime, Is.EqualTo(deploymentOctopusTaskModel.StartTime));
+            Assert.That(result.CompletedTime, Is.EqualTo(deploymentOctopusTaskModel.CompletedTime));
+            Assert.That(result.DeploymentState, Is.EqualTo(deploymentOctopusTaskModel.State));
         }
 
         [Test]
@@ -76,8 +76,8 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             var spaceModel = _converter.ConvertFromOctopusToSpaceModel(nameOnlyOctopusModel);
 
             // Assert
-            Assert.AreEqual(nameOnlyOctopusModel.Id, spaceModel.OctopusId);
-            Assert.AreEqual(nameOnlyOctopusModel.Name, spaceModel.Name);
+            Assert.That(spaceModel.OctopusId, Is.EqualTo(nameOnlyOctopusModel.Id));
+            Assert.That(spaceModel.Name, Is.EqualTo(nameOnlyOctopusModel.Name));
         }
 
         [Test]
@@ -95,9 +95,9 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             var result = _converter.ConvertFromOctopusToProjectModel(projectOctopusModel, spaceId);
 
             // Assert
-            Assert.AreEqual(projectOctopusModel.Name, result.Name);
-            Assert.AreEqual(projectOctopusModel.Id, result.OctopusId);
-            Assert.AreEqual(spaceId, result.SpaceId);
+            Assert.That(result.Name, Is.EqualTo(projectOctopusModel.Name));
+            Assert.That(result.OctopusId, Is.EqualTo(projectOctopusModel.Id));
+            Assert.That(result.SpaceId, Is.EqualTo(spaceId));
         }
 
         [Test]
@@ -115,9 +115,9 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             var result = _converter.ConvertFromOctopusToEnvironmentModel(octopusModel, spaceId);
 
             // Assert
-            Assert.AreEqual(octopusModel.Name, result.Name);
-            Assert.AreEqual(octopusModel.Id, result.OctopusId);
-            Assert.AreEqual(spaceId, result.SpaceId);
+            Assert.That(result.Name, Is.EqualTo(octopusModel.Name));
+            Assert.That(result.OctopusId, Is.EqualTo(octopusModel.Id));
+            Assert.That(result.SpaceId, Is.EqualTo(spaceId));
         }
 
         [Test]
@@ -136,8 +136,8 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
 
             // Assert
             Assert.IsNotNull(result);
-            Assert.AreEqual(tenantOctopusModel.Name, result.Name);
-            Assert.AreEqual(tenantOctopusModel.Id, result.OctopusId);
+            Assert.That(result.Name, Is.EqualTo(tenantOctopusModel.Name));
+            Assert.That(result.OctopusId, Is.EqualTo(tenantOctopusModel.Id));
             Assert.AreEqual(spaceId, result.SpaceId);
         }
 
