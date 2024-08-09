@@ -69,7 +69,7 @@ jobs:
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
           package_id: TridentAI.Database.DbUp
-          version: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseTag) }}"  
+          version: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}.{3}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseLabel, env.GitVersion_CommitsSinceVersionSource) }}"  
           base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
           output_folder: packaged      
@@ -87,7 +87,7 @@ jobs:
       - name: build and push website container
         working-directory: src
         run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseTag) }} --tag ${{ env.DOCKER_REPO }}:${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseTag) }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
+            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}.{3}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseLabel, env.GitVersion_CommitsSinceVersionSource) }} --tag ${{ env.DOCKER_REPO }}:${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}.{3}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseLabel, env.GitVersion_CommitsSinceVersionSource) }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
 
       - name: push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3
@@ -100,15 +100,15 @@ jobs:
           packages: |
             TridentAI.Database.DbUp
             TridentAI            
-          version: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseTag) }}"
+          version: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}.{3}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseLabel, env.GitVersion_CommitsSinceVersionSource) }}"
 
       - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
           channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
-          release_number: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseTag) }}"
-          package_version: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseTag) }}"
+          release_number: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}.{3}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseLabel, env.GitVersion_CommitsSinceVersionSource) }}"
+          package_version: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}.{3}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseLabel, env.GitVersion_CommitsSinceVersionSource) }}"
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}      
           
@@ -118,8 +118,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseTag) }}"
-          release_name: Release ${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseTag) }}
+          tag_name: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}.{3}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseLabel, env.GitVersion_CommitsSinceVersionSource) }}"
+          release_name: Release ${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}.{3}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseLabel, env.GitVersion_CommitsSinceVersionSource) }}
           body: |
             Changes in this Release
             ${{ github.event.head_commit.message }}
