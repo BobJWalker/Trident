@@ -46,5 +46,41 @@ namespace Trident.Web.BusinessLogic.Tests.Factories
             Assert.That(result.Message, Is.EqualTo(message));
             Assert.That(result.Type, Is.EqualTo(LogType.Error));
         }
+
+        [Test]
+        public void MakeWarningLog_ShouldReturnWarningLog()
+        {
+            // Arrange
+            var message = "Warning message";
+            var syncId = 3;
+
+            // Act
+            var result = _syncLogModelFactory.MakeWarningLog(message, syncId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.AreEqual(syncId, result.SyncId);
+            Assert.AreEqual(message, result.Message);
+            Assert.AreEqual(LogType.Warning, result.Type);
+            Assert.True(result.Created <= DateTime.UtcNow);
+        }
+
+        [Test]
+        public void MakeLog_ShouldReturnWarningLog()
+        {
+            // Arrange
+            var message = "Warning message";
+            var syncId = 3;
+
+            // Act
+            var result = _syncLogModelFactory.Make(message, syncId, LogType.Warning);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.AreEqual(syncId, result.SyncId);
+            Assert.AreEqual(message, result.Message);
+            Assert.AreEqual(LogType.Warning, result.Type);
+            Assert.True(result.Created <= DateTime.UtcNow);
+        }
     }
 }

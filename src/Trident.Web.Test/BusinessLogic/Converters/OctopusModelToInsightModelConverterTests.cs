@@ -138,7 +138,7 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             Assert.IsNotNull(result);
             Assert.That(result.Name, Is.EqualTo(tenantOctopusModel.Name));
             Assert.That(result.OctopusId, Is.EqualTo(tenantOctopusModel.Id));
-            Assert.AreEqual(spaceId, result.SpaceId);
+            Assert.That(result.SpaceId, Is.EqualTo(spaceId));
         }
 
         [Test]
