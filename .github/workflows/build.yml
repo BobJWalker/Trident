@@ -99,7 +99,7 @@ jobs:
         with:
           packages: |
             TridentAI.Database.DbUp
-            TridentAI            
+            ${{ env.DOCKER_REPO }}            
           version: "${{ github.ref == 'refs/heads/main' && format('{0}.{1}', env.GitVersion_SemVer, github.run_number) || format('{0}.{1}-{2}.{3}', env.GitVersion_MajorMinorPatch, github.run_number, env.GitVersion_PreReleaseLabel, env.GitVersion_CommitsSinceVersionSource) }}"
 
       - name: create release in Octopus
