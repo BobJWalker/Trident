@@ -58,7 +58,6 @@ namespace Trident.Web.BusinessLogic.Tests.Factories
             var result = _syncLogModelFactory.MakeWarningLog(message, syncId);
 
             // Assert
-            Assert.NotNull(result);
             Assert.That(result.SyncId, Is.EqualTo(syncId));
             Assert.That(result.Message, Is.EqualTo(message));
             Assert.That(result.Type, Is.EqualTo(LogType.Warning));
@@ -76,7 +75,6 @@ namespace Trident.Web.BusinessLogic.Tests.Factories
             var result = _syncLogModelFactory.Make(message, syncId, LogType.Warning);
 
             // Assert
-            Assert.NotNull(result);
             Assert.That(result.SyncId, Is.EqualTo(syncId));
             Assert.That(result.Message, Is.EqualTo(message));
             Assert.That(result.Type, Is.EqualTo(LogType.Warning));
