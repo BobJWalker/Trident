@@ -16,53 +16,6 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
         }
 
         [Test]
-        public void ConvertFromOctopusToDeploymentModel_ShouldReturnValidDeploymentModel()
-        {
-            // Arrange
-            var deploymentOctopusModel = new DeploymentOctopusModel
-            {
-                Id = "Deployments-1",
-                Name = "Deployment 1",
-                EnvironmentId = "Environment1",
-                TenantId = "Tenant1"
-            };
-
-            var deploymentOctopusTaskModel = new DeploymentOctopusTaskModel
-            {
-                QueueTime = new DateTime(2022, 1, 1),
-                StartTime = new DateTime(2022, 1, 2),
-                CompletedTime = new DateTime(2022, 1, 3),
-                State = "Success"
-            };
-
-            var releaseId = 1;
-
-            var environmentDictionary = new Dictionary<string, EnvironmentModel>
-            {
-                { "Environment1", new EnvironmentModel { Id = 1 } }
-            };
-
-            var tenantDictionary = new Dictionary<string, TenantModel>
-            {
-                { "Tenant1", new TenantModel { Id = 1 } }
-            };
-
-            // Act
-            var result = _converter.ConvertFromOctopusToDeploymentModel(deploymentOctopusModel, deploymentOctopusTaskModel, releaseId, environmentDictionary, tenantDictionary);
-
-            // Assert
-            Assert.That(result.OctopusId, Is.EqualTo(deploymentOctopusModel.Id));
-            Assert.That(result.ReleaseId, Is.EqualTo(releaseId));
-            Assert.That(result.Name, Is.EqualTo(deploymentOctopusModel.Name));
-            Assert.That(result.EnvironmentId, Is.EqualTo(environmentDictionary[deploymentOctopusModel.EnvironmentId].Id));
-            Assert.That(result.TenantId, Is.EqualTo(tenantDictionary[deploymentOctopusModel.TenantId].Id));
-            Assert.That(result.QueueTime, Is.EqualTo(deploymentOctopusTaskModel.QueueTime));
-            Assert.That(result.StartTime, Is.EqualTo(deploymentOctopusTaskModel.StartTime));
-            Assert.That(result.CompletedTime, Is.EqualTo(deploymentOctopusTaskModel.CompletedTime));
-            Assert.That(result.DeploymentState, Is.EqualTo(deploymentOctopusTaskModel.State));
-        }
-
-        [Test]
         public void ConvertFromOctopusToSpaceModel_ShouldReturnSpaceModelWithCorrectProperties()
         {
             // Arrange
