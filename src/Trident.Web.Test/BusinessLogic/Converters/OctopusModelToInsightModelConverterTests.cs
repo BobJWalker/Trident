@@ -114,5 +114,155 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             Assert.That(result.OctopusId, Is.EqualTo("Releases-1"));
             Assert.That(result.ProjectId, Is.EqualTo(123));
         }
+
+        [Test]
+        public void ConvertFromOctopusToDeploymentModel_ShouldReturnCorrectDeploymentModel()
+        {
+            // Arrange
+            var deploymentOctopusModel = new DeploymentOctopusModel
+            {
+                Id = "deployment-1",
+                Name = "Deployment 1",
+                EnvironmentId = "env-1",
+                TenantId = "tenant-1"
+            };
+
+            var deploymentOctopusTaskModel = new DeploymentOctopusTaskModel
+            {
+                QueueTime = DateTime.Now.AddMinutes(-10),
+                StartTime = DateTime.Now.AddMinutes(-5),
+                CompletedTime = DateTime.Now,
+                State = "Success"
+            };
+
+            var environmentDictionary = new Dictionary<string, EnvironmentModel>
+            {
+                { "env-1", new EnvironmentModel { Id = 1, Name = "Environment 1" } }
+            };
+
+            var tenantDictionary = new Dictionary<string, TenantModel>
+            {
+                { "tenant-1", new TenantModel { Id = 1, Name = "Tenant 1" } }
+            };
+
+            int releaseId = 1;
+
+            // Act
+            var result = _converter.ConvertFromOctopusToDeploymentModel(
+                deploymentOctopusModel, 
+                deploymentOctopusTaskModel, 
+                releaseId, 
+                environmentDictionary, 
+                tenantDictionary);
+
+            // Assert
+            Assert.AreEqual("deployment-1", result.OctopusId);
+            Assert.AreEqual("Deployment 1", result.Name);
+            Assert.AreEqual(1, result.ReleaseId);
+            Assert.AreEqual(1, result.EnvironmentId);
+            Assert.AreEqual(1, result.TenantId);
+            Assert.AreEqual(deploymentOctopusTaskModel.QueueTime, result.QueueTime);
+            Assert.AreEqual(deploymentOctopusTaskModel.StartTime, result.StartTime);
+            Assert.AreEqual(deploymentOctopusTaskModel.CompletedTime, result.CompletedTime);
+            Assert.AreEqual(deploymentOctopusTaskModel.State, result.DeploymentState);
+        }
+
+        [Test]
+        public void ConvertFromOctopusToDeploymentModel_ShouldHandleMissingEnvironment()
+        {
+            // Arrange
+            var deploymentOctopusModel = new DeploymentOctopusModel
+            {
+                Id = "deployment-1",
+                Name = "Deployment 1",
+                EnvironmentId = "env-2",
+                TenantId = "tenant-1"
+            };
+
+            var deploymentOctopusTaskModel = new DeploymentOctopusTaskModel
+            {
+                QueueTime = DateTime.Now.AddMinutes(-10),
+                StartTime = DateTime.Now.AddMinutes(-5),
+                CompletedTime = DateTime.Now,
+                State = "Success"
+            };
+
+            var environmentDictionary = new Dictionary<string, EnvironmentModel>();
+
+            var tenantDictionary = new Dictionary<string, TenantModel>
+            {
+                { "tenant-1", new TenantModel { Id = 1, Name = "Tenant 1" } }
+            };
+
+            int releaseId = 1;
+
+            // Act
+            var result = _converter.ConvertFromOctopusToDeploymentModel(
+                deploymentOctopusModel, 
+                deploymentOctopusTaskModel, 
+                releaseId, 
+                environmentDictionary, 
+                tenantDictionary);
+
+            // Assert
+            Assert.AreEqual("deployment-1", result.OctopusId);
+            Assert.AreEqual("Deployment 1", result.Name);
+            Assert.AreEqual(1, result.ReleaseId);
+            Assert.AreEqual(0, result.EnvironmentId);
+            Assert.AreEqual(1, result.TenantId);
+            Assert.AreEqual(deploymentOctopusTaskModel.QueueTime, result.QueueTime);
+            Assert.AreEqual(deploymentOctopusTaskModel.StartTime, result.StartTime);
+            Assert.AreEqual(deploymentOctopusTaskModel.CompletedTime, result.CompletedTime);
+            Assert.AreEqual(deploymentOctopusTaskModel.State, result.DeploymentState);
+        }
+
+        [Test]
+        public void ConvertFromOctopusToDeploymentModel_ShouldHandleMissingTenant()
+        {
+            // Arrange
+            var deploymentOctopusModel = new DeploymentOctopusModel
+            {
+                Id = "deployment-1",
+                Name = "Deployment 1",
+                EnvironmentId = "env-1",
+                TenantId = "tenant-2"
+            };
+
+            var deploymentOctopusTaskModel = new DeploymentOctopusTaskModel
+            {
+                QueueTime = DateTime.Now.AddMinutes(-10),
+                StartTime = DateTime.Now.AddMinutes(-5),
+                CompletedTime = DateTime.Now,
+                State = "Success"
+            };
+
+            var environmentDictionary = new Dictionary<string, EnvironmentModel>
+            {
+                { "env-1", new EnvironmentModel { Id = 1, Name = "Environment 1" } }
+            };
+
+            var tenantDictionary = new Dictionary<string, TenantModel>();
+
+            int releaseId = 1;
+
+            // Act
+            var result = _converter.ConvertFromOctopusToDeploymentModel(
+                deploymentOctopusModel, 
+                deploymentOctopusTaskModel, 
+                releaseId, 
+                environmentDictionary, 
+                tenantDictionary);
+
+            // Assert
+            Assert.AreEqual("deployment-1", result.OctopusId);
+            Assert.AreEqual("Deployment 1", result.Name);
+            Assert.AreEqual(1, result.ReleaseId);
+            Assert.AreEqual(1, result.EnvironmentId);
+            Assert.IsNull(result.TenantId);
+            Assert.AreEqual(deploymentOctopusTaskModel.QueueTime, result.QueueTime);
+            Assert.AreEqual(deploymentOctopusTaskModel.StartTime, result.StartTime);
+            Assert.AreEqual(deploymentOctopusTaskModel.CompletedTime, result.CompletedTime);
+            Assert.AreEqual(deploymentOctopusTaskModel.State, result.DeploymentState);
+        }
     }
 }
