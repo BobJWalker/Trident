@@ -52,7 +52,7 @@ jobs:
       - name: Run unit tests
         run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults
       - name: Upload unit tests results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: /tmp/testresults
@@ -68,7 +68,7 @@ jobs:
         id: "database_package"
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
-          package_id: TridentAI.Database.DbUp
+          package_id: Trident.Database.DbUp
           version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"  
           base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
@@ -98,8 +98,8 @@ jobs:
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |
-            TridentAI.Database.DbUp
-            TridentAI            
+            Trident.Database.DbUp   
+            Trident                     
           version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"
 
       - name: create release in Octopus
