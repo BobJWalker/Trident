@@ -69,7 +69,7 @@ step "build-delta-report" {
         properties = {
             Octopus.Action.GitRepository.Source = "External"
             Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
-            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[TridentAI.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\" -changeReportDirectory \"#{Project.ChangeReport.Path}\""
+            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\" -changeReportDirectory \"#{Project.ChangeReport.Path}\""
             Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
@@ -81,10 +81,10 @@ step "build-delta-report" {
             repository_uri = "https://github.com/bobjwalker/Trident.git"
         }
 
-        packages "TridentAI.Database.DbUp" {
+        packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
             feed = "octopus-server-built-in"
-            package_id = "TridentAI.Database.DbUp"
+            package_id = "Trident.Database.DbUp"
             properties = {
                 Extract = "True"
                 Purpose = ""
@@ -166,7 +166,7 @@ step "deploy-database-changes" {
         properties = {
             Octopus.Action.GitRepository.Source = "External"
             Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
-            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[TridentAI.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\""
+            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\""
             Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
@@ -178,10 +178,10 @@ step "deploy-database-changes" {
             repository_uri = "https://github.com/bobjwalker/Trident.git"
         }
 
-        packages "TridentAI.Database.DbUp" {
+        packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
             feed = "octopus-server-built-in"
-            package_id = "TridentAI.Database.DbUp"
+            package_id = "Trident.Database.DbUp"
             properties = {
                 Extract = "True"
                 Purpose = ""
