@@ -40,8 +40,8 @@ step "configure-database-server" {
             Run.Runbook.DateTime = "N/A"
             Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
             Run.Runbook.Machines = "N/A"
-            Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"            
-            Run.Runbook.Name = "Configure Application Infrastructure"            
+            Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
+            Run.Runbook.Name = "Configure Application Infrastructure"
             Run.Runbook.Project.Name = "#{Octopus.Project.Name}"
             Run.Runbook.PromptedVariables = "Project.Release.Branch.Name::#{Project.Release.Branch.Name}"
             Run.Runbook.Space.Name = "#{Octopus.Space.Name}"
@@ -67,19 +67,12 @@ step "build-delta-report" {
                 Generates a delta report as an artifact so DBAs and others can review what changes are going to go out.
                 EOT
         properties = {
-            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
             Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\" -changeReportDirectory \"#{Project.ChangeReport.Path}\""
             Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
-
-        git_dependencies {
-            default_branch = "main"
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/bobjwalker/Trident.git"
-        }
 
         packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
@@ -164,19 +157,12 @@ step "deploy-database-changes" {
                 Deploys all the pending database changes to the target environment
                 EOT
         properties = {
-            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
             Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\""
             Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
-
-        git_dependencies {
-            default_branch = "main"
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/bobjwalker/Trident.git"
-        }
 
         packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
@@ -205,6 +191,8 @@ step "create-connectionstring-secret" {
                 Ensures the connection string secret has been properly created.
                 EOT
         properties = {
+            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-app-secrets.yaml"
+            Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
             Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
@@ -220,14 +208,6 @@ step "create-connectionstring-secret" {
         container {
             feed = "dockerhub"
             image = "#{Project.ExecutionContainer.K8s}"
-        }
-
-        git_dependencies {
-            default_branch = "main"
-            file_path_filters = ["k8s/base/trident-app-secrets.yaml"]
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/bobjwalker/Trident.git"
         }
     }
 }
@@ -246,6 +226,8 @@ step "deploy-trident-website" {
                 Deploys the website container to the Kubernetes Cluster using a manifest file.
                 EOT
         properties = {
+            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-deployment.yaml"
+            Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
             Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
@@ -261,14 +243,6 @@ step "deploy-trident-website" {
         container {
             feed = "dockerhub"
             image = "#{Project.ExecutionContainer.K8s}"
-        }
-
-        git_dependencies {
-            default_branch = "main"
-            file_path_filters = ["k8s/base/trident-deployment.yaml"]
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/bobjwalker/Trident.git"
         }
 
         packages "Trident" {
@@ -295,18 +269,11 @@ step "verify-deployment" {
                 Runs a series of tests to ensure the deployment was successful.
                 EOT
         properties = {
-            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Script.ScriptFileName = "scripts/VerifySuccessfulDeployment.ps1"
             Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
-
-        git_dependencies {
-            default_branch = "main"
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/bobjwalker/Trident.git"
-        }
     }
 }
 
@@ -321,18 +288,11 @@ step "update-load-balancer" {
                 When the verification is successful, the script will update the load balancer to point to the new version of the application. 
                 EOT
         properties = {
-            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Script.ScriptFileName = "scripts/UpdateLoadBalancer.ps1"
             Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
-
-        git_dependencies {
-            default_branch = "main"
-            git_credential_id = "GitCredentials-21"
-            git_credential_type = "Library"
-            repository_uri = "https://github.com/bobjwalker/Trident.git"
-        }
     }
 }
 
