@@ -1,0 +1,8 @@
+{
+    "profiles": {
+      "Trident.Database.DbUp": {
+        "commandName": "Project",
+        "commandLineArgs": "--ConnectionString=\"Server=(localdb)\\MSSQLLocalDB;Integrated Security=true;Database=Trident;\" --PreviewReportPath=\"C:\\DatabaseReports\""
+      }
+    }
+  }

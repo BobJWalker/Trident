@@ -20,12 +20,8 @@ variable "Project.Database.Name" {
     }
 }
 
-variable "Project.ExecutionContainer.Flyway" {
-    value "octopuslabs/flyway-workertools:10.4.1" {}
-}
-
 variable "Project.ExecutionContainer.K8s" {
-    value "octopuslabs/k8s-workertools:1.28" {}
+    value "octopuslabs/k8s-workertools:1.29" {}
 }
 
 variable "Project.ScriptToRun.Text" {
@@ -49,14 +45,6 @@ variable "spec:template:spec:containers:0:image" {
 
 variable "Project.Connection.String" {
     value "Server=tcp:#{SQLServer.Server.Name},1433;Database=#{Project.Database.Name};User Id=#{SQLServer.User.Name};Password=#{SQLServer.User.Password};trustServerCertificate=true;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;" {}
-}
-
-variable "Project.Flyway.Check.Connection.String" {
-    value "jdbc:sqlserver://#{SQLServer.Server.Name}:1433;databaseName=#{Project.Database.Check.Name};user=#{SQLServer.User.Name}@#{SQLServer.Server.Name.NoDomain};password=#{SQLServer.User.Password};encrypt=true;trustServerCertificate=true;loginTimeout=30;" {}
-}
-
-variable "Project.Flyway.Connection.String" {
-    value "jdbc:sqlserver://#{SQLServer.Server.Name}:1433;databaseName=#{Project.Database.Name};user=#{SQLServer.User.Name}@#{SQLServer.Server.Name.NoDomain};password=#{SQLServer.User.Password};encrypt=true;trustServerCertificate=true;loginTimeout=30;" {}
 }
 
 variable "Octopus.ServiceNow.ChangeRequest.Number" {
@@ -127,4 +115,26 @@ variable "Project.Formatted.Branch.Name" {
 
 variable "Project.URL.Local" {
     value "tridentdev#{Project.Formatted.Branch.Name}.local" {}
+}
+
+variable "Project.ChangeReport.Path" {
+    value "../../#{Octopus.Project.Name}/#{Octopus.Release.Number}/#{Octopus.Environment.Name}" {}
+}
+
+variable "spec:rules:0:host" {
+    value "tridentdev.local" {
+        environment = ["development"]
+    }
+
+    value "tridenttest.local" {
+        environment = ["test"]
+    }
+
+    value "tridentstaging.local" {
+        environment = ["staging"]
+    }
+
+    value "tridentprod.local" {
+        environment = ["production"]
+    }
 }

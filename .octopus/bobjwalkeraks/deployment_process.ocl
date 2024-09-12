@@ -5,13 +5,14 @@ step "calculate-deployment-mode" {
         notes = <<-EOT
                 **Always Runs**
                 
-                Determines if the deployment is a deployment, rollback, or redeploy.
+                Step to determine if this run is a deployment, rollback, or re-deployment.
                 EOT
         properties = {
+            Octopus.Action.RunOnServer = "true"
             Octopus.Action.Template.Id = "ActionTemplates-441"
             Octopus.Action.Template.Version = "4"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool_variable = ""
     }
 }
 
@@ -26,11 +27,9 @@ step "configure-database-server" {
         notes = <<-EOT
                 **Runs on Deployments Only**
                 
-                Runs a runbook to verify all the required infrastructure exists.  If it doesn't exist, it will create it automatically.
+                Runs a runbook to verify the database and namespace application / environment exists.  If it doesn't exist, it will create it automatically.
                 EOT
         properties = {
-            Octopus.Action.AutoRetry.MaximumCount = "3"
-            Octopus.Action.ExecutionTimeout.Minutes = "30"
             Octopus.Action.Template.Id = "ActionTemplates-141"
             Octopus.Action.Template.Version = "14"
             OctopusUseBundledTooling = "False"
@@ -50,64 +49,39 @@ step "configure-database-server" {
             Run.Runbook.Waitforfinish = "True"
         }
         worker_pool = "hosted-ubuntu"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.Flyway}"
-        }
     }
 }
 
-step "dry-run-database-migrations" {
+step "build-delta-report" {
     condition = "Variable"
-    name = "Dry Run And Check Database Changes"
+    name = "Build Delta Report"
     properties = {
         Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
     }
 
     action {
-        environments = ["staging"]
+        action_type = "Octopus.Script"
         notes = <<-EOT
                 **Runs on Deployments Only**
                 
-                Runs the `flyway check` command to perform a comparison between an empty database and the destination database.  It will generate an artifact containing what will change and the commands to run.
+                Generates a delta report as an artifact so DBAs and others can review what changes are going to go out.
                 EOT
         properties = {
-            Flyway.Authentication.Method = "usernamepassword"
-            Flyway.Command.BaseLineOnMigrate = "false"
-            Flyway.Command.CheckBuildUrl = "#{Project.Flyway.Check.Connection.String}"
-            Flyway.Command.Locations = "#{Project.Database.MigrationLocation}"
-            Flyway.Command.OutOfOrder = "false"
-            Flyway.Command.SkipExecutingMigrations = "false"
-            Flyway.Command.Target = "latest"
-            Flyway.Command.Value = "check changes"
-            Flyway.Database.Check.User = "#{SQLServer.User.Name}"
-            Flyway.Database.Check.User.Password = "#{SQLServer.User.Password}"
-            Flyway.Database.User = "#{SQLServer.User.Name}"
-            Flyway.Database.User.Password = "#{SQLServer.User.Password}"
-            Flyway.License.Key = "#{Flyway.Enterprise.License}"
-            Flyway.Package.Value = "{\"PackageId\":\"Trident.Database\",\"FeedId\":\"octopus-server-built-in\"}"
-            Flyway.Target.Url = "#{Project.Flyway.Connection.String}"
-            Octopus.Action.AutoRetry.MaximumCount = "3"
-            Octopus.Action.Template.Id = "ActionTemplates-381"
-            Octopus.Action.Template.Version = "11"
-            OctopusUseBundledTooling = "False"
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
+            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\" -changeReportDirectory \"#{Project.ChangeReport.Path}\""
+            Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
 
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.Flyway}"
-        }
-
-        packages "Flyway.Package.Value" {
+        packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
             feed = "octopus-server-built-in"
-            package_id = "Trident.Database"
+            package_id = "Trident.Database.DbUp"
             properties = {
                 Extract = "True"
-                PackageParameterName = "Flyway.Package.Value"
-                SelectionMode = "deferred"
+                Purpose = ""
+                SelectionMode = "immediate"
             }
         }
     }
@@ -123,7 +97,7 @@ step "notify-dbas-of-pending-approval" {
     action {
         environments = ["staging"]
         notes = <<-EOT
-                **Runs on Deployments Only when not triggered by a scheduled trigger**
+                **Runs on Deployments Only**
                 
                 Notifies the DBA of a pending changes so they can review them prior to the migration running. 
                 EOT
@@ -140,11 +114,6 @@ step "notify-dbas-of-pending-approval" {
             ssn_Username = "Octopus Deploy"
         }
         worker_pool = "hosted-ubuntu"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.Flyway}"
-        }
     }
 }
 
@@ -160,70 +129,56 @@ step "dba-review-migration" {
         action_type = "Octopus.Manual"
         environments = ["staging"]
         notes = <<-EOT
-                **Runs on Deployments Only when not triggered by a scheduled trigger**
+                **Runs on Deployments Only**
                 
                 Pauses the deployment so the DBA can review the migration report.  
                 EOT
         properties = {
             Octopus.Action.Manual.BlockConcurrentDeployments = "False"
-            Octopus.Action.Manual.Instructions = "Please review the migration report generated by Flyway"
+            Octopus.Action.Manual.Instructions = "Please review and verify the migration database report matches your expectations."
             Octopus.Action.Manual.ResponsibleTeamIds = "global/octopus-managers"
             Octopus.Action.RunOnServer = "false"
         }
     }
 }
 
-step "deploy-trident-database" {
+step "deploy-database-changes" {
     condition = "Variable"
-    name = "Deploy Trident Database"
+    name = "Deploy Database Changes"
     properties = {
         Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
     }
 
     action {
+        action_type = "Octopus.Script"
         notes = <<-EOT
                 **Runs on Deployments Only**
                 
-                When doing a deployment it will run the `migrate` command.
+                Deploys all the pending database changes to the target environment
                 EOT
         properties = {
-            Flyway.Authentication.Method = "usernamepassword"
-            Flyway.Command.BaseLineOnMigrate = "false"
-            Flyway.Command.Locations = "#{Project.Database.MigrationLocation}"
-            Flyway.Command.OutOfOrder = "false"
-            Flyway.Command.SkipExecutingMigrations = "false"
-            Flyway.Command.Target = "latest"
-            Flyway.Command.Value = "migrate"
-            Flyway.License.Key = "#{Flyway.Enterprise.License}"
-            Flyway.Package.Value = "{\"PackageId\":\"Trident.Database\",\"FeedId\":\"octopus-server-built-in\"}"
-            Flyway.Target.Url = "#{Project.Flyway.Connection.String}"
-            Octopus.Action.AutoRetry.MaximumCount = "3"
-            Octopus.Action.Template.Id = "ActionTemplates-381"
-            Octopus.Action.Template.Version = "11"
-            OctopusUseBundledTooling = "False"
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
+            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\""
+            Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
 
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.Flyway}"
-        }
-
-        packages "Flyway.Package.Value" {
+        packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
             feed = "octopus-server-built-in"
-            package_id = "Trident.Database"
+            package_id = "Trident.Database.DbUp"
             properties = {
                 Extract = "True"
-                PackageParameterName = "Flyway.Package.Value"
-                SelectionMode = "deferred"
+                Purpose = ""
+                SelectionMode = "immediate"
             }
         }
     }
 }
 
-step "deploy-connection-string-secret" {
-    name = "Deploy Connection String Secret"
+step "create-connectionstring-secret" {
+    name = "Create ConnectionString Secret"
     properties = {
         Octopus.Action.TargetRoles = "trident-web"
     }
@@ -233,15 +188,15 @@ step "deploy-connection-string-secret" {
         notes = <<-EOT
                 **Always Runs**
                 
-                Ensures the connection string secret is up to date with the encrypted value from Octopus.
+                Ensures the connection string secret has been properly created.
                 EOT
         properties = {
             Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-app-secrets.yaml"
             Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
             Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-app-secrets.yaml"
             Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
             Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
@@ -257,31 +212,30 @@ step "deploy-connection-string-secret" {
     }
 }
 
-step "deploy-website-via-kustomize" {
-    name = "Deploy Website via Kustomize"
+step "deploy-trident-website" {
+    name = "Deploy Trident Website"
     properties = {
         Octopus.Action.TargetRoles = "trident-web"
     }
 
     action {
-        action_type = "Octopus.Kubernetes.Kustomize"
+        action_type = "Octopus.KubernetesDeployRawYaml"
         notes = <<-EOT
                 **Always Runs**
                 
                 Deploys the website container to the Kubernetes Cluster using a manifest file.
                 EOT
         properties = {
+            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-deployment.yaml"
             Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
-            Octopus.Action.Kubernetes.Kustomize.OverlayPath = "k8s/overlays/#{Octopus.Environment.Name | toLower}"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-deployment.yaml"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
+            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
             Octopus.Action.Script.ScriptSource = "GitRepository"
-            Octopus.Action.SubstituteInFiles.TargetFiles = <<-EOT
-                k8s/base/kustomization.yaml
-                k8s/overlays/development/kustomization.yaml
-                EOT
             OctopusUseBundledTooling = "False"
         }
         worker_pool = "hosted-ubuntu"
@@ -291,7 +245,7 @@ step "deploy-website-via-kustomize" {
             image = "#{Project.ExecutionContainer.K8s}"
         }
 
-        packages "trident" {
+        packages "Trident" {
             acquisition_location = "NotAcquired"
             feed = "dockerhub"
             package_id = "bobjwalker99/trident"
@@ -304,8 +258,8 @@ step "deploy-website-via-kustomize" {
     }
 }
 
-step "verify-successful-deployment" {
-    name = "Verify successful deployment"
+step "verify-deployment" {
+    name = "Verify Deployment"
 
     action {
         action_type = "Octopus.Script"
@@ -315,9 +269,9 @@ step "verify-successful-deployment" {
                 Runs a series of tests to ensure the deployment was successful.
                 EOT
         properties = {
-            Octopus.Action.Script.ScriptBody = "Write-Highlight \"Verification was successful!\""
-            Octopus.Action.Script.ScriptSource = "Inline"
-            Octopus.Action.Script.Syntax = "PowerShell"
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Script.ScriptFileName = "scripts/VerifySuccessfulDeployment.ps1"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
     }
@@ -334,12 +288,9 @@ step "update-load-balancer" {
                 When the verification is successful, the script will update the load balancer to point to the new version of the application. 
                 EOT
         properties = {
-            Octopus.Action.Script.ScriptBody = <<-EOT
-                Write-Host "Updating Load Balancer"
-                Write-Host "Load Balancer SUccessfully Updated"
-                EOT
-            Octopus.Action.Script.ScriptSource = "Inline"
-            Octopus.Action.Script.Syntax = "PowerShell"
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Script.ScriptFileName = "scripts/UpdateLoadBalancer.ps1"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
         }
         worker_pool = "hosted-ubuntu"
     }
@@ -369,10 +320,5 @@ step "notify-team-of-deployment-status" {
             ssn_Username = "Octopus Deploy"
         }
         worker_pool = "hosted-ubuntu"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.Flyway}"
-        }
     }
 }

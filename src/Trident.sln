@@ -10,6 +10,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trident.Web.Test", "Trident.Web.Test\Trident.Web.Test.csproj", "{FDB3D451-CB8E-4724-A721-FF8494E39BD0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trident.Database.DbUp", "Trident.Database.DbUp\Trident.Database.DbUp.csproj", "{BD8915AF-0FDC-42DA-8D03-B084C147E799}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +24,14 @@ Global
 		{DA14AD22-2718-4991-A55B-5A7EE8D6E8AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA14AD22-2718-4991-A55B-5A7EE8D6E8AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA14AD22-2718-4991-A55B-5A7EE8D6E8AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDB3D451-CB8E-4724-A721-FF8494E39BD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDB3D451-CB8E-4724-A721-FF8494E39BD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDB3D451-CB8E-4724-A721-FF8494E39BD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDB3D451-CB8E-4724-A721-FF8494E39BD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD8915AF-0FDC-42DA-8D03-B084C147E799}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD8915AF-0FDC-42DA-8D03-B084C147E799}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD8915AF-0FDC-42DA-8D03-B084C147E799}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD8915AF-0FDC-42DA-8D03-B084C147E799}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
