@@ -10,15 +10,17 @@ on:
       - 'db/**'
       - 'k8s/**'
       - '.github/workflows/build.yml'
+      - 'scripts/**'
   workflow_dispatch:
 
 env:    
-  OCTOPUS_PROJECT_NAME: "Trident"
-  OCTOPUS_FEATURE_BRANCH_CHANNEL: Default  
-  OCTOPUS_RELEASE_CHANNEL: Release 
-  OCTOPUS_SPACE: Default
+  OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}
+  OCTOPUS_FEATURE_BRANCH_CHANNEL: ${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}  
+  OCTOPUS_RELEASE_CHANNEL: ${{ vars.OCTOPUS_RELEASE_CHANNEL }} 
+  OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}
   OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
-  OCTOPUS_URL: http://bobjwalker.octopus.app
+  OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}
+  DOCKER_REPO: ${{ vars.DOCKER_HUB_REPO }}
 jobs:
   build-and-push-application:    
     runs-on: ubuntu-latest        
@@ -29,35 +31,46 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         with:
-          fetch-depth: '0'      
+          fetch-depth: '0'            
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v0.9.14
+        uses: gittools/actions/gitversion/setup@v1
         with:
             versionSpec: 5.x
       - id: determine_version
         name: Determine Version
-        uses: gittools/actions/gitversion/execute@v0.9.14
+        uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /overrideconfig mode=Mainline 
-      - name: update tag
-        uses: richardsimko/update-tag@v1
-        with:
-          tag_name: ${{ env.GitVersion_SemVer }}
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: github.ref == 'refs/heads/main'             
+            additionalArguments: /overrideconfig mode=Mainline            
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}                  
+          dotnet-version: ${{ matrix.dotnet-version }}       
+      - name: Install dependencies
+        run: dotnet restore src/Trident.sln
+      
+      - name: Run unit tests
+        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults
+      - name: Upload unit tests results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: /tmp/testresults
+      
+      - name: Create artifacts folder
+        run: |
+            mkdir "$GITHUB_WORKSPACE/artifacts"
+            mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp"   
+      - name: Publish Database
+        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"      
+                           
       - name: package database
         id: "database_package"
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
-          package_id: Trident.Database
-          version: "${{ env.GitVersion_SemVer }}"  
-          base_path: "db"          
+          package_id: TridentAI.Database.DbUp
+          version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"  
+          base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
           output_folder: packaged      
 
@@ -74,7 +87,7 @@ jobs:
       - name: build and push website container
         working-directory: src
         run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ env.GitVersion_SemVer }} --tag bobjwalker99/trident:${{ env.GitVersion_SemVer }} --tag bobjwalker99/trident:latest .                                   
+            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ env.GitVersion_SemVer }}.${{ github.run_number }} --tag ${{ env.DOCKER_REPO }}:${{ env.GitVersion_SemVer }}.${{ github.run_number }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
 
       - name: push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3
@@ -85,16 +98,30 @@ jobs:
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |
-            Trident.Database
-            Trident            
-          version: "${{ env.GitVersion_SemVer }}"
+            TridentAI.Database.DbUp
+            TridentAI            
+          version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"
 
-      - name: create release
+      - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
           channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
-          release_number: "${{ env.GitVersion_SemVer }}"
-          package_version: "${{ env.GitVersion_SemVer }}"      
+          release_number: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"
+          package_version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
-          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}
+          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}      
+          
+      - name: Create Release for GitHub
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"
+          release_name: Release ${{ env.GitVersion_SemVer }}.${{ github.run_number }}
+          body: |
+            Changes in this Release
+            ${{ github.event.head_commit.message }}
+          draft: false
+          prerelease:  ${{ github.ref == 'refs/heads/main' && 'false' || 'true' }}
