@@ -22,12 +22,13 @@ env:
   OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}
   DOCKER_REPO: ${{ vars.DOCKER_HUB_REPO }}
 jobs:
-  build-and-push-application:    
-    runs-on: ubuntu-latest        
-    strategy:
-      matrix:
-        dotnet-version: ['8.0.x']
-
+  prep:    
+    runs-on: ubuntu-latest 
+    outputs:
+      website: ${{ steps.changes.outputs.website }}
+      database: ${{ steps.changes.outputs.database }}
+      pre_release: ${{ steps.determine_version.outputs.preReleaseNumber }}       
+      sem_ver: ${{ steps.determine_version.outputs.semVer }}       
     steps:
       - uses: actions/checkout@v1
         with:
@@ -40,75 +41,132 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /overrideconfig mode=Mainline            
+            additionalArguments: /overrideconfig mode=Mainline  
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          base: ${{ github.event.before }}
+          filters: |
+            website:
+              - 'src/Trident.Web/**'
+            database:
+              - 'src/Trident.Database.DbUp/**'
       
+  build-database:
+    needs: [prep]
+    if: ${{ needs.prep.outputs.database == 'true' || needs.prep.outputs.pre_release == '1' }}
+    strategy:
+      matrix:
+        dotnet-version: ['8.0.x']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: '0' 
+
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet-version }}       
+
       - name: Install dependencies
-        run: dotnet restore src/Trident.sln
-      
-      - name: Run unit tests
-        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults
-      - name: Upload unit tests results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: /tmp/testresults
+        run: dotnet restore src/Trident.Database.DbUp/Trident.Database.DbUp.csproj    
       
       - name: Create artifacts folder
         run: |
             mkdir "$GITHUB_WORKSPACE/artifacts"
-            mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp"   
+            mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" 
+
       - name: Publish Database
-        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"      
-                           
+        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"              
+      
       - name: package database
         id: "database_package"
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
           package_id: Trident.Database.DbUp
-          version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"  
+          version: "${{ needs.prep.outputs.sem_Ver }}.${{ github.run_number }}"  
           base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
-          output_folder: packaged      
+          output_folder: packaged
+      
+      - name: push packages to Octopus
+        uses: OctopusDeploy/push-package-action@v3
+        with:
+          packages: |
+            packaged/**/*.zip 
+      
+      - name: push database build information to Octopus
+        uses: OctopusDeploy/push-build-information-action@v3
+        with:
+          packages: |            
+            Trident.Database.DbUp                     
+          version: "${{ needs.prep.outputs.sem_Ver }}.${{ github.run_number }}"           
+      
+
+  build-website:
+    needs: [prep]
+    if: ${{ needs.prep.outputs.website == 'true' || needs.prep.outputs.pre_release == '1' }}
+    strategy:
+      matrix:
+        dotnet-version: ['8.0.x']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: '0' 
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}  
+
+      - name: Install dependencies
+        run: dotnet restore src/Trident.sln
+      
+      - name: Run unit tests
+        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults
+      
+      - name: Upload unit tests results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: /tmp/testresults
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:             
             username: ${{ secrets.DOCKERHUB_USERNAME }}
             password: ${{ secrets.DOCKERHUB_PAT }}
+        
       - name: install buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v1
         with:
           version: latest
+        
       - name: build and push website container
         working-directory: src
         run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ env.GitVersion_SemVer }}.${{ github.run_number }} --tag ${{ env.DOCKER_REPO }}:${{ env.GitVersion_SemVer }}.${{ github.run_number }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
-
-      - name: push packages to Octopus
-        uses: OctopusDeploy/push-package-action@v3
-        with:
-          packages: |
-            packaged/**/*.zip                      
-      - name: push build information to Octopus
+            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ needs.prep.outputs.sem_Ver }}.${{ github.run_number }} --tag ${{ env.DOCKER_REPO }}:${{ needs.prep.outputs.sem_Ver }}.${{ github.run_number }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
+        
+      - name: push code build information to Octopus
         uses: OctopusDeploy/push-build-information-action@v3
         with:
-          packages: |
-            Trident.Database.DbUp   
+          packages: |            
             Trident                     
-          version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"
-
+          version: "${{ needs.prep.outputs.sem_Ver }}.${{ github.run_number }}"                        
+        
+  deploy:
+    needs: [prep, build-website, build-database]
+    if: ${{ always() && !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
       - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
           channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
-          release_number: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"
-          package_version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"
+          release_number: "${{ needs.prep.outputs.sem_Ver }}.${{ github.run_number }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}      
           
@@ -118,8 +176,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"
-          release_name: Release ${{ env.GitVersion_SemVer }}.${{ github.run_number }}
+          tag_name: "${{ needs.prep.outputs.sem_Ver }}.${{ github.run_number }}"
+          release_name: Release ${{ needs.prep.outputs.sem_Ver }}.${{ github.run_number }}
           body: |
             Changes in this Release
             ${{ github.event.head_commit.message }}
