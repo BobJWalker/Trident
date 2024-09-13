@@ -45,6 +45,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: changes
         with:
+          base: ${{ github.event.before }}
           filters: |
             website:
               - 'src/Trident.Web/**'
