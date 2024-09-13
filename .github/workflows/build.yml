@@ -157,7 +157,6 @@ jobs:
         
   deploy:
     needs: [prep, build-website, build-database]
-    if: ${{ needs.prep.outputs.website == 'true' || needs.prep.outputs.pre_release == '1' || needs.prep.outputs.database == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: create release in Octopus

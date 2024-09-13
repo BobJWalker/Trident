@@ -33,31 +33,11 @@ namespace Trident.Database.DbUp
                 .LogToConsole();
 
             var upgradeEngine = upgradeEngineBuilder.Build();
-
             Console.WriteLine("Is upgrade required: " + upgradeEngine.IsUpgradeRequired());
             
             if (args.Any(a => a.StartsWith("--PreviewReportPath", StringComparison.InvariantCultureIgnoreCase)))
             {
-                Console.WriteLine("Generating a preview report for the upgrade");
-                // Generate a preview file so Octopus Deploy can generate an artifact for approvals
-                var report = args.FirstOrDefault(x => x.StartsWith("--PreviewReportPath", StringComparison.OrdinalIgnoreCase));
-                report = report.Substring(report.IndexOf("=") + 1).Replace(@"""", string.Empty);
-
-                if (Directory.Exists(report) == false)
-                {
-                    Directory.CreateDirectory(report);
-                }
-
-                var fullReportPath = Path.Combine(report, "UpgradeReport.html");
-
-                if (File.Exists(fullReportPath) == true)
-                {
-                    File.Delete(fullReportPath);
-                }
-
-                Console.WriteLine($"Generating the report at {fullReportPath}");
-                
-                upgradeEngine.GenerateUpgradeHtmlReport(fullReportPath);
+                GenerateReport(args, upgradeEngine);
             }
             else
             {
@@ -76,6 +56,31 @@ namespace Trident.Database.DbUp
                     Console.WriteLine("Failed!");
                 }
             }
+        }
+
+        private static void GenerateReport(string[] args, UpgradeEngine upgradeEngine)
+        {
+            Console.WriteLine("Generating a preview report for the upgrade");
+
+            // Generate a preview file so Octopus Deploy can generate an artifact for approvals
+            var report = args.FirstOrDefault(x => x.StartsWith("--PreviewReportPath", StringComparison.OrdinalIgnoreCase));
+            report = report.Substring(report.IndexOf("=") + 1).Replace(@"""", string.Empty);
+
+            if (Directory.Exists(report) == false)
+            {
+                Directory.CreateDirectory(report);
+            }
+
+            var fullReportPath = Path.Combine(report, "UpgradeReport.html");
+
+            if (File.Exists(fullReportPath) == true)
+            {
+                File.Delete(fullReportPath);
+            }
+
+            Console.WriteLine($"Generating the report at {fullReportPath}");
+
+            upgradeEngine.GenerateUpgradeHtmlReport(fullReportPath);
         }
     }
 }
