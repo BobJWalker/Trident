@@ -69,10 +69,10 @@ jobs:
         run: |
             mkdir "$GITHUB_WORKSPACE/artifacts"
             mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" 
-        if: steps.changes.outputs.database == 'true'  
+        if: ${{ steps.changes.outputs.database == 'true' || env.GitVersion_PreReleaseNumber == '1' }}  
       - name: Publish Database
         run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"      
-        if: steps.changes.outputs.database == 'true'         
+        if: ${{ steps.changes.outputs.database == 'true' || env.GitVersion_PreReleaseNumber == '1' }}        
       - name: package database
         id: "database_package"
         uses: OctopusDeploy/create-zip-package-action@v3
@@ -82,45 +82,45 @@ jobs:
           base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
           output_folder: packaged
-        if: steps.changes.outputs.database == 'true' 
+        if: ${{ steps.changes.outputs.database == 'true' || env.GitVersion_PreReleaseNumber == '1' }} 
       - name: push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3
         with:
           packages: |
             packaged/**/*.zip 
-        if: steps.changes.outputs.database == 'true' 
+        if: ${{ steps.changes.outputs.database == 'true' || env.GitVersion_PreReleaseNumber == '1' }} 
       - name: push database build information to Octopus
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |            
             Trident.Database.DbUp                     
           version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"           
-        if: steps.changes.outputs.database == 'true'
+        if: ${{ steps.changes.outputs.database == 'true' || env.GitVersion_PreReleaseNumber == '1' }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:             
             username: ${{ secrets.DOCKERHUB_USERNAME }}
             password: ${{ secrets.DOCKERHUB_PAT }}
-        if: steps.changes.outputs.website == 'true'
+        if: ${{ steps.changes.outputs.website == 'true' || env.GitVersion_PreReleaseNumber == '1' }}
       - name: install buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v1
         with:
           version: latest
-        if: steps.changes.outputs.website == 'true'
+        if: ${{ steps.changes.outputs.website == 'true' || env.GitVersion_PreReleaseNumber == '1' }}
       - name: build and push website container
         working-directory: src
         run: | 
             docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ env.GitVersion_SemVer }}.${{ github.run_number }} --tag ${{ env.DOCKER_REPO }}:${{ env.GitVersion_SemVer }}.${{ github.run_number }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
-        if: steps.changes.outputs.website == 'true'
+        if: ${{ steps.changes.outputs.website == 'true' || env.GitVersion_PreReleaseNumber == '1' }}
       - name: push code build information to Octopus
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |            
             Trident                     
           version: "${{ env.GitVersion_SemVer }}.${{ github.run_number }}"                        
-        if: steps.changes.outputs.website == 'true'
+        if: ${{ steps.changes.outputs.website == 'true' || env.GitVersion_PreReleaseNumber == '1' }}
 
       - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
