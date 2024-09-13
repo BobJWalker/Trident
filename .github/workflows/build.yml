@@ -157,6 +157,7 @@ jobs:
         
   deploy:
     needs: [prep, build-website, build-database]
+    if: ${{ always()}}
     runs-on: ubuntu-latest
     steps:
       - name: create release in Octopus
