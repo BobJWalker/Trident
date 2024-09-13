@@ -32,9 +32,9 @@ namespace Trident.Database.DbUp
                 .WithTransactionPerScript()
                 .LogToConsole();
 
-            var upgrader = upgradeEngineBuilder.Build();
+            var upgradeEngine = upgradeEngineBuilder.Build();
 
-            Console.WriteLine("Is upgrade required: " + upgrader.IsUpgradeRequired());
+            Console.WriteLine("Is upgrade required: " + upgradeEngine.IsUpgradeRequired());
             
             if (args.Any(a => a.StartsWith("--PreviewReportPath", StringComparison.InvariantCultureIgnoreCase)))
             {
@@ -56,11 +56,11 @@ namespace Trident.Database.DbUp
 
                 Console.WriteLine($"Generating the report at {fullReportPath}");
                 
-                upgrader.GenerateUpgradeHtmlReport(fullReportPath);
+                upgradeEngine.GenerateUpgradeHtmlReport(fullReportPath);
             }
             else
             {
-                var result = upgrader.PerformUpgrade();
+                var result = upgradeEngine.PerformUpgrade();
 
                 // Display the result
                 if (result.Successful)
