@@ -5,6 +5,8 @@ param (
     $environmentName
 )
 
+Write-Host "Setting the current location to $extractedPath"
+Set-Location $extractedPath
 $ExecutionLocation = "$extractedPath/Trident.Database.DbUp.dll"
 
 if ([string]::IsNullOrWhiteSpace($changeReportDirectory) -eq $true)
