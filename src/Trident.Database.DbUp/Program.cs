@@ -38,6 +38,7 @@ namespace Trident.Database.DbUp
             
             if (args.Any(a => a.StartsWith("--PreviewReportPath", StringComparison.InvariantCultureIgnoreCase)))
             {
+                Console.WriteLine("Generating a preview report for the upgrade");
                 // Generate a preview file so Octopus Deploy can generate an artifact for approvals
                 var report = args.FirstOrDefault(x => x.StartsWith("--PreviewReportPath", StringComparison.OrdinalIgnoreCase));
                 report = report.Substring(report.IndexOf("=") + 1).Replace(@"""", string.Empty);

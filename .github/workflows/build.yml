@@ -59,6 +59,10 @@ jobs:
         dotnet-version: ['8.0.x']
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: '0' 
+
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
@@ -107,15 +111,20 @@ jobs:
         dotnet-version: ['8.0.x']
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: '0' 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}       
+          dotnet-version: ${{ matrix.dotnet-version }}  
+
       - name: Install dependencies
         run: dotnet restore src/Trident.sln
       
       - name: Run unit tests
         run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults
+      
       - name: Upload unit tests results
         uses: actions/upload-artifact@v4
         with:
