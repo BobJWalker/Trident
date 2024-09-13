@@ -49,6 +49,7 @@ jobs:
           filters: |
             website:
               - 'src/Trident.Web/**'
+              - 'src/Trident.Web.Test/**'
             database:
               - 'src/Trident.Database.DbUp/**'
       
@@ -61,8 +62,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-        with:
-          fetch-depth: '0' 
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -113,8 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-        with:
-          fetch-depth: '0' 
+ 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
