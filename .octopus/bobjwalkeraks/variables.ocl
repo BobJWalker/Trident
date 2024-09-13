@@ -122,10 +122,6 @@ variable "Project.ChangeReport.Path" {
 }
 
 variable "spec:rules:0:host" {
-    value "tridentdev.local" {
-        environment = ["development"]
-    }
-
     value "tridenttest.local" {
         environment = ["test"]
     }
@@ -136,5 +132,9 @@ variable "spec:rules:0:host" {
 
     value "tridentprod.local" {
         environment = ["production"]
+    }
+
+    value "trident#{Project.Formatted.Branch.Name}dev.local" {
+        environment = ["development"]
     }
 }
