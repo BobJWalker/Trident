@@ -139,8 +139,6 @@ jobs:
       - name: install buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v1
-        with:
-          version: latest
         
       - name: build and push website container
         working-directory: src
@@ -151,7 +149,7 @@ jobs:
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |            
-            Trident                     
+            ${{ env.DOCKER_REPO }}                     
           version: "${{ needs.prep.outputs.sem_Ver }}"                        
         
   deploy:
