@@ -85,11 +85,6 @@ step "build-delta-report" {
         }
         worker_pool = "azure-aks"
 
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
-
         packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
             feed = "octopus-server-built-in"
@@ -185,11 +180,6 @@ step "deploy-database-changes" {
             OctopusUseBundledTooling = "False"
         }
         worker_pool = "azure-aks"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
 
         packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
