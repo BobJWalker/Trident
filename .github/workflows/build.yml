@@ -102,7 +102,6 @@ jobs:
             Trident.Database.DbUp                     
           version: "${{ needs.prep.outputs.sem_Ver }}"           
       
-
   build-website:
     needs: [prep]
     if: ${{ needs.prep.outputs.website == 'true' || needs.prep.outputs.pre_release == '1' }}
