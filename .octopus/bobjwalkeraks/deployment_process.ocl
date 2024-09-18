@@ -8,11 +8,16 @@ step "calculate-deployment-mode" {
                 Step to determine if this run is a deployment, rollback, or re-deployment.
                 EOT
         properties = {
-            Octopus.Action.RunOnServer = "true"
             Octopus.Action.Template.Id = "ActionTemplates-441"
             Octopus.Action.Template.Version = "4"
+            OctopusUseBundledTooling = "False"
         }
-        worker_pool_variable = ""
+        worker_pool = "azure-aks"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
 
@@ -48,7 +53,12 @@ step "configure-database-server" {
             Run.Runbook.UsePublishedSnapShot = "True"
             Run.Runbook.Waitforfinish = "True"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "azure-aks"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
 
@@ -71,8 +81,14 @@ step "build-delta-report" {
             Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
             Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\" -changeReportDirectory \"#{Project.ChangeReport.Path}\""
             Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "azure-aks"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
 
         packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
@@ -113,7 +129,12 @@ step "notify-dbas-of-pending-approval" {
             ssn_Title = "#{Notification.ManualIntervention.Subject.Text}"
             ssn_Username = "Octopus Deploy"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "azure-aks"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
 
@@ -161,8 +182,14 @@ step "deploy-database-changes" {
             Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
             Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\""
             Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "azure-aks"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
 
         packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
@@ -272,8 +299,14 @@ step "verify-deployment" {
             Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Script.ScriptFileName = "scripts/VerifySuccessfulDeployment.ps1"
             Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "azure-aks"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
 
@@ -291,8 +324,14 @@ step "update-load-balancer" {
             Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Script.ScriptFileName = "scripts/UpdateLoadBalancer.ps1"
             Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "azure-aks"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
 
@@ -319,6 +358,11 @@ step "notify-team-of-deployment-status" {
             ssn_Title = "#{Notification.DeploymentStatus.Subject.Text}"
             ssn_Username = "Octopus Deploy"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "azure-aks"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
