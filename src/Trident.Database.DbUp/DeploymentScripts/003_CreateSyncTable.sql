@@ -6,7 +6,7 @@ CREATE TABLE [dbo].[Sync](
 	[Created] [datetime2](7) NOT NULL,
 	[Started] [datetime2](7) NULL,
 	[Completed] [datetime2](7) NULL,
-	[SearchStateDate] [datetime2](7) NULL,
+	[SearchStartDate] [datetime2](7) NULL,
 	[RetryAttempts] [int] NULL,
  CONSTRAINT [PK_Sync] PRIMARY KEY CLUSTERED 
 (

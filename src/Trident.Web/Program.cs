@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using NLog.Web;
 using System;
 using System.Reflection;
+using Trident.Web.HostedServices;
 
 namespace Trident.Web
 {
@@ -47,6 +48,8 @@ namespace Trident.Web
             {
                 builder.Services.AddWebOptimizer();
             }
+
+            builder.Services.AddHostedService<SyncJobHostedService>();
         }
 
         private static void ConfigureConfigurationFiles(WebApplicationBuilder builder)

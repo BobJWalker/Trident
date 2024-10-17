@@ -16,7 +16,7 @@ namespace Trident.Database.DbUp
             var connectionString = args.FirstOrDefault(x => x.StartsWith("--ConnectionString", StringComparison.OrdinalIgnoreCase));
             connectionString = connectionString.Substring(connectionString.IndexOf("=") + 1).Replace(@"""", string.Empty);
 
-            var executingPath = Assembly.GetExecutingAssembly().Location.Replace("Trident.Database.DbUp.dll", "").Replace("Trident.Database.DbUp.dll", "");
+            var executingPath = Assembly.GetExecutingAssembly().Location.Replace("Trident.Database.DbUp.dll", "").Replace("Trident.Database.DbUp.exe", "");
             Console.WriteLine($"The execution location is {executingPath}");
 
             var deploymentScriptPath = Path.Combine(executingPath, "DeploymentScripts");

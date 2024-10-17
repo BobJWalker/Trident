@@ -7,6 +7,7 @@ using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.ViewModels;
 using Trident.Web.DataAccess;
+using Trident.Web.Core.Configuration;
 
 namespace Trident.Web.Controllers
 {
@@ -16,21 +17,39 @@ namespace Trident.Web.Controllers
         private readonly IInstanceRepository _instanceRepository;
         private readonly ISyncModelFactory _syncModelFactory;
         private readonly ISyncRepository _syncRepository;
+        private readonly IMetricConfiguration _metricConfiguration;
 
         public HomeController(ILogger<HomeController> logger, 
             IInstanceRepository instanceRepository,
             ISyncModelFactory syncModelFactory,
-            ISyncRepository syncRepository)
+            ISyncRepository syncRepository,
+            IMetricConfiguration metricConfiguration)
         {
             _logger = logger;
             _instanceRepository = instanceRepository;
             _syncModelFactory = syncModelFactory;
             _syncRepository = syncRepository;
+            _metricConfiguration = metricConfiguration;
         }
 
         public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
         {
-            var allInstances = await _instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);        
+            var allInstances = await _instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);      
+
+            if (allInstances.Items.Count == 0 && string.IsNullOrWhiteSpace(_metricConfiguration.DefaultInstanceUrl) == false)  
+            {
+                var defaultInstance = new InstanceModel
+                {
+                    Name = "Default Instance",
+                    OctopusId = "Default",
+                    Url = _metricConfiguration.DefaultInstanceUrl,
+                    ApiKey = _metricConfiguration.DefaultInstanceApiKey
+                };
+
+                await _instanceRepository.InsertAsync(defaultInstance);
+
+                allInstances = await _instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);
+            }
 
             return View(allInstances);
         }
