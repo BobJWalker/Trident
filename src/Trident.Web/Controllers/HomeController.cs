@@ -33,11 +33,12 @@ namespace Trident.Web.Controllers
         }
 
         public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
-        {
+        {            
             var allInstances = await _instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);      
 
             if (allInstances.Items.Count == 0 && string.IsNullOrWhiteSpace(_metricConfiguration.DefaultInstanceUrl) == false)  
             {
+                _logger.LogDebug("No instances found, creating default instance");
                 var defaultInstance = new InstanceModel
                 {
                     Name = "Default Instance",
@@ -49,6 +50,10 @@ namespace Trident.Web.Controllers
                 await _instanceRepository.InsertAsync(defaultInstance);
 
                 allInstances = await _instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);
+            }
+            else
+            {
+                _logger.LogDebug("Instances found");
             }
 
             return View(allInstances);

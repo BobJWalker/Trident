@@ -19,6 +19,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NLog.Targets.Syslog" Version="7.0.0" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="5.3.8" />
+    <PackageReference Include="SumoLogic.Logging.NLog" Version="1.0.1.8" />
     <PackageReference Include="RestSharp" Version="112.0.0" />
   </ItemGroup>
 

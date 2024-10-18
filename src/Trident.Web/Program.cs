@@ -6,7 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NLog.Config;
 using NLog.Web;
+using SumoLogic.Logging.NLog;
 using System;
 using System.Reflection;
 using Trident.Web.HostedServices;
@@ -83,6 +85,22 @@ namespace Trident.Web
         {
             builder.Logging.ClearProviders();
             builder.Logging.SetMinimumLevel(LogLevel.Debug);
+
+            var logConfig = new LoggingConfiguration();
+            var sumoTarget = new SumoLogicTarget();
+
+            sumoTarget.Name = "SumoLogic";
+            sumoTarget.Url = Environment.GetEnvironmentVariable("TRIDENT_SUMOLOGIC_URL");
+            sumoTarget.SourceName = $"Trident.{Environment.GetEnvironmentVariable("TRIDENT_ENVIRONMENT")}";
+            sumoTarget.SourceCategory = "trident";
+            sumoTarget.ConnectionTimeout = 30000;
+            sumoTarget.UseConsoleLog = true;
+            sumoTarget.Layout = "${LEVEL}, ${message}${exception:format=tostring}${newline}";
+
+            logConfig.AddTarget(sumoTarget);
+            logConfig.LoggingRules.Add(new LoggingRule("*", NLog.LogLevel.Debug, sumoTarget));
+
+            builder.Logging.AddNLog(logConfig);
         }
     }
 }
