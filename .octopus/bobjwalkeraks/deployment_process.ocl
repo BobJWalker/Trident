@@ -9,8 +9,7 @@ step "calculate-deployment-mode" {
                 EOT
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-441"
-            Octopus.Action.Template.Version = "4"
-            OctopusUseBundledTooling = "False"
+            Octopus.Action.Template.Version = "5"
         }
         worker_pool = "azure-aks"
 
