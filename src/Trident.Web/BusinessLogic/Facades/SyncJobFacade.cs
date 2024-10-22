@@ -136,10 +136,12 @@ namespace Trident.Web.BusinessLogic.Facades
                     await ProcessProjects(syncJobCompositeModel, spaceToTrack, stoppingToken);
                 }
 
-                if (syncJobCompositeModel.SyncModel.SearchStartDate.HasValue)
+                if (stoppingToken.IsCancellationRequested)
                 {
-                    await ProcessDeploymentsSinceLastSync(syncJobCompositeModel, stoppingToken);
+                    return true;
                 }
+
+                await ProcessDeploymentsSinceLastSync(syncJobCompositeModel, stoppingToken);                
 
                 return true;
             }
@@ -174,10 +176,7 @@ namespace Trident.Web.BusinessLogic.Facades
 
                 syncJobCompositeModel.ProjectDictionary.Add(item.OctopusId, modelToTrack);
 
-                if (syncJobCompositeModel.SyncModel.SearchStartDate.HasValue == false)
-                {
-                    await ProcessReleasesForProject(syncJobCompositeModel, space, item, stoppingToken);
-                }
+                await ProcessReleasesForProject(syncJobCompositeModel, space, item, stoppingToken);
             }
         }
 
