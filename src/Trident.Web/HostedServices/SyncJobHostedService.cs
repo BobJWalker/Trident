@@ -56,7 +56,7 @@ namespace Trident.Web.HostedServices
                     break;
                 }
 
-                await _syncJobFacade.ProcessSyncJob(syncJobCompositeModel);
+                await _syncJobFacade.ProcessSyncJob(syncJobCompositeModel, stoppingToken);
             }
         }               
     }

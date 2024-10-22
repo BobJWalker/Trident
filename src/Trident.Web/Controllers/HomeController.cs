@@ -42,7 +42,7 @@ namespace Trident.Web.Controllers
                 var defaultInstance = new InstanceModel
                 {
                     Name = "Default Instance",
-                    OctopusId = "Default",
+                    OctopusId = _metricConfiguration.DefaultInstanceId,
                     Url = _metricConfiguration.DefaultInstanceUrl,
                     ApiKey = _metricConfiguration.DefaultInstanceApiKey
                 };

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Trident.Web.BusinessLogic.Factories;
@@ -12,7 +13,7 @@ namespace Trident.Web.BusinessLogic.Facades
 {
     public interface ISyncJobFacade
     {
-        Task ProcessSyncJob(SyncJobCompositeModel syncJobCompositeModel);
+        Task ProcessSyncJob(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken);
     }
 
     public class SyncJobFacade : ISyncJobFacade
@@ -55,7 +56,7 @@ namespace Trident.Web.BusinessLogic.Facades
             _syncLogModelFactory = syncLogModelFactory;
         }
 
-        public async Task ProcessSyncJob(SyncJobCompositeModel syncJobCompositeModel)
+        public async Task ProcessSyncJob(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken)
         {
             try
             {
@@ -63,13 +64,15 @@ namespace Trident.Web.BusinessLogic.Facades
                 syncJobCompositeModel.SyncModel.Started = DateTime.UtcNow;
                 await _syncRepository.UpdateAsync(syncJobCompositeModel.SyncModel);
 
-                var isSuccessful = await SyncAllRecords(syncJobCompositeModel);
+                var isSuccessful = await SyncAllRecords(syncJobCompositeModel, stoppingToken);
 
                 await ProcessStatus(syncJobCompositeModel, isSuccessful);
             }
             catch (Exception ex)
             {
                 await LogException($"Exception when processing Sync Job {syncJobCompositeModel.SyncModel.Id} {ex.Message}", syncJobCompositeModel);
+
+                await ProcessStatus(syncJobCompositeModel, isSuccessful: false);
             }
         }
 
@@ -102,7 +105,7 @@ namespace Trident.Web.BusinessLogic.Facades
             await _syncRepository.UpdateAsync(syncJobCompositeModel.SyncModel);
         }
 
-        private async Task<bool> SyncAllRecords(SyncJobCompositeModel syncJobCompositeModel)
+        private async Task<bool> SyncAllRecords(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken)
         {
             try
             {
@@ -112,6 +115,11 @@ namespace Trident.Web.BusinessLogic.Facades
 
                 foreach (var item in octopusSpaces)
                 {
+                    if (stoppingToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     await LogInformation($"Checking to see if space {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
                     var spaceModel = await _spaceRepository.GetByOctopusIdAsync(item.OctopusId, syncJobCompositeModel.InstanceModel.Id);
                     await LogInformation($"{(spaceModel != null ? "Space already exists, updating" : "Unable to find space, creating")}", syncJobCompositeModel);
@@ -123,14 +131,14 @@ namespace Trident.Web.BusinessLogic.Facades
 
                     syncJobCompositeModel.SpaceDictionary.Add(item.OctopusId, spaceToTrack);
 
-                    await ProcessEnvironments(syncJobCompositeModel, spaceToTrack);
-                    await ProcessTenants(syncJobCompositeModel, spaceToTrack);
-                    await ProcessProjects(syncJobCompositeModel, spaceToTrack);
+                    await ProcessEnvironments(syncJobCompositeModel, spaceToTrack, stoppingToken);
+                    await ProcessTenants(syncJobCompositeModel, spaceToTrack, stoppingToken);
+                    await ProcessProjects(syncJobCompositeModel, spaceToTrack, stoppingToken);
                 }
 
                 if (syncJobCompositeModel.SyncModel.SearchStartDate.HasValue)
                 {
-                    await ProcessDeploymentsSinceLastSync(syncJobCompositeModel);
+                    await ProcessDeploymentsSinceLastSync(syncJobCompositeModel, stoppingToken);
                 }
 
                 return true;
@@ -143,7 +151,7 @@ namespace Trident.Web.BusinessLogic.Facades
             }
         }
 
-        private async Task ProcessProjects(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space)
+        private async Task ProcessProjects(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, CancellationToken stoppingToken)
         {
             await LogInformation($"Getting all the projects for {syncJobCompositeModel.InstanceModel.Name}:{space.Name}", syncJobCompositeModel);
             var octopusList = await _octopusRepository.GetAllProjectsForSpaceAsync(syncJobCompositeModel.InstanceModel, space);
@@ -151,6 +159,11 @@ namespace Trident.Web.BusinessLogic.Facades
 
             foreach (var item in octopusList)
             {
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 await LogInformation($"Checking to see if project {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
                 var itemModel = await _projectRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
                 await LogInformation($"{(itemModel != null ? "Project already exists, updating" : "Unable to find project, creating")}", syncJobCompositeModel);
@@ -163,12 +176,12 @@ namespace Trident.Web.BusinessLogic.Facades
 
                 if (syncJobCompositeModel.SyncModel.SearchStartDate.HasValue == false)
                 {
-                    await ProcessReleasesForProject(syncJobCompositeModel, space, item);
+                    await ProcessReleasesForProject(syncJobCompositeModel, space, item, stoppingToken);
                 }
             }
         }
 
-        private async Task ProcessEnvironments(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space)
+        private async Task ProcessEnvironments(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, CancellationToken stoppingToken)
         {
             await LogInformation($"Getting all the environments for {syncJobCompositeModel.InstanceModel.Name}:{space.Name}", syncJobCompositeModel);
             var octopusList = await _octopusRepository.GetAllEnvironmentsForSpaceAsync(syncJobCompositeModel.InstanceModel, space);
@@ -176,6 +189,11 @@ namespace Trident.Web.BusinessLogic.Facades
 
             foreach (var item in octopusList)
             {
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 await LogInformation($"Checking to see if environment {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
                 var itemModel = await _environmentRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
                 await LogInformation($"{(itemModel != null ? "Environment already exists, updating" : "Unable to find environment, creating")}", syncJobCompositeModel);
@@ -189,7 +207,7 @@ namespace Trident.Web.BusinessLogic.Facades
             }
         }
 
-        private async Task ProcessTenants(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space)
+        private async Task ProcessTenants(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, CancellationToken stoppingToken)
         {
             await LogInformation($"Getting all the tenants for {syncJobCompositeModel.InstanceModel.Name}:{space.Name}", syncJobCompositeModel);
             var octopusList = await _octopusRepository.GetAllTenantsForSpaceAsync(syncJobCompositeModel.InstanceModel, space);
@@ -197,6 +215,11 @@ namespace Trident.Web.BusinessLogic.Facades
 
             foreach (var item in octopusList)
             {
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 await LogInformation($"Checking to see if tenant {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
                 var itemModel = await _tenantRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
                 await LogInformation($"{(itemModel != null ? "Tenant already exists, updating" : "Unable to find tenant, creating")}", syncJobCompositeModel);
@@ -210,7 +233,7 @@ namespace Trident.Web.BusinessLogic.Facades
             }
         }
 
-        private async Task ProcessReleasesForProject(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, ProjectModel project)
+        private async Task ProcessReleasesForProject(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, ProjectModel project, CancellationToken stoppingToken)
         {
             await LogInformation($"Getting all the releases for {syncJobCompositeModel.InstanceModel.Name}:{space.Name}:{project.Name}", syncJobCompositeModel);
             var octopusList = await _octopusRepository.GetAllReleasesForProjectAsync(syncJobCompositeModel.InstanceModel, space, project);
@@ -218,6 +241,11 @@ namespace Trident.Web.BusinessLogic.Facades
 
             foreach (var item in octopusList)
             {
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 await LogInformation($"Checking to see if release {syncJobCompositeModel.InstanceModel.Name}:{space.Name}:{project.Name}:{item.OctopusId}:{item.Version} already exists", syncJobCompositeModel);
                 var itemModel = await _releaseRepository.GetByOctopusIdAsync(item.OctopusId, project.Id);
                 await LogInformation($"{(itemModel != null ? "Release already exists, updating" : "Unable to find release, creating")}", syncJobCompositeModel);
@@ -226,11 +254,11 @@ namespace Trident.Web.BusinessLogic.Facades
                 await LogInformation($"Saving release {syncJobCompositeModel.InstanceModel.Name}:{space.Name}:{project.Name}:{item.OctopusId}:{item.Version} to the database", syncJobCompositeModel);
                 var modelToTrack = item.Id > 0 ? await _releaseRepository.UpdateAsync(item) : await _releaseRepository.InsertAsync(item);
 
-                await ProcessDeploymentsForProjectsRelease(syncJobCompositeModel, space, project, modelToTrack);
+                await ProcessDeploymentsForProjectsRelease(syncJobCompositeModel, space, project, modelToTrack, stoppingToken);
             }
         }
 
-        private async Task ProcessDeploymentsForProjectsRelease(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, ProjectModel project, ReleaseModel releaseModel)
+        private async Task ProcessDeploymentsForProjectsRelease(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, ProjectModel project, ReleaseModel releaseModel, CancellationToken stoppingToken)
         {
             await LogInformation($"Getting all the deployments for {syncJobCompositeModel.InstanceModel.Name}:{space.Name}:{project.Name}:{releaseModel.Version}", syncJobCompositeModel);
             var octopusList = await _octopusRepository.GetAllDeploymentsForReleaseAsync(syncJobCompositeModel.InstanceModel, space, project, releaseModel, syncJobCompositeModel.EnvironmentDictionary, syncJobCompositeModel.TenantDictionary);
@@ -238,6 +266,11 @@ namespace Trident.Web.BusinessLogic.Facades
 
             foreach (var item in octopusList)
             {
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 await LogInformation($"Checking to see if deployment {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
                 var itemModel = await _deploymentRepository.GetByOctopusIdAsync(item.OctopusId, releaseModel.Id);
                 await LogInformation($"{(itemModel != null ? "Deployment already exists, updating" : "Unable to find deployment, creating")}", syncJobCompositeModel);
@@ -248,7 +281,7 @@ namespace Trident.Web.BusinessLogic.Facades
             }
         }
 
-        private async Task ProcessDeploymentsSinceLastSync(SyncJobCompositeModel syncJobCompositeModel)
+        private async Task ProcessDeploymentsSinceLastSync(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken)
         {
             var startIndex = 0;
             var canContinue = true;
@@ -257,11 +290,21 @@ namespace Trident.Web.BusinessLogic.Facades
 
             while (canContinue)
             {
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 await LogInformation($"Getting the next results at {startIndex}", syncJobCompositeModel);
                 var eventResults = await _octopusRepository.GetAllEvents(syncJobCompositeModel.InstanceModel, syncJobCompositeModel.SyncModel, startIndex);
 
                 foreach (var octopusEvent in eventResults.Items)
                 {
+                    if (stoppingToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     var spaceId = octopusEvent.SpaceId;
                     var space = syncJobCompositeModel.SpaceDictionary[spaceId];
 
