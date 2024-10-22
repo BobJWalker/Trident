@@ -98,7 +98,7 @@ namespace Trident.Web
             sumoTarget.Layout = "${LEVEL}, ${message}${exception:format=tostring}${newline}";
 
             logConfig.AddTarget(sumoTarget);
-            logConfig.LoggingRules.Add(new LoggingRule("*", NLog.LogLevel.Debug, sumoTarget));
+            logConfig.LoggingRules.Add(new LoggingRule("*", NLog.LogLevel.Info, sumoTarget));
 
             builder.Logging.AddNLog(logConfig);
         }

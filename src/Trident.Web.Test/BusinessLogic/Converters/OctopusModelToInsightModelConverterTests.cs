@@ -52,8 +52,7 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
 
             // Assert
             Assert.That(result.OctopusId, Is.EqualTo(deploymentOctopusModel.Id));
-            Assert.That(result.ReleaseId, Is.EqualTo(releaseId));
-            Assert.That(result.Name, Is.EqualTo(deploymentOctopusModel.Name));
+            Assert.That(result.ReleaseId, Is.EqualTo(releaseId));            
             Assert.That(result.EnvironmentId, Is.EqualTo(environmentDictionary[deploymentOctopusModel.EnvironmentId].Id));
             Assert.That(result.TenantId, Is.EqualTo(tenantDictionary[deploymentOctopusModel.TenantId].Id));
             Assert.That(result.QueueTime, Is.EqualTo(deploymentOctopusTaskModel.QueueTime));

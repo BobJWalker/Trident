@@ -62,6 +62,7 @@ namespace Trident.Web.BusinessLogic.Facades
             {
                 await LogInformation("Setting the starting date to UTC Now", syncJobCompositeModel);
                 syncJobCompositeModel.SyncModel.Started = DateTime.UtcNow;
+                syncJobCompositeModel.SyncModel.State = SyncState.Started;
                 await _syncRepository.UpdateAsync(syncJobCompositeModel.SyncModel);
 
                 var isSuccessful = await SyncAllRecords(syncJobCompositeModel, stoppingToken);
@@ -89,7 +90,7 @@ namespace Trident.Web.BusinessLogic.Facades
                 await LogInformation("The sync failed, incrementing retry counter", syncJobCompositeModel);
                 syncJobCompositeModel.SyncModel.RetryAttempts = syncJobCompositeModel.SyncModel.RetryAttempts.GetValueOrDefault() + 1;
 
-                if (syncJobCompositeModel.SyncModel.RetryAttempts > 5)
+                if (syncJobCompositeModel.SyncModel.RetryAttempts >= 5)
                 {
                     await LogInformation("The retry counter has gone over 5, failing this sync", syncJobCompositeModel);
                     syncJobCompositeModel.SyncModel.State = SyncState.Failed;
@@ -98,6 +99,7 @@ namespace Trident.Web.BusinessLogic.Facades
                 {
                     await LogInformation("Retry attempts are still possible, setting the start date to null", syncJobCompositeModel);
                     syncJobCompositeModel.SyncModel.Started = null;
+                    syncJobCompositeModel.SyncModel.State = SyncState.Queued;
                 }
             }
 
@@ -270,12 +272,12 @@ namespace Trident.Web.BusinessLogic.Facades
                     break;
                 }
 
-                await LogInformation($"Checking to see if deployment {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
+                await LogInformation($"Checking to see if deployment {item.OctopusId} already exists", syncJobCompositeModel);
                 var itemModel = await _deploymentRepository.GetByOctopusIdAsync(item.OctopusId, releaseModel.Id);
                 await LogInformation($"{(itemModel != null ? "Deployment already exists, updating" : "Unable to find deployment, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
-                await LogInformation($"Saving deployment {item.OctopusId}:{item.Name} to the database", syncJobCompositeModel);
+                await LogInformation($"Saving deployment {item.OctopusId} to the database", syncJobCompositeModel);
                 var modelToTrack = item.Id > 0 ? await _deploymentRepository.UpdateAsync(item) : await _deploymentRepository.InsertAsync(item);
             }
         }
@@ -331,7 +333,7 @@ namespace Trident.Web.BusinessLogic.Facades
                             await LogInformation($"{(itemModel != null ? "Deployment already exists, updating" : "Unable to find deployment, creating")}", syncJobCompositeModel);
                             deploymentModel.Id = itemModel?.Id ?? 0;
 
-                            await LogInformation($"Saving deployment {deploymentModel.OctopusId}:{deploymentModel.Name} to the database", syncJobCompositeModel);
+                            await LogInformation($"Saving deployment {deploymentModel.OctopusId} to the database", syncJobCompositeModel);
                             var modelToTrack = deploymentModel.Id > 0 ? await _deploymentRepository.UpdateAsync(deploymentModel) : await _deploymentRepository.InsertAsync(deploymentModel);
                         }
                     }

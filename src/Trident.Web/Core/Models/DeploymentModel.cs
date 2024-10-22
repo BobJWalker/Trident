@@ -6,7 +6,6 @@ namespace Trident.Web.Core.Models
     [Table("Deployment")]
     public class DeploymentModel : BaseOctopusModel
     {
-        public string Name { get; set; }
         public int ReleaseId { get; set; }
         public int EnvironmentId { get; set; }
         public int? TenantId { get; set; }
