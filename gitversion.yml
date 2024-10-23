@@ -40,7 +40,7 @@ branches:
     mode: ContinuousDelivery
     tag: PullRequest
     increment: Inherit
-    prevent-increment-prevent-increment-when-current-commit-tagged: false      
+    prevent-increment-when-current-commit-tagged: false      
     tag-number-pattern: '[/-](?<number>\d+)[-/]'
     track-merge-target: false
     tracks-release-branches: false
