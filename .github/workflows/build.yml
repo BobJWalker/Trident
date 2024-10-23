@@ -11,6 +11,7 @@ on:
       - 'k8s/**'
       - '.github/workflows/build.yml'
       - 'scripts/**'
+      - 'gitversion.yml'
   workflow_dispatch:
 
 env:    
@@ -41,7 +42,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /overrideconfig mode=Mainline assembly-versioning-scheme=MajorMinorPatchTag assembly-file-versioning-scheme=MajorMinorPatchTag assembly-informational-format="{FullSemVer}" 
+            additionalArguments: /config gitversion.yml
       - uses: dorny/paths-filter@v3
         id: changes
         with:

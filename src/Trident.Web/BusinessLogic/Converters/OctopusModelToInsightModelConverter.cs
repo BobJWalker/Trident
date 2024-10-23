@@ -82,7 +82,6 @@ namespace Trident.Web.BusinessLogic.Converters
             {
                 OctopusId = deploymentOctopusModel.Id,
                 ReleaseId = releaseId,
-                Name = deploymentOctopusModel.Name,
                 EnvironmentId = environmentDictionary.ContainsKey(deploymentOctopusModel.EnvironmentId) ? environmentDictionary[deploymentOctopusModel.EnvironmentId].Id : 0,
                 TenantId = string.IsNullOrWhiteSpace(deploymentOctopusModel.TenantId) ? null : tenantDictionary.ContainsKey(deploymentOctopusModel.TenantId) ? (int?)tenantDictionary[deploymentOctopusModel.TenantId].Id : null,
                 QueueTime = deploymentOctopusTaskModel.QueueTime,

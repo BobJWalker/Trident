@@ -9,20 +9,17 @@ using Trident.Web.DataAccess;
 
 namespace Trident.Web.HostedServices
 {
-    public class SyncJobHostedService : IHostedService, IDisposable
+    public class SyncJobHostedService : BackgroundService, IDisposable
     {
         private readonly ILogger<SyncJobHostedService> _logger;
         private readonly ISyncRepository _syncRepository;
         private readonly ISyncJobCompositeModelFactory _syncJobCompositeModelFactory;
-        private readonly ISyncJobFacade _syncJobFacade;
-        private Timer _timer;
-        private Task _executingTask;
-        private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
+        private readonly ISyncJobFacade _syncJobFacade;        
 
         public SyncJobHostedService(ILogger<SyncJobHostedService> logger,
             ISyncRepository syncRepository,
             ISyncJobCompositeModelFactory syncJobCompositeModelFactory,
-            ISyncJobFacade syncJobFacade)
+            ISyncJobFacade syncJobFacade) : base()
         {
             _logger = logger;
             _syncRepository = syncRepository;
@@ -30,25 +27,18 @@ namespace Trident.Web.HostedServices
             _syncJobFacade = syncJobFacade;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Timed Background Service is starting.");
-
-            _timer = new Timer(ExecuteTask, null, TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(-1));
-
-            return Task.CompletedTask;
-        }
-
-        private void ExecuteTask(object state)
-        {
-            _timer?.Change(Timeout.Infinite, 0);
-            _executingTask = ExecuteTaskAsync(_stoppingCts.Token);
-        }
-
-        private async Task ExecuteTaskAsync(CancellationToken stoppingToken)
-        {
-            await RunJobAsync(stoppingToken);
-            _timer.Change(TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(-1));
+            using (var timer = new PeriodicTimer(TimeSpan.FromSeconds(15)))
+            {
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    while(await timer.WaitForNextTickAsync())
+                    {
+                        await RunJobAsync(stoppingToken);
+                    }
+                }
+            }
         }
 
         private async Task RunJobAsync(CancellationToken stoppingToken)
@@ -61,35 +51,13 @@ namespace Trident.Web.HostedServices
             {
                 var syncJobCompositeModel = await _syncJobCompositeModelFactory.MakeSyncJobCompositeModelAsync(syncJob);
 
-                await _syncJobFacade.ProcessSyncJob(syncJobCompositeModel);
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                await _syncJobFacade.ProcessSyncJob(syncJobCompositeModel, stoppingToken);
             }
-        }
-
-        public virtual async Task StopAsync(CancellationToken cancellationToken)
-        {
-            _logger.LogInformation("Timed Background Service is stopping.");
-            _timer?.Change(Timeout.Infinite, 0);
-
-            if (_executingTask == null)
-            {
-                return;
-            }
-
-            try
-            {
-                _stoppingCts.Cancel();
-            }
-            finally
-            {
-                await Task.WhenAny(_executingTask, Task.Delay(Timeout.Infinite, cancellationToken));
-            }
-
-        }
-
-        public void Dispose()
-        {
-            _stoppingCts.Cancel();
-            _timer?.Dispose();
-        }
+        }               
     }
 }
