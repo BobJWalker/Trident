@@ -11,6 +11,7 @@ on:
       - 'k8s/**'
       - '.github/workflows/build.yml'
       - 'scripts/**'
+      - 'gitversion.yml'
   workflow_dispatch:
 
 env:    
