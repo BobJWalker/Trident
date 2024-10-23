@@ -1,4 +1,4 @@
-assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{BuildMetaData}{PreReleaseLabelWithDash}'
+assembly-file-versioning-format: MajorMinorPatchTag
 mode: ContinuousDelivery
 major-version-bump-message: '\+semver:\s?(breaking|major)'
 minor-version-bump-message: '\+semver:\s?(feature|minor)'
@@ -12,12 +12,13 @@ branches:
   main:
     regex: ^master$|^main$    
     tag: ""
-    increment: Patch
+    increment: Inherit
     prevent-increment-of-merged-branch-version: true
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: true
     is-mainline: true
+    assembly-file-versioning-format: MajorMinorPatchTag
   feature:
     regex: ^features?[/-]    
     tag: '{BranchName}'
@@ -25,14 +26,7 @@ branches:
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
-  pull-request:
-    regex: ^(pull|pull\-requests|pr)[/-]    
-    tag: PullRequest
-    increment: Inherit         
-    tag-number-pattern: '[/-](?<number>\d+)[-/]'
-    track-merge-target: false
-    tracks-release-branches: false
-    is-release-branch: false
+    assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{CommitsSinceVersionSource}{PreReleaseLabelWithDash}'
   hotfix:
     regex: ^hotfix(es)?[/-]    
     tag: '{BranchName}'
@@ -40,3 +34,4 @@ branches:
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
+    assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{CommitsSinceVersionSource}{PreReleaseLabelWithDash}'
