@@ -31,7 +31,8 @@ branches:
     mode: ContinuousDelivery
     tag: '{BranchName}'
     increment: Minor
-    prevent-increment-of-merged-branch-version: false
+    prevent-increment:
+      when-current-commit-tagged: false
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
@@ -40,7 +41,8 @@ branches:
     mode: ContinuousDelivery
     tag: PullRequest
     increment: Inherit
-    prevent-increment-of-merged-branch-version: false
+    prevent-increment:
+      when-current-commit-tagged: false
     tag-number-pattern: '[/-](?<number>\d+)[-/]'
     track-merge-target: false
     tracks-release-branches: false
@@ -50,7 +52,8 @@ branches:
     mode: ContinuousDelivery
     tag: '{BranchName}'
     increment: Patch
-    prevent-increment-of-merged-branch-version: false
+    prevent-increment:
+      when-current-commit-tagged: false
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
