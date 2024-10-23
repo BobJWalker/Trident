@@ -26,7 +26,6 @@ branches:
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
-    is-main-branch: true
   feature:
     regex: ^features?[/-]
     mode: ContinuousDelivery
