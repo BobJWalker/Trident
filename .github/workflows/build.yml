@@ -39,9 +39,7 @@ jobs:
             versionSpec: 5.x
       - id: determine_version
         name: Determine Version
-        uses: gittools/actions/gitversion/execute@v1
-        with:
-            additionalArguments: /overrideconfig mode=Mainline assembly-versioning-scheme=MajorMinorPatchTag assembly-file-versioning-scheme=MajorMinorPatchTag assembly-informational-format="{FullSemVer}" 
+        uses: gittools/actions/gitversion/execute@v1             
       - uses: dorny/paths-filter@v3
         id: changes
         with:
