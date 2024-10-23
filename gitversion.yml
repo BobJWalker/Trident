@@ -1,5 +1,6 @@
 assembly-versioning-scheme: MajorMinorPatch
 assembly-file-versioning-scheme: MajorMinorPatch
+mode: ContinuousDeployment
 tag-prefix: "[vV]"
 major-version-bump-message: '\+semver:\s?(breaking|major)'
 minor-version-bump-message: '\+semver:\s?(feature|minor)'
@@ -16,14 +17,14 @@ branches:
   main:
     regex: ^master$|^main$    
     tag: ""
-    increment: Patch
+    increment: Minor
     prevent-increment-of-merged-branch-version: true
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
   feature:
     regex: ^features?[/-]
-    mode: ManualDeployment
+    mode: ContinuousDeployment
     tag: '{BranchName}'
     increment: Inherit    
     track-merge-target: false
@@ -31,7 +32,7 @@ branches:
     is-release-branch: false
   pull-request:
     regex: ^(pull|pull\-requests|pr)[/-]
-    mode: ContinuousDelivery
+    mode: ContinuousDeployment
     tag: PullRequest
     increment: Inherit         
     tag-number-pattern: '[/-](?<number>\d+)[-/]'
@@ -40,7 +41,7 @@ branches:
     is-release-branch: false
   hotfix:
     regex: ^hotfix(es)?[/-]
-    mode: ManualDeployment
+    mode: ContinuousDeployment
     tag: '{BranchName}'
     increment: Patch         
     track-merge-target: false
