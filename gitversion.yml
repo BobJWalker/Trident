@@ -1,6 +1,5 @@
-assembly-versioning-scheme: MajorMinorPatchTag
-assembly-file-versioning-scheme: '{Major}.{Minor}.{Patch}.{Tag}{PreReleaseLabelWithDash}'
-mode: ContinuousDeployment
+assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{Tag}{PreReleaseLabelWithDash}'
+mode: Mainline
 tag-prefix: "[vV]"
 major-version-bump-message: '\+semver:\s?(breaking|major)'
 minor-version-bump-message: '\+semver:\s?(feature|minor)'
