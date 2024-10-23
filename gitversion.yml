@@ -9,9 +9,6 @@ legacy-semver-padding: 4
 build-metadata-padding: 4
 commits-since-version-source-padding: 4
 commit-message-incrementing: Enabled
-commit-date-format: "yyyy-MM-dd"
-ignore:
-  sha: []
 branches:
   main:
     regex: ^master$|^main$    
