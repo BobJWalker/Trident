@@ -1,9 +1,5 @@
 assembly-versioning-scheme: MajorMinorPatch
 assembly-file-versioning-scheme: MajorMinorPatch
-assembly-informational-format: "{FullSemVer}"
-mode: ContinuousDeployment
-increment: Inherit
-continuous-delivery-fallback-tag: ci
 tag-prefix: "[vV]"
 major-version-bump-message: '\+semver:\s?(breaking|major)'
 minor-version-bump-message: '\+semver:\s?(feature|minor)'
@@ -18,8 +14,7 @@ ignore:
   sha: []
 branches:
   main:
-    regex: ^master$|^main$
-    mode: ContinuousDelivery
+    regex: ^master$|^main$    
     tag: ""
     increment: Patch
     prevent-increment-of-merged-branch-version: true
@@ -28,10 +23,9 @@ branches:
     is-release-branch: false
   feature:
     regex: ^features?[/-]
-    mode: ContinuousDelivery
+    mode: ManualDeployment
     tag: '{BranchName}'
-    increment: Minor
-    prevent-increment-when-current-commit-tagged: false
+    increment: Inherit    
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
@@ -39,18 +33,16 @@ branches:
     regex: ^(pull|pull\-requests|pr)[/-]
     mode: ContinuousDelivery
     tag: PullRequest
-    increment: Inherit
-    prevent-increment-when-current-commit-tagged: false      
+    increment: Inherit         
     tag-number-pattern: '[/-](?<number>\d+)[-/]'
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
   hotfix:
     regex: ^hotfix(es)?[/-]
-    mode: ContinuousDelivery
+    mode: ManualDeployment
     tag: '{BranchName}'
-    increment: Patch
-    prevent-increment-when-current-commit-tagged: false      
+    increment: Patch         
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
