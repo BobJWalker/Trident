@@ -1,5 +1,5 @@
-assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{CommitsSinceVersionSource}{PreReleaseLabelWithDash}'
-mode: Mainline
+assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{BuildMetaData}{PreReleaseNumber}{PreReleaseLabelWithDash}'
+mode: ContinuousDelivery
 tag-prefix: "[vV]"
 major-version-bump-message: '\+semver:\s?(breaking|major)'
 minor-version-bump-message: '\+semver:\s?(feature|minor)'
