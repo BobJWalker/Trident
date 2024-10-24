@@ -1,4 +1,5 @@
-assembly-file-versioning-format: MajorMinorPatchTag
+assembly-versioning-scheme: MajorMinorPatchTag
+assembly-file-versioning-scheme: MajorMinorPatchTag
 mode: Mainline
 continuous-delivery-fallback-tag: ''
 major-version-bump-message: '\+semver:\s?(breaking|major)'
