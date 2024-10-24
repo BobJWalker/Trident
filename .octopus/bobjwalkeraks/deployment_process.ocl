@@ -11,12 +11,7 @@ step "calculate-deployment-mode" {
             Octopus.Action.Template.Id = "ActionTemplates-441"
             Octopus.Action.Template.Version = "6"
         }
-        worker_pool = "azure-aks"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
+        worker_pool = "hosted-ubuntu"
     }
 }
 
@@ -52,12 +47,7 @@ step "configure-database-server" {
             Run.Runbook.UsePublishedSnapShot = "True"
             Run.Runbook.Waitforfinish = "True"
         }
-        worker_pool = "azure-aks"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
+        worker_pool = "hosted-ubuntu"
     }
 }
 
@@ -82,7 +72,7 @@ step "build-delta-report" {
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool = "azure-aks"
+        worker_pool = "hosted-ubuntu"
 
         packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
@@ -123,12 +113,7 @@ step "notify-dbas-of-pending-approval" {
             ssn_Title = "#{Notification.ManualIntervention.Subject.Text}"
             ssn_Username = "Octopus Deploy"
         }
-        worker_pool = "azure-aks"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
+        worker_pool = "hosted-ubuntu"
     }
 }
 
@@ -178,7 +163,7 @@ step "deploy-database-changes" {
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool = "azure-aks"
+        worker_pool = "hosted-ubuntu"
 
         packages "Trident.Database.DbUp" {
             acquisition_location = "Server"
@@ -290,12 +275,7 @@ step "verify-deployment" {
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool = "azure-aks"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
+        worker_pool = "hosted-ubuntu"
     }
 }
 
@@ -315,12 +295,7 @@ step "update-load-balancer" {
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool = "azure-aks"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
+        worker_pool = "hosted-ubuntu"
     }
 }
 
@@ -347,11 +322,6 @@ step "notify-team-of-deployment-status" {
             ssn_Title = "#{Notification.DeploymentStatus.Subject.Text}"
             ssn_Username = "Octopus Deploy"
         }
-        worker_pool = "azure-aks"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
+        worker_pool = "hosted-ubuntu"
     }
 }
