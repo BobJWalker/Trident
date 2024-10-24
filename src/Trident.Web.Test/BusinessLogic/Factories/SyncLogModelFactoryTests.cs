@@ -79,7 +79,7 @@ namespace Trident.Web.BusinessLogic.Tests.Factories
             Assert.NotNull(result);
             Assert.That(result.SyncId, Is.EqualTo(syncId));
             Assert.That(result.Message, Is.EqualTo(message));
-            Assert.AreEqual(LogType.Warning, result.Type);
+            Assert.That(result.Type, Is.EqualTo(LogType.Warning));
             Assert.True(result.Created <= DateTime.UtcNow);
         }
     }
