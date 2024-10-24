@@ -12,7 +12,10 @@ on:
       - '.github/workflows/build.yml'
       - 'scripts/**'
       - 'gitversion.yml'
-      - 'scripts/FileUpdate.yml'
+  workflow_run:
+    workflows: [Trigger No Op Build]
+    types:
+      - completed
 
 env:    
   OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}
