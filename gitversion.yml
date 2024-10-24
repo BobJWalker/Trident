@@ -1,5 +1,5 @@
 assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{PreReleaseTag}'
-mode: ContinuousDeployment
+mode: Mainline
 continuous-delivery-fallback-tag: ''
 major-version-bump-message: '\+semver:\s?(breaking|major)'
 minor-version-bump-message: '\+semver:\s?(feature|minor)'
@@ -17,28 +17,24 @@ branches:
     increment: Patch
     prevent-increment-of-merged-branch-version: true
     track-merge-target: false
-    tracks-release-branches: false
-    is-release-branch: true
+    tracks-release-branches: false    
     is-mainline: true
   feature:
     regex: ^features?[/-]    
     tag: '{BranchName}'
     increment: Inherit    
     track-merge-target: false
-    tracks-release-branches: false
-    is-release-branch: false
+    tracks-release-branches: false    
   pull-request:
     regex: ^(pull|pull\-requests|pr)[/-]    
     tag: PullRequest
     increment: Inherit         
     tag-number-pattern: '[/-](?<number>\d+)[-/]'
     track-merge-target: false
-    tracks-release-branches: false
-    is-release-branch: false
+    tracks-release-branches: false    
   hotfix:
     regex: ^hotfix(es)?[/-]    
     tag: '{BranchName}'
     increment: Patch         
     track-merge-target: false
-    tracks-release-branches: false
-    is-release-branch: false
+    tracks-release-branches: false    
