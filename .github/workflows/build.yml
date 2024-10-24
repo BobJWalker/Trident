@@ -28,7 +28,7 @@ jobs:
       website: ${{ steps.changes.outputs.website }}
       database: ${{ steps.changes.outputs.database }}
       pre_release: ${{ steps.determine_version.outputs.preReleaseNumber }}       
-      sem_ver: ${{ steps.determine_version.outputs.AssemblySemFileVer }}       
+      sem_ver: ${{ steps.determine_version.outputs.fullSemVer }}       
     steps:
       - uses: actions/checkout@v1
         with:
