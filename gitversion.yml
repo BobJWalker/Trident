@@ -1,4 +1,4 @@
-assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{PreReleaseNumber}{PreReleaseLabelWithDash}'
+assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{PreReleaseTag}'
 mode: ContinuousDeployment
 continuous-delivery-fallback-tag: ''
 major-version-bump-message: '\+semver:\s?(breaking|major)'
