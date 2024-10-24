@@ -12,7 +12,6 @@ on:
       - '.github/workflows/build.yml'
       - 'scripts/**'
       - 'gitversion.yml'
-  workflow_dispatch:
 
 env:    
   OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}
@@ -28,7 +27,7 @@ jobs:
     outputs:
       website: ${{ steps.changes.outputs.website }}
       database: ${{ steps.changes.outputs.database }}
-      pre_release: ${{ steps.determine_version.outputs.CommitsSinceVersionSource }}       
+      pre_release: ${{ steps.determine_version.outputs.preReleaseNumber }}       
       sem_ver: ${{ steps.determine_version.outputs.AssemblySemFileVer }}       
     steps:
       - uses: actions/checkout@v1

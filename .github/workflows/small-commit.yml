@@ -1,0 +1,25 @@
+name: Trigger No Op Build
+
+on:
+    workflow_dispatch:
+jobs:
+    build-and-push-application:
+        runs-on: ubuntu-latest                
+        steps:
+            - uses: actions/checkout@v1
+              with:
+                fetch-depth: '0'            
+            - name: update file to trigger build
+              uses: mikefarah/yq@master              
+              with:
+                cmd: yq -i '.runNumber = "${{ github.run_number }}"' 'scripts/FileUpdate.yml'              
+            - id: commit_file_change
+              name: commit file change
+              run : |
+                git config --global user.name '${{ github.actor }}'
+                git config --global user.email '${{ github.actor }}@users.noreply.github.com'
+                git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY                
+                git checkout "${GITHUB_REF:11}"                
+                git stage 'scripts/FileUpdate.yml'
+                git commit -am "[promotion:demo] Updating FileUpdate to ${{ github.run_number }}"
+                git push --set-upstream origin ${GITHUB_REF:11}                                      
