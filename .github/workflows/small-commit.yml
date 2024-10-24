@@ -20,7 +20,7 @@ jobs:
                 git config --global user.email '${{ github.actor }}@users.noreply.github.com'
                 git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY                
 
-                git checkout 'origin/main'
+                git checkout "${GITHUB_REF:11}" 
                 git stage 'scripts/FileUpdate.yml'
                 git commit -am "Updating FileUpdate to ${{ github.run_number }}"
-                git push 'origin/main'                   
+                git push --set-upstream origin ${GITHUB_REF:11}                  
