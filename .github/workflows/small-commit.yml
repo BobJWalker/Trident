@@ -21,5 +21,5 @@ jobs:
                 git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY                
                 git checkout "${GITHUB_REF:11}"                
                 git stage 'scripts/FileUpdate.yml'
-                git commit -am "[promotion:demo] Updating FileUpdate to ${{ github.run_number }}"
+                git commit -am "Updating FileUpdate to ${{ github.run_number }}"
                 git push --set-upstream origin ${GITHUB_REF:11}                                      

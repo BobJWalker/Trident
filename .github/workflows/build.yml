@@ -12,6 +12,7 @@ on:
       - '.github/workflows/build.yml'
       - 'scripts/**'
       - 'gitversion.yml'
+      - 'scripts/FileUpdate.yml'
 
 env:    
   OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}
