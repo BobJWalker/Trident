@@ -3,8 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Trident.Web.BusinessLogic.Facades;
 using Trident.Web.BusinessLogic.Factories;
+using Trident.Web.BusinessLogic.Syncers;
 using Trident.Web.DataAccess;
 
 namespace Trident.Web.HostedServices
@@ -14,17 +14,17 @@ namespace Trident.Web.HostedServices
         private readonly ILogger<SyncJobHostedService> _logger;
         private readonly ISyncRepository _syncRepository;
         private readonly ISyncJobCompositeModelFactory _syncJobCompositeModelFactory;
-        private readonly ISyncJobFacade _syncJobFacade;        
+        private readonly IInstanceSyncer _instanceSyncer;        
 
         public SyncJobHostedService(ILogger<SyncJobHostedService> logger,
             ISyncRepository syncRepository,
             ISyncJobCompositeModelFactory syncJobCompositeModelFactory,
-            ISyncJobFacade syncJobFacade) : base()
+            IInstanceSyncer instanceSyncer) : base()
         {
             _logger = logger;
             _syncRepository = syncRepository;
             _syncJobCompositeModelFactory = syncJobCompositeModelFactory;
-            _syncJobFacade = syncJobFacade;
+            _instanceSyncer = instanceSyncer;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -56,7 +56,7 @@ namespace Trident.Web.HostedServices
                     break;
                 }
 
-                await _syncJobFacade.ProcessSyncJob(syncJobCompositeModel, stoppingToken);
+                await _instanceSyncer.ProcessSyncJob(syncJobCompositeModel, stoppingToken);
             }
         }               
     }
