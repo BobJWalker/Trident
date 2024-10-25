@@ -15,7 +15,7 @@ branches:
   main:
     regex: ^master$|^main$    
     tag: ""
-    increment: Inherit
+    increment: Patch
     prevent-increment-of-merged-branch-version: true
     track-merge-target: false
     tracks-release-branches: false    
@@ -23,7 +23,7 @@ branches:
   feature:
     regex: ^features?[/-]    
     tag: '{BranchName}'
-    increment: Inherit    
+    increment: Minor    
     track-merge-target: false
     tracks-release-branches: false    
   pull-request:
