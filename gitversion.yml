@@ -15,7 +15,7 @@ branches:
   main:
     regex: ^master$|^main$    
     tag: ""
-    increment: Patch
+    increment: Inherit
     prevent-increment-of-merged-branch-version: true
     track-merge-target: false
     tracks-release-branches: false    

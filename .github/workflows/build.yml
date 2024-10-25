@@ -51,9 +51,6 @@ jobs:
         with:
           base: ${{ github.event.before }}
           filters: |
-            website:
-              - 'src/Trident.Web/**'
-              - 'src/Trident.Web.Test/**'
             database:
               - 'src/Trident.Database.DbUp/**'
       
