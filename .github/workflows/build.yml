@@ -32,7 +32,7 @@ jobs:
       website: ${{ steps.changes.outputs.website }}
       database: ${{ steps.changes.outputs.database }}
       pre_release: ${{ steps.determine_version.outputs.preReleaseNumber }}       
-      sem_ver:  ${{ github.ref == 'refs/heads/main' && steps.determine_version.outputs.assemblySemFileVer || format('{0}{1}', steps.determine_version.outputs.assemblySemFileVer, steps.determine_version.outputs.preReleaseLabelWithDash) }}      
+      sem_ver:  ${{ steps.determine_version.outputs.FullSemVer }}      
     steps:
       - uses: actions/checkout@v1
         with:
