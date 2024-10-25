@@ -143,7 +143,10 @@ namespace Trident.Web.BusinessLogic.Facades
                     return true;
                 }
 
-                await ProcessDeploymentsSinceLastSync(syncJobCompositeModel, stoppingToken);                
+                if(syncJobCompositeModel.SyncModel.SearchStartDate.HasValue == true)
+                {
+                    await ProcessDeploymentsSinceLastSync(syncJobCompositeModel, stoppingToken);                
+                }
 
                 return true;
             }
@@ -255,7 +258,10 @@ namespace Trident.Web.BusinessLogic.Facades
                 await LogInformation($"Saving release {syncJobCompositeModel.InstanceModel.Name}:{space.Name}:{project.Name}:{item.OctopusId}:{item.Version} to the database", syncJobCompositeModel);
                 var modelToTrack = item.Id > 0 ? await _releaseRepository.UpdateAsync(item) : await _releaseRepository.InsertAsync(item);
 
-                await ProcessDeploymentsForProjectsRelease(syncJobCompositeModel, space, project, modelToTrack, stoppingToken);
+                if (syncJobCompositeModel.SyncModel.SearchStartDate.HasValue == false)
+                {
+                    await ProcessDeploymentsForProjectsRelease(syncJobCompositeModel, space, project, modelToTrack, stoppingToken);
+                }
             }
         }
 
@@ -312,31 +318,21 @@ namespace Trident.Web.BusinessLogic.Facades
                     var projectId = octopusEvent.RelatedDocumentIds.First(x => x.StartsWith("Projects"));
                     var project = syncJobCompositeModel.ProjectDictionary[projectId];
 
-                    var releaseId = octopusEvent.RelatedDocumentIds.First(x => x.StartsWith("Release"));
-                    var releaseModel = await _octopusRepository.GetSpecificRelease(syncJobCompositeModel.InstanceModel, space, project, releaseId);
-
-                    if (releaseModel != null)
-                    {
-                        var existingReleaseModel = await _releaseRepository.GetByOctopusIdAsync(releaseModel.OctopusId, project.Id);
-                        await LogInformation($"{(existingReleaseModel != null ? "Release already exists, updating" : "Unable to find release, creating")}", syncJobCompositeModel);
-                        releaseModel.Id = existingReleaseModel?.Id ?? 0;
-
-                        await LogInformation($"Saving release {syncJobCompositeModel.InstanceModel.Name}:{space.Name}:{project.Name}:{releaseModel.OctopusId}:{releaseModel.Version} to the database", syncJobCompositeModel);
-                        var releaseModelToTrack = releaseModel.Id > 0 ? await _releaseRepository.UpdateAsync(releaseModel) : await _releaseRepository.InsertAsync(releaseModel);
+                    var releaseId = octopusEvent.RelatedDocumentIds.First(x => x.StartsWith("Release"));                    
+                    var releaseModelToTrack = await _releaseRepository.GetByIdAsync(int.Parse(releaseId));
 
                         var deploymentId = octopusEvent.RelatedDocumentIds.First(x => x.StartsWith("DeploymentId"));
                         var deploymentModel = await _octopusRepository.GetSpecificDeployment(syncJobCompositeModel.InstanceModel, space, releaseModelToTrack, deploymentId, syncJobCompositeModel.EnvironmentDictionary, syncJobCompositeModel.TenantDictionary);
 
                         if (deploymentModel != null)
                         {
-                            var itemModel = await _deploymentRepository.GetByOctopusIdAsync(deploymentModel.OctopusId, releaseModel.Id);
+                            var itemModel = await _deploymentRepository.GetByIdAsync(deploymentModel.Id);
                             await LogInformation($"{(itemModel != null ? "Deployment already exists, updating" : "Unable to find deployment, creating")}", syncJobCompositeModel);
                             deploymentModel.Id = itemModel?.Id ?? 0;
 
                             await LogInformation($"Saving deployment {deploymentModel.OctopusId} to the database", syncJobCompositeModel);
                             var modelToTrack = deploymentModel.Id > 0 ? await _deploymentRepository.UpdateAsync(deploymentModel) : await _deploymentRepository.InsertAsync(deploymentModel);
                         }
-                    }
                 }
 
                 canContinue = eventResults.Items.Count > 0;
