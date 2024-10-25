@@ -51,9 +51,6 @@ jobs:
         with:
           base: ${{ github.event.before }}
           filters: |
-            website:
-              - 'src/Trident.Web/**'
-              - 'src/Trident.Web.Test/**'
             database:
               - 'src/Trident.Database.DbUp/**'
       
@@ -107,8 +104,7 @@ jobs:
           version: "${{ needs.prep.outputs.sem_Ver }}"           
       
   build-website:
-    needs: [prep]
-    if: ${{ needs.prep.outputs.website == 'true' || needs.prep.outputs.pre_release == '1' }}
+    needs: [prep]    
     strategy:
       matrix:
         dotnet-version: ['8.0.x']
