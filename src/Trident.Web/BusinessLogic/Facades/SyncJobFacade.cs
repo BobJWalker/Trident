@@ -284,7 +284,14 @@ namespace Trident.Web.BusinessLogic.Facades
                 item.Id = itemModel?.Id ?? 0;
 
                 await LogInformation($"Saving deployment {item.OctopusId} to the database", syncJobCompositeModel);
-                var modelToTrack = item.Id > 0 ? await _deploymentRepository.UpdateAsync(item) : await _deploymentRepository.InsertAsync(item);
+                if (item.Id > 0)
+                {
+                    await _deploymentRepository.UpdateAsync(item);
+                }
+                else
+                {
+                    await _deploymentRepository.InsertAsync(item);
+                }                
             }
         }
 
