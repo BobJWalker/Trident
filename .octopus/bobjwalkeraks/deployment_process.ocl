@@ -205,11 +205,6 @@ step "create-connectionstring-secret" {
             OctopusUseBundledTooling = "False"
         }
         worker_pool = "hosted-ubuntu"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
     }
 }
 
@@ -240,11 +235,6 @@ step "deploy-trident-website" {
             OctopusUseBundledTooling = "False"
         }
         worker_pool = "hosted-ubuntu"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
 
         packages "Trident" {
             acquisition_location = "NotAcquired"
