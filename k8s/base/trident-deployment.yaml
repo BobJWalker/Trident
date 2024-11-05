@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: trident-web
-          image: bobjwalker99/trident:3.5.1.360
+          image: bobjwalker99/trident:6.0.8
           imagePullPolicy: "Always"
           ports:
            - containerPort: 8080
