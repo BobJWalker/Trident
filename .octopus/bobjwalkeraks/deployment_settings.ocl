@@ -13,5 +13,5 @@ connectivity_policy {
 }
 
 versioning_strategy {
-    template = "#{Octopus.Version.Channel.LastMajor}.#{Octopus.Version.Channel.LastMinor}.#{Octopus.Version.Channel.LastPatch}.#{Octopus.Version.Channel.NextBuild}"
+    template = "#{Octopus.Version.Channel.LastMajor}.#{Octopus.Version.Channel.LastMinor}.#{Octopus.Version.Channel.LastPatch}.i"
 }
