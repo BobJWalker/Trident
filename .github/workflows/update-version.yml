@@ -1,4 +1,4 @@
-name: Trigger No Op Build
+name: spin the Version
 
 on:
     workflow_dispatch:
@@ -9,10 +9,22 @@ jobs:
             - uses: actions/checkout@v1
               with:
                 fetch-depth: '0'            
+            - uses: actions/checkout@v1
+              with:
+                fetch-depth: '0'            
+            - name: Install GitVersion
+              uses: gittools/actions/gitversion/setup@v1
+              with:
+                  versionSpec: 6.x
+            - id: determine_version
+              name: Determine Version
+              uses: gittools/actions/gitversion/execute@v1
+              with:
+                  additionalArguments: /config gitversion.yml
             - name: update file to trigger build
               uses: mikefarah/yq@master              
               with:
-                cmd: yq -i '.runNumber = "${{ github.run_number }}"' 'scripts/FileUpdate.yml'              
+                cmd: yq -i '.runNumber = "${{ steps.determine_version.outputs.FullSemVer }}"' 'version.yml'              
             - id: commit_file_change
               name: commit file change
               run : |
@@ -21,6 +33,6 @@ jobs:
                 git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY                
 
                 git checkout "${GITHUB_REF:11}" 
-                git stage 'scripts/FileUpdate.yml'
-                git commit -am "+semver: patch updating file to ${{ github.run_number }}"
+                git stage 'version.yml'
+                git commit -am "Updating prvious version to ${{ steps.determine_version.outputs.FullSemVer }}"
                 git push --set-upstream origin ${GITHUB_REF:11}                  
