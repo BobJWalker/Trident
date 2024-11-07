@@ -1,9 +1,9 @@
-name: spin the Version
+name: Spin the Version Number
 
 on:
     workflow_dispatch:
 jobs:
-    no_op_build:
+    Update_Version:
         runs-on: ubuntu-latest                
         steps:
             - uses: actions/checkout@v1
