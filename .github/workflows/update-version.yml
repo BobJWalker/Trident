@@ -42,24 +42,24 @@ jobs:
 
                 foreach ($release in $progessionResults.Releases)
                 {
-                    Write-Host "Checking release $($release.Version) for $projectName in $spaceName"
+                    Write-Host "Checking release $($release.Release.Version) for $projectName in $spaceName"
                     if ($release.Channel.Name -ne "Release")
                     {
-                        Write-Host "Skipping release $($release.Version) because it is not a Release channel"
+                        Write-Host "Skipping release $($release.Release.Version) because it is not a Release channel"
                         continue
                     }
 
-                    Write-Host "Checking the next deployments for $($release.Version)"    
+                    Write-Host "Checking the next deployments for $($release.Release.Version)"    
                     foreach ($nextDeploymentId in $release.NextDeployments)
                     {
                         if ($nextDeploymentId -eq $stagingEnvironment.Id)
                         {
-                            Write-Host "Staging environment is the next deployment for $($release.Version)"
+                            Write-Host "Staging environment is the next deployment for $($release.Release.Version)"
                             $createNewRelease = $false
                         }
                         elseif ($nextDeploymentId -eq $productionEnvironment.Id)
                         {
-                            Write-Host "Production environment is the next deployment for $($release.Version)"
+                            Write-Host "Production environment is the next deployment for $($release.Release.Version)"
                             $createNewRelease = $false
                         }
                     }
