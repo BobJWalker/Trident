@@ -2,8 +2,8 @@ name: Spin the Version Number
 
 on:
     workflow_dispatch:
-    ##schedule:
-    ##- cron: '*/15 * * * *'
+    schedule:
+    - cron: '*/20 * * * 1-5'
 jobs:
     Update_Version:
         runs-on: ubuntu-latest                
