@@ -23,7 +23,6 @@ jobs:
                 $projectName = '${{ vars.OCTOPUS_PROJECT_NAME }}'                
 
                 $stagingEnvironmentName = 'Staging'
-                $productionEnvironmentName = 'Production'
 
                 $header = @{ "X-Octopus-ApiKey" = $apiKey }
 
@@ -34,10 +33,9 @@ jobs:
                 Write-Host "Pulling Octopus Progression information for $projectName in $spaceName"
                 $progessionResults = (Invoke-RestMethod "$($instanceURL)/api/$($space.Id)/projects/$($Project.id)/progression" -Method Get -Headers $header)
 
-                Write-Host "Getting environment information for $stagingEnvironmentName and $productionEnvironmentName"                
+                Write-Host "Getting environment information for $stagingEnvironmentName"                
                 $stagingEnvironment = $progessionResults.Environments | Where-Object {$_.Name -eq $stagingEnvironmentName}
-                $productionEnvironment = $progessionResults.Environments | Where-Object {$_.Name -eq $productionEnvironmentName}
-
+                
                 $createNewRelease = $true
 
                 foreach ($release in $progessionResults.Releases)
@@ -57,16 +55,11 @@ jobs:
                             Write-Host "Staging environment is the next deployment for $($release.Release.Version)"
                             $createNewRelease = $false
                         }
-                        elseif ($nextDeploymentId -eq $productionEnvironment.Id)
-                        {
-                            Write-Host "Production environment is the next deployment for $($release.Release.Version)"
-                            $createNewRelease = $false
-                        }
                     }
 
                     if ($createNewRelease -eq $false)
                     {
-                        Write-Host "Found a release that is ready to deploy to Staging or Production.  Stopping the check."
+                        Write-Host "Found a release that is ready to deploy to Staging.  Stopping the check."
                         break
                     }
                 }
@@ -83,7 +76,7 @@ jobs:
                 }
                 else
                 {
-                  Write-Host "No releases are ready to deploy to Staging or Production.  Proceeding with the workflow."
+                  Write-Host "No releases are ready to deploy to Staging.  Proceeding with the workflow."
                 }
               env:
                 GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
