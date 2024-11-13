@@ -3,7 +3,7 @@ name: Spin the Version Number
 on:
     workflow_dispatch:
     schedule:
-    - cron: '*/20 * * * 1-5'
+    - cron: '*/15 0-2,13-23 * * 1-5'
 jobs:
     Update_Version:
         runs-on: ubuntu-latest                
@@ -14,6 +14,51 @@ jobs:
             - uses: actions/checkout@v1
               with:
                 fetch-depth: '0'
+            - name: Check_for_pending_manual_interventions
+              shell: pwsh
+              run: |
+                $instanceURL = '${{ vars.OCTOPUS_SERVER_URL }}'
+                $apiKey = '${{ secrets.OCTOPUSSERVERAPIKEY }} '
+                $spaceName = '${{ vars.OCTOPUS_SPACE }}'
+
+                $header = @{ "X-Octopus-ApiKey" = $apiKey }
+
+                Write-Host "Pulling Octopus Space and Project information for $spaceName"
+                $space = (Invoke-RestMethod -Method Get -Uri "$instanceURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
+                $pendingTasks = Invoke-RestMethod -Method Get -Uri "$instanceURL/api/$($space.Id)/interruptions?pendingOnly=True" -Headers $header
+
+                Write-Host "Found $($pendingTasks.Items.Count) awaiting manual intervention."
+                
+                $currentDate = [DateTime]::UtcNow
+                Write-Host "The current date is $currentDate"
+                
+                foreach ($task in $pendingTasks.Items)
+                {
+                    Write-Host "The pending task is $($task.Id) created at $($task.Created)"
+                    $timeWaiting = $currentDate - $task.Created
+                    Write-Host "Task $($task.Id) has been waiting for $($timeWaiting.TotalMinutes) minutes"
+                
+                    if ($timeWaiting.TotalMinutes -ge 15)
+                    {
+                        Write-Host "The task has been waiting for approval for over 15 minutes.  Approving it now."
+                
+                        $body = @{
+                            Instructions= $null
+                            Notes = "Auto-Approving because it was pending for over 15 minutes"
+                            Result = "Proceed"  
+                        } | ConvertTo-Json
+                
+                        # Take responsibility for the Intervention
+                        Invoke-RestMethod "$instanceURL/api/$($space.Id)/interruptions/$($task.Id)/responsible" -Method Put -Headers $header
+                
+                        #Approve/abort the intervention
+                        Invoke-RestMethod "$instanceURL/api/$($space.Id)/interruptions/$($task.Id)/submit" -Body $body -Method Post -Headers $header
+                    }
+                    else
+                    {
+                        Write-Host "The task has not been waiting for approval for 15 minutes yet.  Skipping approval."
+                    }
+                }
             - name: Check_for_existing_releases
               shell: pwsh
               run: |
