@@ -25,31 +25,31 @@ spec:
                secretKeyRef:
                  name: trident-credentials
                  key: connectionString
-            - name: TRIDENT_INSTANCE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: trident-credentials
-                  key: instanceUrl
-            - name: TRIDENT_INSTANCE_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: trident-credentials
-                  key: instanceApiKey
-            - name: TRIDENT_SUMO_LOGIC_URL
-              valueFrom:
-                secretKeyRef:
-                  name: trident-credentials
-                  key: sumoLogicUrl
-            - name: TRIDENT_FEATURE_TOGGLES_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: trident-credentials
-                  key: featureTogglesClientId
-            - name: TRIDENT_ENVIRONMENT
-              valueFrom:
-                secretKeyRef:
-                  name: trident-credentials
-                  key: environmentName          
+           - name: TRIDENT_INSTANCE_URL
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: instanceUrl
+           - name: TRIDENT_INSTANCE_API_KEY
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: instanceApiKey
+           - name: TRIDENT_SUMO_LOGIC_URL
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: sumoLogicUrl
+           - name: TRIDENT_FEATURE_TOGGLES_CLIENT_ID
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: featureTogglesClientId
+           - name: TRIDENT_ENVIRONMENT
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: environmentName          
 ---
 apiVersion: v1
 kind: Service
