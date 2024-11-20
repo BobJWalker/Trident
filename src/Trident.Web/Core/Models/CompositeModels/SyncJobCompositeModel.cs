@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-
-namespace Trident.Web.Core.Models.CompositeModels
+﻿namespace Trident.Web.Core.Models.CompositeModels
 {
     public class SyncJobCompositeModel
     {
-        public SyncModel SyncModel { get; set; }
-        public InstanceModel InstanceModel { get; set; }
+        public SyncModel SyncModel { get; set; } = new SyncModel();
+        public InstanceModel InstanceModel { get; set; } = new InstanceModel();
 
         public Dictionary<string, EnvironmentModel> EnvironmentDictionary { get; set; } = new Dictionary<string, EnvironmentModel>();
         public Dictionary<string, TenantModel> TenantDictionary { get; set; } = new Dictionary<string, TenantModel>();

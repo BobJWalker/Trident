@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Trident.Web</RootNamespace>
-    <VersionPrefix>4.0.1</VersionPrefix>
-    <StartupObject>Trident.Web.Program</StartupObject>     
+    <VersionPrefix>4.0.1</VersionPrefix>    
+    <ImplicitUsings>enable</ImplicitUsings>    
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +21,8 @@
     <PackageReference Include="NLog.Web.AspNetCore" Version="5.3.8" />
     <PackageReference Include="SumoLogic.Logging.NLog" Version="1.0.1.8" />
     <PackageReference Include="RestSharp" Version="112.0.0" />
+    <PackageReference Include="Octopus.OpenFeature" Version="0.0.21" />
+    <PackageReference Include="OpenFeature" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
