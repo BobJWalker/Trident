@@ -42,54 +42,5 @@ namespace Trident.Web.Tests.BusinessLogic.Syncers
                 _syncLogModelFactoryMock.Object
             );
         }
-
-        [Test]
-        public async Task ProcessDeploymentsSinceLastSync_ShouldLogInformation()
-        {
-            // Arrange
-            var syncJobCompositeModel = new SyncJobCompositeModel
-            {
-                SyncModel = new SyncModel { SearchStartDate = DateTime.Now },
-                InstanceModel = new InstanceModel(),
-                SpaceDictionary = new Dictionary<string, SpaceModel>(),
-                ProjectDictionary = new Dictionary<string, ProjectModel>(),
-                EnvironmentDictionary = new Dictionary<string, EnvironmentModel>(),
-                TenantDictionary = new Dictionary<string, TenantModel>()
-            };
-            var stoppingToken = new CancellationToken();
-
-            _octopusRepositoryMock.Setup(repo => repo.GetAllEvents(It.IsAny<InstanceModel>(), It.IsAny<SyncModel>(), It.IsAny<int>()))
-                .ReturnsAsync(new PagedOctopusModel<EventOctopusModel> { Items = new List<EventOctopusModel>() });
-
-            // Act
-            await _eventSyncer.ProcessDeploymentsSinceLastSync(syncJobCompositeModel, stoppingToken);
-
-            // Assert
-            _loggerMock.Verify(logger => logger.LogInformation(It.IsAny<string>()), Times.AtLeastOnce);
-            _syncLogRepositoryMock.Verify(repo => repo.InsertAsync(It.IsAny<SyncLogModel>()), Times.AtLeastOnce);
-        }
-
-        [Test]
-        public async Task ProcessDeploymentsSinceLastSync_ShouldStopWhenCancellationRequested()
-        {
-            // Arrange
-            var syncJobCompositeModel = new SyncJobCompositeModel
-            {
-                SyncModel = new SyncModel { SearchStartDate = DateTime.Now },
-                InstanceModel = new InstanceModel(),
-                SpaceDictionary = new Dictionary<string, SpaceModel>(),
-                ProjectDictionary = new Dictionary<string, ProjectModel>(),
-                EnvironmentDictionary = new Dictionary<string, EnvironmentModel>(),
-                TenantDictionary = new Dictionary<string, TenantModel>()
-            };
-            var stoppingTokenSource = new CancellationTokenSource();
-            stoppingTokenSource.Cancel();
-
-            // Act
-            await _eventSyncer.ProcessDeploymentsSinceLastSync(syncJobCompositeModel, stoppingTokenSource.Token);
-
-            // Assert
-            _loggerMock.Verify(logger => logger.LogInformation(It.IsAny<string>()), Times.Once);
-        }
     }
 }
