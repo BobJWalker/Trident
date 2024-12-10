@@ -132,7 +132,7 @@ jobs:
             - name: Install GitVersion
               uses: gittools/actions/gitversion/setup@v1
               with:
-                  versionSpec: 6.x
+                  versionSpec: 6.0.5
             - id: determine_version
               name: Determine Version
               uses: gittools/actions/gitversion/execute@v1
