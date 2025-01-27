@@ -1,0 +1,104 @@
+name = "Destroy Application Infrastructure"
+default_guided_failure_mode = "EnvironmentDefault"
+description = <<-EOT
+        **Action:** Destroys the application's databases and namespace
+        
+        **Affects:** the SQL Server and the AKS cluster this application is running on.
+        EOT
+
+connectivity_policy {
+    allow_deployments_to_no_targets = true
+}
+
+run_retention_policy {
+    quantity_to_keep = 100
+}
+
+process {
+    step "azure-sql-delete-tenanted-database" {
+        name = "Azure SQL Delete Main Database"
+
+        action {
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Deletes the main database from Azure SQL Server
+                    EOT
+            properties = {
+                createSqlLoginPasswordWhoHasRights = "#{SQLServer.User.Password}"
+                createSqlLoginUserWhoHasCreateUserRights = "#{SQLServer.User.Name}"
+                createSqlServer = "#{SQLServer.Server.Name}"
+                deleteDatabaseName = "#{Project.Database.Name}"
+                Octopus.Action.AutoRetry.MaximumCount = "3"
+                Octopus.Action.Template.Id = "ActionTemplates-382"
+                Octopus.Action.Template.Version = "1"
+                OctopusUseBundledTooling = "False"
+            }
+            worker_pool = "hosted-ubuntu"
+        }
+    }
+
+    step "delete-kubernetes-namespace" {
+        name = "Delete Kubernetes Namespace"
+        properties = {
+            Octopus.Action.TargetRoles = "trident-web"
+        }
+
+        action {
+            action_type = "Octopus.KubernetesRunScript"
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Deletes the tenant namespace from the Kubernetes Cluster.
+                    EOT
+            properties = {
+                Octopus.Action.KubernetesContainers.Namespace = "default"
+                Octopus.Action.Script.ScriptBody = <<-EOT
+                    $namespace = $OctopusParameters["Project.K8s.Namespace"]
+                    
+                    kubectl delete namespace $namespace
+                        
+                    if ($lastexitcode -eq 0)
+                    {
+                         write-host "The namespace $namespace was successfully deleted."
+                    }
+                    else
+                    {
+                         Write-Host "There was an error deleting the namespace $namespace.  Please check the Cluster UI to verify a deletion has occurred."
+                         Exit 0
+                    }
+                    EOT
+                Octopus.Action.Script.ScriptSource = "Inline"
+                Octopus.Action.Script.Syntax = "PowerShell"
+                OctopusUseBundledTooling = "False"
+            }
+            worker_pool = "azure-aks"
+        }
+    }
+
+    step "notify-team-of-runbook-status" {
+        condition = "Always"
+        name = "Notify Team of Runbook Status"
+
+        action {
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Sends a slack message to the teams so they know the status of the runbook run.
+                    EOT
+            properties = {
+                Octopus.Action.Template.Id = "ActionTemplates-101"
+                Octopus.Action.Template.Version = "15"
+                OctopusUseBundledTooling = "False"
+                ssn_Channel = "trident-status"
+                ssn_Color = "#{unless Octopus.Deployment.Error}good#{else}danger#{/unless}"
+                ssn_HookUrl = "#{Notification.Slack.Webhook.Url}"
+                ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
+                ssn_Message = "#{Notification.Body.Text}"
+                ssn_Title = "#{Notification.RunbookStatus.Subject.Text}"
+                ssn_Username = "Octopus Deploy"
+            }
+            worker_pool = "hosted-ubuntu"
+        }
+    }
+}
