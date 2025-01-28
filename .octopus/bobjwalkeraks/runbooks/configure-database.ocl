@@ -92,6 +92,21 @@ process {
         }
     }
 
+    step "run-verification" {
+        name = "Run verification"
+
+        action {
+            action_type = "Octopus.Script"
+            properties = {
+                Octopus.Action.GitRepository.Source = "Project"
+                Octopus.Action.Script.ScriptFileName = "scripts/VerifySuccessfulDeployment.ps1"
+                Octopus.Action.Script.ScriptSource = "GitRepository"
+                OctopusUseBundledTooling = "False"
+            }
+            worker_pool = "hosted-ubuntu"
+        }
+    }
+
     step "notify-team-of-runbook-status" {
         condition = "Always"
         name = "Notify Team of Runbook Status"
