@@ -111,6 +111,17 @@ process {
                 git_credential_type = "Library"
                 repository_uri = "https://github.com/BobJWalker/Trident.git"
             }
+
+            packages "Trident.Database.DbUp" {
+                acquisition_location = "Server"
+                feed = "octopus-server-built-in"
+                package_id = "Trident.Database.DbUp"
+                properties = {
+                    Extract = "True"
+                    Purpose = ""
+                    SelectionMode = "immediate"
+                }
+            }
         }
     }
 
