@@ -98,19 +98,12 @@ process {
         action {
             action_type = "Octopus.Script"
             properties = {
-                Octopus.Action.GitRepository.Source = "External"
+                Octopus.Action.GitRepository.Source = "Project"
                 Octopus.Action.Script.ScriptFileName = "scripts/VerifySuccessfulDeployment.ps1"
                 Octopus.Action.Script.ScriptSource = "GitRepository"
                 OctopusUseBundledTooling = "False"
             }
             worker_pool = "hosted-ubuntu"
-
-            git_dependencies {
-                default_branch = "main"
-                git_credential_id = "GitCredentials-21"
-                git_credential_type = "Library"
-                repository_uri = "https://github.com/BobJWalker/Trident.git"
-            }
 
             packages "Trident.Database.DbUp" {
                 acquisition_location = "Server"
