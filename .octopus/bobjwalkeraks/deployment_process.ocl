@@ -21,7 +21,7 @@ step "configure-cac-infrastructure" {
     action {
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-521"
-            Octopus.Action.Template.Version = "3"
+            Octopus.Action.Template.Version = "4"
             Run.Runbook.Api.Key = "#{Project.Runbook.Api.Key}"
             Run.Runbook.AutoApproveManualInterventions = "No"
             Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
