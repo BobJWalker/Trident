@@ -81,10 +81,6 @@ variable "Project.Formatted.Branch.Name" {
     value "#{Project.Release.Branch.Name | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {}
 }
 
-variable "Project.URL.Local" {
-    value "tridentdev#{Project.Formatted.Branch.Name}.local" {}
-}
-
 variable "Project.ChangeReport.Path" {
     value "../../#{Octopus.Project.Name}/#{Octopus.Release.Number}/#{Octopus.Environment.Name}" {}
 }
