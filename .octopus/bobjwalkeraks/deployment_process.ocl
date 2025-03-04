@@ -59,10 +59,11 @@ step "configure-database-server" {
                 EOT
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-141"
-            Octopus.Action.Template.Version = "16"
+            Octopus.Action.Template.Version = "17"
             Run.Runbook.Api.Key = "#{Project.Runbook.Api.Key}"
             Run.Runbook.AutoApproveManualInterventions = "No"
             Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
+            Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
             Run.Runbook.CancelInSeconds = "1800"
             Run.Runbook.DateTime = "N/A"
             Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
@@ -70,7 +71,7 @@ step "configure-database-server" {
             Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
             Run.Runbook.Name = "Configure Application Infrastructure"
             Run.Runbook.Project.Name = "#{Octopus.Project.Name}"
-            Run.Runbook.PromptedVariables = "Project.Release.Branch.Name::#{Project.Release.Branch.Name}"
+            Run.Runbook.PromptedVariables = ""
             Run.Runbook.Space.Name = "#{Octopus.Space.Name}"
             Run.Runbook.UsePublishedSnapShot = "True"
             Run.Runbook.Waitforfinish = "True"
