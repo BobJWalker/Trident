@@ -31,9 +31,8 @@ jobs:
   prep:    
     runs-on: ubuntu-latest 
     outputs:
-      database: ${{ steps.changes.outputs.database }}
-      pre_release: ${{ steps.determine_version.outputs.preReleaseNumber }}       
-      sem_ver:  ${{ steps.determine_version.outputs.FullSemVer }}      
+      database: ${{ steps.changes.outputs.database }}            
+      sem_ver:  ${{ steps.determine_version.outputs.SemVer }}      
     steps:      
       - uses: actions/checkout@v1
         with:
