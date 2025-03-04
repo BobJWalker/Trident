@@ -1,7 +1,3 @@
-variable "Project.Database.MigrationLocation" {
-    value "filesystem:#{Octopus.Action.Package[Flyway.Package.Value].ExtractedPath}/migrations" {}
-}
-
 variable "Project.Database.Name" {
     value "Trident_Test" {
         environment = ["test"]
@@ -81,42 +77,6 @@ variable "Project.K8s.Image.VersionTag" {
     value "#{Octopus.Action.Package[trident].PackageVersion}" {}
 }
 
-variable "Project.Release.Branch.Name" {
-    value "main" {
-        description = ""
-        process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
-
-        prompt {
-            description = ""
-            display_settings = {
-                Octopus.ControlType = "SingleLineText"
-            }
-            label = "Branch Name"
-            required = true
-        }
-    }
-
-    value "#{Octopus.Release.Git.BranchName}" {}
-}
-
-variable "Project.Database.Check.Name" {
-    value "Trident_#{Octopus.Environment.Name}_Check" {
-        description = ""
-    }
-
-    value "Trident_#{Octopus.Environment.Name}_#{Project.Formatted.Branch.Name}_Check" {
-        environment = ["development"]
-    }
-}
-
-variable "Project.Formatted.Branch.Name" {
-    value "#{Project.Release.Branch.Name | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {}
-}
-
-variable "Project.URL.Local" {
-    value "tridentdev#{Project.Formatted.Branch.Name}.local" {}
-}
-
 variable "Project.ChangeReport.Path" {
     value "../../#{Octopus.Project.Name}/#{Octopus.Release.Number}/#{Octopus.Environment.Name}" {}
 }
@@ -136,5 +96,16 @@ variable "spec:rules:0:host" {
 
     value "trident#{Project.Formatted.Branch.Name}dev.local" {
         environment = ["development"]
+    }
+}
+
+variable "Project.Formatted.Branch.Name" {
+    value "#{Octopus.RunbookRun.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\"}" {
+        description = ""
+        process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
+    }
+
+    value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {
+        process = ["deployment-process"]
     }
 }

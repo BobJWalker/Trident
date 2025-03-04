@@ -5,6 +5,7 @@ description = <<-EOT
           
           **Affects**: The SQL Server this application is running on.
         EOT
+environment_scope = "FromProjectLifecycles"
 
 connectivity_policy {
     allow_deployments_to_no_targets = true
@@ -89,32 +90,6 @@ process {
                 OctopusUseBundledTooling = "False"
             }
             worker_pool = "azure-aks"
-        }
-    }
-
-    step "run-verification" {
-        name = "Run verification"
-
-        action {
-            action_type = "Octopus.Script"
-            properties = {
-                Octopus.Action.GitRepository.Source = "Project"
-                Octopus.Action.Script.ScriptFileName = "scripts/VerifySuccessfulDeployment.ps1"
-                Octopus.Action.Script.ScriptSource = "GitRepository"
-                OctopusUseBundledTooling = "False"
-            }
-            worker_pool = "hosted-ubuntu"
-
-            packages "Trident.Database.DbUp" {
-                acquisition_location = "Server"
-                feed = "octopus-server-built-in"
-                package_id = "Trident.Database.DbUp"
-                properties = {
-                    Extract = "True"
-                    Purpose = ""
-                    SelectionMode = "immediate"
-                }
-            }
         }
     }
 

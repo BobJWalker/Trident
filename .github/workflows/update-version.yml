@@ -141,7 +141,7 @@ jobs:
             - name: update version file with latest version
               uses: mikefarah/yq@master              
               with:
-                cmd: yq -i '.runNumber = "${{ steps.determine_version.outputs.FullSemVer }}"' 'version.yml' 
+                cmd: yq -i '.runNumber = "${{ steps.determine_version.outputs.SemVer }}"' 'version.yml' 
             - name: update version file with latest run number
               uses: mikefarah/yq@master              
               with:
@@ -155,5 +155,5 @@ jobs:
 
                 git checkout "${GITHUB_REF:11}" 
                 git stage 'version.yml'
-                git commit -am "Updating prvious version to ${{ steps.determine_version.outputs.FullSemVer }} and run number to ${{ github.run_number }}"
+                git commit -am "Updating prvious version to ${{ steps.determine_version.outputs.SemVer }} and run number to ${{ github.run_number }}"
                 git push --set-upstream origin ${GITHUB_REF:11}                  
