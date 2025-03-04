@@ -100,12 +100,12 @@ variable "spec:rules:0:host" {
 }
 
 variable "Project.Formatted.Branch.Name" {
-    value "#{Project.Release.Branch.Name | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {
-        process = ["deployment-process"]
-    }
-
     value "#{Octopus.RunbookRun.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\"}" {
         description = ""
         process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
+    }
+
+    value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {
+        process = ["deployment-process"]
     }
 }
