@@ -77,10 +77,6 @@ variable "Project.K8s.Image.VersionTag" {
     value "#{Octopus.Action.Package[trident].PackageVersion}" {}
 }
 
-variable "Project.Formatted.Branch.Name" {
-    value "#{Project.Release.Branch.Name | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {}
-}
-
 variable "Project.ChangeReport.Path" {
     value "../../#{Octopus.Project.Name}/#{Octopus.Release.Number}/#{Octopus.Environment.Name}" {}
 }
@@ -100,5 +96,16 @@ variable "spec:rules:0:host" {
 
     value "trident#{Project.Formatted.Branch.Name}dev.local" {
         environment = ["development"]
+    }
+}
+
+variable "Project.Formatted.Branch.Name" {
+    value "#{Project.Release.Branch.Name | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {
+        process = ["deployment-process"]
+    }
+
+    value "#{Octopus.RunbookRun.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\"}" {
+        description = ""
+        process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
     }
 }
