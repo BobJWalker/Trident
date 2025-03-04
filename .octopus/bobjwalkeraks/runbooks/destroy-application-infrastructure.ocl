@@ -5,6 +5,7 @@ description = <<-EOT
         
         **Affects:** the SQL Server and the AKS cluster this application is running on.
         EOT
+environment_scope = "FromProjectLifecycles"
 
 connectivity_policy {
     allow_deployments_to_no_targets = true
