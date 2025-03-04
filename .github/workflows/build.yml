@@ -17,6 +17,7 @@ on:
     workflows: [Spin the Version Number]
     types:
       - completed
+  workflow_dispatch:
     
 
 env:    
