@@ -69,10 +69,6 @@ variable "stringData:connectionString" {
     }
 }
 
-variable "Project.K8s.Image.VersionTag" {
-    value "#{Octopus.Action.Package[trident].PackageVersion}" {}
-}
-
 variable "Project.ChangeReport.Path" {
     value "../../#{Octopus.Project.Name}/#{Octopus.Release.Number}/#{Octopus.Environment.Name}" {}
 }
@@ -92,4 +88,8 @@ variable "Project.URL.Local" {
     value "trident#{Project.Formatted.Branch.Name}dev.local" {
         environment = ["development"]
     }
+}
+
+variable "Project.K8s.Image.VersionTag" {
+    value "#{Octopus.Action.Package[Trident].PackageVersion}" {}
 }
