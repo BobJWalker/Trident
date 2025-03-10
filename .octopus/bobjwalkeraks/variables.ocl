@@ -35,10 +35,6 @@ variable "Project.ScriptToRun.Text" {
     }
 }
 
-variable "spec:template:spec:containers:0:image" {
-    value "bobjwalker99/trident:#{Octopus.Action.Package[Trident].PackageVersion}" {}
-}
-
 variable "Project.Connection.String" {
     value "Server=tcp:#{SQLServer.Server.Name},1433;Database=#{Project.Database.Name};User Id=#{SQLServer.User.Name};Password=#{SQLServer.User.Password};trustServerCertificate=true;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;" {}
 }
@@ -81,24 +77,6 @@ variable "Project.ChangeReport.Path" {
     value "../../#{Octopus.Project.Name}/#{Octopus.Release.Number}/#{Octopus.Environment.Name}" {}
 }
 
-variable "spec:rules:0:host" {
-    value "tridenttest.local" {
-        environment = ["test"]
-    }
-
-    value "tridentstaging.local" {
-        environment = ["staging"]
-    }
-
-    value "tridentprod.local" {
-        environment = ["production"]
-    }
-
-    value "trident#{Project.Formatted.Branch.Name}dev.local" {
-        environment = ["development"]
-    }
-}
-
 variable "Project.Formatted.Branch.Name" {
     value "#{Octopus.RunbookRun.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\"}" {
         description = ""
@@ -107,5 +85,11 @@ variable "Project.Formatted.Branch.Name" {
 
     value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {
         process = ["deployment-process"]
+    }
+}
+
+variable "Project.URL.Local" {
+    value "trident#{Project.Formatted.Branch.Name}dev.local" {
+        environment = ["development"]
     }
 }
