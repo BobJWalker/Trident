@@ -207,33 +207,36 @@ step "create-connectionstring-secret" {
     }
 }
 
-step "deploy-trident-website" {
-    name = "Deploy Trident Website"
+step "deploy-website-with-kustomize" {
+    name = "Deploy Website with Kustomize"
     properties = {
         Octopus.Action.TargetRoles = "trident-web"
     }
 
     action {
-        action_type = "Octopus.KubernetesDeployRawYaml"
+        action_type = "Octopus.Kubernetes.Kustomize"
         notes = <<-EOT
                 **Always Runs**
                 
-                Deploys the website container to the Kubernetes Cluster using a manifest file.
+                Deploys the website container to the Kubernetes Cluster using a Kustomzie
                 EOT
         properties = {
-            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-deployment.yaml"
             Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.Kustomize.OverlayPath = "k8s/overlays/#{Octopus.Environment.Name | ToLower}"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
-            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
-            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-deployment.yaml"
-            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
-            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
             Octopus.Action.Script.ScriptSource = "GitRepository"
+            Octopus.Action.SubstituteInFiles.TargetFiles = "**/kustomization.yaml"
             OctopusUseBundledTooling = "False"
         }
         worker_pool = "hosted-ubuntu"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
 
         packages "Trident" {
             acquisition_location = "NotAcquired"
