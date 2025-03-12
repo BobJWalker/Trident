@@ -31,7 +31,7 @@ step "configure-database-server" {
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-141"
             Octopus.Action.Template.Version = "17"
-            Run.Runbook.Api.Key = "#{Project.Runbook.Api.Key}"
+            Run.Runbook.Api.Key = "#{IaC.Runbook.API.Key}"
             Run.Runbook.AutoApproveManualInterventions = "No"
             Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
             Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
