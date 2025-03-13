@@ -91,13 +91,13 @@ jobs:
           files: "**/*"
           output_folder: packaged
 
-      - name: package database
+      - name: package sbom
         id: "package_sbom"
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
           package_id: Trident.Artifact.SBOM
           version: "${{ steps.determine_version.outputs.SemVer }}"  
-          base_path: ""          
+          base_path: "./"          
           files: "${{ steps.gensbom.outputs.fileName }}"
           output_folder: packaged
 
