@@ -120,6 +120,20 @@ jobs:
             Trident.Database.DbUp                     
           version: "${{ steps.determine_version.outputs.SemVer }}"
 
+      - name: Create Release for GitHub
+        id: create_release
+        uses: ncipollo/release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag: "${{ steps.determine_version.outputs.SemVer }}"
+          name: Release ${{ steps.determine_version.outputs.SemVer }}
+          body: |
+            Commit Message: ${{ github.event.head_commit.message }}
+          draft: false
+          prerelease:  ${{ github.ref == 'refs/heads/main' && 'false' || 'true' }}           
+          artifacts: "${{ steps.gensbom.outputs.fileName }},$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp/packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip,/tmp/testresults/*.trx"
+
       - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
         with:
@@ -128,18 +142,7 @@ jobs:
           release_number: "${{ steps.determine_version.outputs.SemVer }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}   
-          release_notes_file: ${{ steps.gensbom.outputs.fileName }}   
+          release_notes: "[GitHub Release](${{ steps.create_release.outputs.html_url }}) - includes build artifacts and SBOM"
           
-      - name: Create Release for GitHub
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: "${{ steps.determine_version.outputs.SemVer }}"
-          release_name: Release ${{ steps.determine_version.outputs.SemVer }}
-          body: |
-            Commit Message: ${{ github.event.head_commit.message }}
-          draft: false
-          prerelease:  ${{ github.ref == 'refs/heads/main' && 'false' || 'true' }}        
+             
       
