@@ -30,10 +30,7 @@ env:
   DOCKER_REPO: ${{ vars.DOCKER_HUB_REPO }}
 jobs:
   build_and_deploy:    
-    runs-on: ubuntu-latest 
-    outputs:
-      database: ${{ steps.changes.outputs.database }}            
-      sem_ver:  ${{ steps.determine_version.outputs.SemVer }}      
+    runs-on: ubuntu-latest     
     steps:      
       - uses: actions/checkout@v1
         with:
@@ -53,7 +50,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /config gitversion.yml
+            additionalArguments: /config gitversion.yml            
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -71,6 +68,10 @@ jobs:
         with:
           name: test-results
           path: /tmp/testresults
+
+      - name: Generate SBOM
+        id: gensbom
+        uses: advanced-security/generate-sbom-action@v1
 
       - name: Create artifacts folder
         run: |
@@ -126,7 +127,8 @@ jobs:
           channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
           release_number: "${{ steps.determine_version.outputs.SemVer }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
-          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}      
+          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}   
+          release_notes_file: ${{ steps.gensbom.outputs.fileName }}   
           
       - name: Create Release for GitHub
         id: create_release
