@@ -6,16 +6,15 @@ WORKDIR /app
 EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG APP_VERSION="2025.2.0"
 WORKDIR /src
 COPY ["Trident.Web/Trident.Web.csproj", "Trident.Web/"]
 RUN dotnet restore "Trident.Web/Trident.Web.csproj"
 COPY . .
 WORKDIR "/src/Trident.Web"
-RUN dotnet build "Trident.Web.csproj" -c Release -o /app/build /p:Version=$APP_VERSION
+RUN dotnet build "Trident.Web.csproj" -c Release -o /app/build 
 
 FROM build AS publish
-RUN dotnet publish "Trident.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false /p:Version=$APP_VERSION
+RUN dotnet publish "Trident.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
