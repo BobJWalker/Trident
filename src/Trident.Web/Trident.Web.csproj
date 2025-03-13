@@ -4,7 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Trident.Web</RootNamespace>
     <VersionPrefix>4.0.1</VersionPrefix>
-    <StartupObject>Trident.Web.Program</StartupObject>     
+    <StartupObject>Trident.Web.Program</StartupObject>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>       
   </PropertyGroup>
 
   <ItemGroup>
