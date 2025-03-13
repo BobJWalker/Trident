@@ -1,3 +1,4 @@
+using Allure.NUnit;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,7 @@ using Trident.Web.Core.Models.OctopusServerModels;
 
 namespace Trident.Web.Tests.BusinessLogic.Syncers
 {
+    [AllureNUnit]
     [TestFixture]
     public class EventSyncerTest
     {

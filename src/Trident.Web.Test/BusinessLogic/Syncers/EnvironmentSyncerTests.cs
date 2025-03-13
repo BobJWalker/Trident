@@ -1,3 +1,4 @@
+using Allure.NUnit;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Models;
 using Moq;
@@ -8,6 +9,7 @@ using Trident.Web.Core.Models.CompositeModels;
 
 namespace Trident.Web.Test.BusinessLogic.Syncers
 {
+    [AllureNUnit]
     [TestFixture]
     public class EnvironmentSyncerTest
     {

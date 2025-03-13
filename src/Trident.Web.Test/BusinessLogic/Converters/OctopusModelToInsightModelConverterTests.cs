@@ -1,9 +1,11 @@
+using Allure.NUnit;
 using Trident.Web.BusinessLogic.Converters;
 using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.OctopusServerModels;
 
 namespace Trident.Web.BusinessLogic.Tests.Converters
 {
+    [AllureNUnit]
     [TestFixture]
     public class OctopusModelToInsightModelConverterTests
     {

@@ -1,3 +1,4 @@
+using Allure.NUnit;
 using NUnit.Framework;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Constants;
@@ -5,6 +6,7 @@ using Trident.Web.Core.Models;
 
 namespace Trident.Web.BusinessLogic.Tests.Factories
 {
+    [AllureNUnit]
     [TestFixture]
     public class SyncModelFactoryTests
     {
