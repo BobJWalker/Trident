@@ -6,7 +6,7 @@ WORKDIR /app
 EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG APP_VERSION="6.0.7"
+ARG APP_VERSION="2025.2.0"
 WORKDIR /src
 COPY ["Trident.Web/Trident.Web.csproj", "Trident.Web/"]
 RUN dotnet restore "Trident.Web/Trident.Web.csproj"
