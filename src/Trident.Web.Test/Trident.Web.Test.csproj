@@ -26,7 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Trident.Web\Trident.Web.csproj" />
-    <Content Include="allureconfig.json">
+    <Content Include="allureConfig.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
