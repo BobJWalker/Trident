@@ -97,7 +97,7 @@ jobs:
         with:
           package_id: Trident.Artifact.SBOM
           version: "${{ steps.determine_version.outputs.SemVer }}"  
-          base_path: "$GITHUB_WORKSPACE"          
+          base_path: ""          
           files: "${{ steps.gensbom.outputs.fileName }}"
           output_folder: packaged
 
