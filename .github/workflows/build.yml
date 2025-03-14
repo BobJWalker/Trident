@@ -152,8 +152,4 @@ jobs:
           channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
           release_number: "${{ steps.determine_version.outputs.SemVer }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
-          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}   
-          release_notes: "[GitHub Release](${{ steps.create_release.outputs.html_url }}) - includes build artifacts and SBOM"
-          
-             
-      
+          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}                       
