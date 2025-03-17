@@ -122,7 +122,7 @@ jobs:
           packages: |
             packaged/**/*.zip 
       
-      - name: push database build information to Octopus
+      - name: push build information to Octopus
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |   
