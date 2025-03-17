@@ -15,6 +15,51 @@ step "calculate-deployment-mode" {
     }
 }
 
+step "attach-sbom-to-release" {
+    name = "Attach SBOM to Release"
+
+    action {
+        action_type = "Octopus.Script"
+        environments = ["development", "test"]
+        notes = <<-EOT
+                **Always Runs**
+                
+                In the first environment for each pipeline, extract the SBOM package and attach the file as an artifact to the release.
+                EOT
+        properties = {
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                $extractedPath = $OctopusParameters["Octopus.Action.Package[Trident.Artifact.SBOM].ExtractedPath"]
+                $releaseNumber = $OctopusParameters["Octopus.Release.Number"]
+                
+                # Get all .json files recursively
+                $jsonFiles = Get-ChildItem -Path $extractedPath -Filter *.json -Recurse
+                
+                # Iterate through each .json file
+                foreach ($file in $jsonFiles) {
+                    Write-Host "Processing file: $($file.FullName)"
+                    
+                    New-OctopusArtifact -Path "$($file.FullName)" -Name "$releaseNumber.SBOM.JSON"
+                }
+                EOT
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        packages "Trident.Artifact.SBOM" {
+            acquisition_location = "Server"
+            feed = "octopus-server-built-in"
+            package_id = "Trident.Artifact.SBOM"
+            properties = {
+                Extract = "True"
+                Purpose = ""
+                SelectionMode = "immediate"
+            }
+        }
+    }
+}
+
 step "configure-database-server" {
     condition = "Variable"
     name = "Configure Infrastructure"
@@ -31,7 +76,7 @@ step "configure-database-server" {
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-141"
             Octopus.Action.Template.Version = "17"
-            Run.Runbook.Api.Key = "#{Project.Runbook.Api.Key}"
+            Run.Runbook.Api.Key = "#{IaC.Runbook.API.Key}"
             Run.Runbook.AutoApproveManualInterventions = "No"
             Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
             Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
