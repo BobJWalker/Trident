@@ -140,6 +140,7 @@ jobs:
           tag: "${{ steps.determine_version.outputs.SemVer }}"
           name: Release ${{ steps.determine_version.outputs.SemVer }}
           body: |
+            Automatic Release creation by GitHub Action
             Commit Message: ${{ github.event.head_commit.message }}
           draft: false
           prerelease:  ${{ github.ref == 'refs/heads/main' && 'false' || 'true' }}           
