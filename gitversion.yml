@@ -21,7 +21,7 @@ strategies:
 - VersionInBranchName
 branches:
   main:
-    mode: ContinuousDeployment
+    mode: ContinuousDelivery
     label: ''
     increment: Patch
     prevent-increment:
