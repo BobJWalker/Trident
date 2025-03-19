@@ -95,128 +95,31 @@ step "configure-database-server" {
     }
 }
 
-step "build-delta-report" {
-    condition = "Variable"
-    name = "Build Delta Report"
-    properties = {
-        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
-    }
+step "deploy-databases" {
+    name = "Deploy Databases"
 
     action {
-        action_type = "Octopus.Script"
-        notes = <<-EOT
-                **Runs on Deployments Only**
-                
-                Generates a delta report as an artifact so DBAs and others can review what changes are going to go out.
-                EOT
+        action_type = "Octopus.ProcessTemplate"
         properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
-            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\" -changeReportDirectory \"#{Project.ChangeReport.Path}\""
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-            OctopusUseBundledTooling = "False"
-        }
-        worker_pool = "hosted-ubuntu"
-
-        packages "Trident.Database.DbUp" {
-            acquisition_location = "Server"
-            feed = "octopus-server-built-in"
-            package_id = "Trident.Database.DbUp"
-            properties = {
-                Extract = "True"
-                Purpose = ""
-                SelectionMode = "immediate"
-            }
-        }
-    }
-}
-
-step "notify-dbas-of-pending-approval" {
-    condition = "Variable"
-    name = "Notify DBAs of Pending Changes"
-    properties = {
-        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
-    }
-
-    action {
-        environments = ["staging"]
-        notes = <<-EOT
-                **Runs on Deployments Only**
-                
-                Notifies the DBA of a pending changes so they can review them prior to the migration running. 
-                EOT
-        properties = {
-            Octopus.Action.Template.Id = "ActionTemplates-101"
-            Octopus.Action.Template.Version = "15"
-            OctopusUseBundledTooling = "False"
-            ssn_Channel = "trident-approvals"
-            ssn_Color = "warning"
-            ssn_HookUrl = "#{Notification.Slack.Webhook.Url}"
-            ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
-            ssn_Message = "#{Notification.Body.Text}"
-            ssn_Title = "#{Notification.ManualIntervention.Subject.Text}"
-            ssn_Username = "Octopus Deploy"
-        }
-        worker_pool = "hosted-ubuntu"
-    }
-}
-
-step "dba-review-migration" {
-    condition = "Variable"
-    name = "DBA Review Migration"
-    properties = {
-        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
-    }
-    start_trigger = "StartWithPrevious"
-
-    action {
-        action_type = "Octopus.Manual"
-        environments = ["staging"]
-        notes = <<-EOT
-                **Runs on Deployments Only**
-                
-                Pauses the deployment so the DBA can review the migration report.  
-                EOT
-        properties = {
-            Octopus.Action.Manual.BlockConcurrentDeployments = "False"
-            Octopus.Action.Manual.Instructions = "Please review and verify the migration database report matches your expectations."
-            Octopus.Action.Manual.ResponsibleTeamIds = "global/octopus-managers"
+            Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-database"
+            Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
             Octopus.Action.RunOnServer = "false"
+            Template.Database.ChangeReportDirectory = "#{Project.ChangeReport.Path}"
+            Template.Database.ConnectionString = "#{Project.Connection.String}"
+            Template.Database.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
+            Template.DbUp.Executable = "Trident.Database.DbUp.dll"
+            Template.Notification.Email = "bob.walker@octopus.com"
+            Template.Skip.OptionalSteps = "True"
         }
-    }
-}
+        worker_pool_variable = ""
 
-step "deploy-database-changes" {
-    condition = "Variable"
-    name = "Deploy Database Changes"
-    properties = {
-        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
-    }
-
-    action {
-        action_type = "Octopus.Script"
-        notes = <<-EOT
-                **Runs on Deployments Only**
-                
-                Deploys all the pending database changes to the target environment
-                EOT
-        properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/DeployDatabaseChanges.ps1"
-            Octopus.Action.Script.ScriptParameters = "-connectionString \"#{Project.Connection.String}\" -extractedPath \"#{Octopus.Action.Package[Trident.Database.DbUp].ExtractedPath}\" -environmentName \"#{Octopus.Environment.Name}\""
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-            OctopusUseBundledTooling = "False"
-        }
-        worker_pool = "hosted-ubuntu"
-
-        packages "Trident.Database.DbUp" {
-            acquisition_location = "Server"
+        packages "Template.Database.Package" {
+            acquisition_location = ""
             feed = "octopus-server-built-in"
             package_id = "Trident.Database.DbUp"
             properties = {
-                Extract = "True"
-                Purpose = ""
-                SelectionMode = "immediate"
+                PackageParameterName = "Template.Database.Package"
+                SelectionMode = "deferred"
             }
         }
     }
