@@ -67,12 +67,6 @@ variable "Project.K8s.Namespace" {
     }
 }
 
-variable "stringData:connectionString" {
-    value "#{Project.Connection.String}" {
-        process = ["runbook/configure-database"]
-    }
-}
-
 variable "Project.K8s.Image.VersionTag" {
     value "#{Octopus.Action.Package[trident].PackageVersion}" {}
 }
@@ -108,4 +102,8 @@ variable "Project.Formatted.Branch.Name" {
     value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {
         process = ["deployment-process"]
     }
+}
+
+variable "stringData:connectionString" {
+    value "#{Project.Connection.String}" {}
 }
