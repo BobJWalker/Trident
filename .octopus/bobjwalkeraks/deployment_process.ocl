@@ -1,20 +1,3 @@
-step "calculate-deployment-mode" {
-    name = "Calculate Deployment Mode"
-
-    action {
-        notes = <<-EOT
-                **Always Runs**
-                
-                Step to determine if this run is a deployment, rollback, or re-deployment.
-                EOT
-        properties = {
-            Octopus.Action.Template.Id = "ActionTemplates-441"
-            Octopus.Action.Template.Version = "7"
-        }
-        worker_pool = "hosted-ubuntu"
-    }
-}
-
 step "attach-sbom-to-release" {
     name = "Attach SBOM to Release"
 
@@ -61,15 +44,11 @@ step "attach-sbom-to-release" {
 }
 
 step "configure-database-server" {
-    condition = "Variable"
     name = "Configure Infrastructure"
-    properties = {
-        Octopus.Step.ConditionVariableExpression = "#{unless Octopus.Deployment.Error}#{Octopus.Action[Calculate Deployment Mode].Output.RunOnDeploy}#{/unless}"
-    }
 
     action {
         notes = <<-EOT
-                **Runs on Deployments Only**
+                **Always Runs**
                 
                 Runs a runbook to verify the database and namespace application / environment exists.  If it doesn't exist, it will create it automatically.
                 EOT
