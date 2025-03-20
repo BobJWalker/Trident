@@ -13,10 +13,6 @@ on:
       - '.github/workflows/build.yml'
       - 'scripts/**'
       - 'gitversion.yml'
-  workflow_run:
-    workflows: [Spin the Version Number]
-    types:
-      - completed
   workflow_dispatch:
     
 
@@ -146,4 +142,22 @@ jobs:
           channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
           release_number: "${{ steps.determine_version.outputs.SemVer }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
-          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }}                       
+          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
+          
+      - name: update version file with latest version
+        uses: mikefarah/yq@master              
+        with:
+          cmd: |
+            yq -i '.runNumber = "${{ steps.determine_version.outputs.SemVer }}"' 'version.yml' 
+            yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'      
+      - id: commit_file_change
+        name: commit file change
+        run : |
+          git config --global user.name '${{ github.actor }}'
+          git config --global user.email '${{ github.actor }}@users.noreply.github.com'
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY                
+
+          git checkout "${GITHUB_REF:11}" 
+          git stage 'version.yml'
+          git commit -am "Updating previous version to ${{ steps.determine_version.outputs.SemVer }} and run number to ${{ github.run_number }}"
+          git push --set-upstream origin ${GITHUB_REF:11}  
