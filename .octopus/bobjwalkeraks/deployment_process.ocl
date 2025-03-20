@@ -84,6 +84,7 @@ step "deploy-databases" {
             Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
             Octopus.Action.RunOnServer = "false"
             "Octopus.Step[Build Delta Report].Action[Build Delta Report].WorkerPoolId" = "WorkerPools-3"
+            "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].WorkerPoolId" = "WorkerPools-3"
             "Octopus.Step[DBAs Approve Delta Script].Action[DBAs Approve Delta Script].Environments" = "Environments-81"
             "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].WorkerPoolId" = "WorkerPools-3"
             "Octopus.Step[Notify DBAs].Action[Notify DBAs].Environments" = "Environments-81"
