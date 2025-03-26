@@ -24,7 +24,22 @@ spec:
              valueFrom:
                secretKeyRef:
                  name: trident-credentials
-                 key: connectionString          
+                 key: connectionString  
+           - name: TRIDENT_SUMOLOGIC_URL
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: sumologicUrl
+           - name: TRIDENT_INSTANCE_URL
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: instanceUrl
+           - name: TRIDENT_INSTANCE_API_KEY
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: instanceApiKey
 ---
 apiVersion: v1
 kind: Service
