@@ -14,11 +14,7 @@ on:
       - '.github/workflows/build.yml'
       - 'scripts/**'
       - 'gitversion.yml'
-  workflow_dispatch:    
-  workflow_run:
-    workflows: [Auto Demo Creation]
-    types:
-      - completed
+  workflow_dispatch:      
 env:    
   OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}
   OCTOPUS_FEATURE_BRANCH_CHANNEL: ${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}  
