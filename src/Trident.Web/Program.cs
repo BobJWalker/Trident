@@ -86,6 +86,18 @@ namespace Trident.Web
             builder.Logging.ClearProviders();
             builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
+            var sumoUrl = Environment.GetEnvironmentVariable("TRIDENT_SUMOLOGIC_URL");
+
+            if (string.IsNullOrWhiteSpace(sumoUrl))
+            {
+                return;
+            }
+
+            if (sumoUrl == "blah")
+            {
+                return;
+            }
+
             var logConfig = new LoggingConfiguration();
             var sumoTarget = new SumoLogicTarget();
 

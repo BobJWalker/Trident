@@ -36,7 +36,7 @@ namespace Trident.Web.Controllers
         {            
             var allInstances = await _instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);      
 
-            if (allInstances.Items.Count == 0 && string.IsNullOrWhiteSpace(_metricConfiguration.DefaultInstanceUrl) == false)  
+            if (allInstances.Items.Count == 0 && string.IsNullOrWhiteSpace(_metricConfiguration.DefaultInstanceUrl) == false && _metricConfiguration.DefaultInstanceUrl != "blah")  
             {
                 _logger.LogDebug("No instances found, creating default instance");
                 var defaultInstance = new InstanceModel
