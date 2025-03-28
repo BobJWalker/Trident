@@ -40,6 +40,11 @@ spec:
                secretKeyRef:
                  name: trident-credentials
                  key: instanceApiKey
+           - name: TRIDENT_ENVIRONMENT
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: environment
 ---
 apiVersion: v1
 kind: Service
