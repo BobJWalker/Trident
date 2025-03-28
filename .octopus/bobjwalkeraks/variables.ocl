@@ -90,7 +90,7 @@ variable "stringData:connectionString" {
 }
 
 variable "Octopus.ServiceNow.ChangeRequest.Number" {
-    value "" {
+    value "CHG0030003" {
         environment = ["production"]
         process = ["deployment-process"]
 
