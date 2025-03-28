@@ -3,7 +3,7 @@ step "attach-sbom-to-release" {
 
     action {
         action_type = "Octopus.Script"
-        environments = ["development", "test"]
+        environments = ["development", "production"]
         notes = <<-EOT
                 **Always Runs**
                 
