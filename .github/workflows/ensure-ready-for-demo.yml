@@ -1,9 +1,9 @@
-name: Spin the Version Number
+name: Auto Demo Creation
 
 on:
     workflow_dispatch:
-    ##schedule:
-    ##- cron: '*/45 0-2,13-23 * * 1-5'
+    schedule:
+    - cron: '*/45 7-20 * * 1-5'
 jobs:
     Update_Version:
         runs-on: ubuntu-latest                
@@ -38,13 +38,13 @@ jobs:
                     $timeWaiting = $currentDate - $task.Created
                     Write-Host "Task $($task.Id) has been waiting for $($timeWaiting.TotalMinutes) minutes"
                 
-                    if ($timeWaiting.TotalMinutes -ge 15)
+                    if ($timeWaiting.TotalMinutes -ge 5)
                     {
-                        Write-Host "The task has been waiting for approval for over 15 minutes.  Approving it now."
+                        Write-Host "The task has been waiting for approval for over 5 minutes.  Approving it now."
                 
                         $body = @{
                             Instructions= $null
-                            Notes = "Auto-Approving because it was pending for over 15 minutes"
+                            Notes = "Auto-Approving because it was pending for over 5 minutes"
                             Result = "Proceed"  
                         } | ConvertTo-Json
                 
@@ -56,7 +56,7 @@ jobs:
                     }
                     else
                     {
-                        Write-Host "The task has not been waiting for approval for 15 minutes yet.  Skipping approval."
+                        Write-Host "The task has not been waiting for approval for 5 minutes yet.  Skipping approval."
                     }
                 }
             - name: Check_for_existing_releases
@@ -67,7 +67,7 @@ jobs:
                 $spaceName = '${{ vars.OCTOPUS_SPACE }}'
                 $projectName = '${{ vars.OCTOPUS_PROJECT_NAME }}'                
 
-                $stagingEnvironmentName = 'Staging'
+                $environmentName = 'Production'
 
                 $header = @{ "X-Octopus-ApiKey" = $apiKey }
 
@@ -76,14 +76,14 @@ jobs:
                 $project = (Invoke-RestMethod -Method Get -Uri "$instanceURL/api/$($space.Id)/projects/all" -Headers $header) | Where-Object {$_.Name -eq $projectName}
 
                 Write-Host "Pulling Octopus Progression information for $projectName in $spaceName"
-                $progessionResults = (Invoke-RestMethod "$($instanceURL)/api/$($space.Id)/projects/$($Project.id)/progression" -Method Get -Headers $header)
+                $progressionResults = (Invoke-RestMethod "$($instanceURL)/api/$($space.Id)/projects/$($Project.id)/progression" -Method Get -Headers $header)
 
-                Write-Host "Getting environment information for $stagingEnvironmentName"                
-                $stagingEnvironment = $progessionResults.Environments | Where-Object {$_.Name -eq $stagingEnvironmentName}
+                Write-Host "Getting environment information for $environmentName"                
+                $stagingEnvironment = $progressionResults.Environments | Where-Object {$_.Name -eq $environmentName}
                 
                 $createNewRelease = $true
 
-                foreach ($release in $progessionResults.Releases)
+                foreach ($release in $progressionResults.Releases)
                 {
                     Write-Host "Checking release $($release.Release.Version) for $projectName in $spaceName"
                     if ($release.Channel.Name -ne "Release")
@@ -97,7 +97,7 @@ jobs:
                     {
                         if ($nextDeploymentId -eq $stagingEnvironment.Id)
                         {
-                            Write-Host "Staging environment is the next deployment for $($release.Release.Version)"
+                            Write-Host "$environmentName environment is the next deployment for $($release.Release.Version)"
                             $createNewRelease = $false
                         }
                     }
@@ -110,14 +110,10 @@ jobs:
                 }
 
                 $eventName = '${{github.event_name}}'
-                if ($createNewRelease -eq $false -and $eventName -ne 'workflow_dispatch')
+                if ($createNewRelease -eq $false)
                 {
                   gh run cancel ${{ github.run_id }}
                   gh run watch ${{ github.run_id }}
-                }
-                elseif ($createNewRelease -eq $false -and $eventName -eq 'workflow_dispatch')
-                {
-                  Write-Host "This is a manual run.  Skipping the check for existing releases."                  
                 }
                 else
                 {
@@ -128,32 +124,4 @@ jobs:
                 OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}  
                 OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}
                 OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
-                OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}  
-            - name: Install GitVersion
-              uses: gittools/actions/gitversion/setup@v1
-              with:
-                  versionSpec: 6.0.5
-            - id: determine_version
-              name: Determine Version
-              uses: gittools/actions/gitversion/execute@v1
-              with:
-                  additionalArguments: /config gitversion.yml
-            - name: update version file with latest version
-              uses: mikefarah/yq@master              
-              with:
-                cmd: yq -i '.runNumber = "${{ steps.determine_version.outputs.SemVer }}"' 'version.yml' 
-            - name: update version file with latest run number
-              uses: mikefarah/yq@master              
-              with:
-                cmd: yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'              
-            - id: commit_file_change
-              name: commit file change
-              run : |
-                git config --global user.name '${{ github.actor }}'
-                git config --global user.email '${{ github.actor }}@users.noreply.github.com'
-                git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY                
-
-                git checkout "${GITHUB_REF:11}" 
-                git stage 'version.yml'
-                git commit -am "Updating prvious version to ${{ steps.determine_version.outputs.SemVer }} and run number to ${{ github.run_number }}"
-                git push --set-upstream origin ${GITHUB_REF:11}                  
+                OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}                 
