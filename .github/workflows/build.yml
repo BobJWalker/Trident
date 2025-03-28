@@ -14,9 +14,11 @@ on:
       - '.github/workflows/build.yml'
       - 'scripts/**'
       - 'gitversion.yml'
-  workflow_dispatch:
-    
-
+  workflow_dispatch:    
+  workflow_run:
+    workflows: [Auto Demo Creation]
+    types:
+      - completed
 env:    
   OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}
   OCTOPUS_FEATURE_BRANCH_CHANNEL: ${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}  
@@ -135,15 +137,6 @@ jobs:
             Commit Message: ${{ github.event.head_commit.message }}
           draft: false          
           artifacts: "${{ steps.gensbom.outputs.fileName }},$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp/packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip,/tmp/testresults/*.trx"
-
-      - name: create release in Octopus
-        uses: OctopusDeploy/create-release-action@v3
-        with:
-          project: ${{ env.OCTOPUS_PROJECT_NAME }}
-          channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
-          release_number: "${{ steps.determine_version.outputs.SemVer }}"          
-          git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
-          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
           
       - name: update version file with latest version
         uses: mikefarah/yq@master              
@@ -162,3 +155,12 @@ jobs:
           git stage 'version.yml'
           git commit -am "TRID-18: Updating previous version to ${{ steps.determine_version.outputs.SemVer }} and run number to ${{ github.run_number }}"
           git push --set-upstream origin ${GITHUB_REF:11}  
+
+      - name: create release in Octopus
+        uses: OctopusDeploy/create-release-action@v3
+        with:
+          project: ${{ env.OCTOPUS_PROJECT_NAME }}
+          channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
+          release_number: "${{ steps.determine_version.outputs.SemVer }}"          
+          git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
+          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
