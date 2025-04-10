@@ -16,24 +16,24 @@ run_retention_policy {
 }
 
 process {
-    step "azure-sql-create-database-if-not-exists" {
-        name = "Azure SQL - Create Database Main Database If Not Exists"
+    step "sql-create-database-if-not-exists" {
+        name = "SQL - Create Database If Not Exists"
 
         action {
             notes = <<-EOT
                     **Always Runs**
                     
-                    Runs a script on the Azure Sql Server to ensure the database exists and is configured as a serverless general purpose database with 1 vCore.
+                    Runs a script on the Sql Server to ensure the database exists and is configured properly.
                     EOT
             properties = {
-                createCommandTimeout = "600"
+                createCommandTimeout = "30"
                 createDatabaseName = "#{Project.Database.Name}"
                 createSqlDatabaseRetryAttempts = "0"
                 createSqlLoginPasswordWhoHasRights = "#{SQLServer.User.Password}"
                 createSqlLoginUserWhoHasCreateUserRights = "#{SQLServer.User.Name}"
                 createSqlServer = "#{SQLServer.Server.Name}"
-                Octopus.Action.Template.Id = "ActionTemplates-481"
-                Octopus.Action.Template.Version = "0"
+                Octopus.Action.Template.Id = "ActionTemplates-21"
+                Octopus.Action.Template.Version = "5"
                 OctopusUseBundledTooling = "False"
             }
             worker_pool = "homelab-k8s"
