@@ -28,7 +28,12 @@ step "attach-sbom-to-release" {
             Octopus.Action.Script.Syntax = "PowerShell"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
 
         packages "Trident.Artifact.SBOM" {
             acquisition_location = "Server"
@@ -55,6 +60,7 @@ step "configure-database-server" {
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-141"
             Octopus.Action.Template.Version = "17"
+            OctopusUseBundledTooling = "False"
             Run.Runbook.Api.Key = "#{IaC.Runbook.API.Key}"
             Run.Runbook.AutoApproveManualInterventions = "No"
             Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
@@ -70,7 +76,12 @@ step "configure-database-server" {
             Run.Runbook.UsePublishedSnapShot = "True"
             Run.Runbook.Waitforfinish = "True"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
 
@@ -83,10 +94,13 @@ step "deploy-databases" {
             Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-database"
             Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
             Octopus.Action.RunOnServer = "false"
-            "Octopus.Step[Build Delta Report].Action[Build Delta Report].WorkerPoolId" = "WorkerPools-3"
-            "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].WorkerPoolId" = "WorkerPools-3"
+            "Octopus.Step[Build Delta Report].Action[Build Delta Report].Container" = "{\"Image\":\"#{Project.ExecutionContainer.K8s}\",\"FeedId\":\"Feeds-1283\",\"GitUrl\":null,\"Dockerfile\":null}"
+            "Octopus.Step[Build Delta Report].Action[Build Delta Report].WorkerPoolId" = "WorkerPools-423"
+            "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].Container" = "{\"Image\":\"#{Project.ExecutionContainer.K8s}\",\"FeedId\":\"Feeds-1283\",\"GitUrl\":null,\"Dockerfile\":null}"
+            "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].WorkerPoolId" = "WorkerPools-423"
             "Octopus.Step[DBAs Approve Delta Script].Action[DBAs Approve Delta Script].Environments" = "Environments-81"
-            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].WorkerPoolId" = "WorkerPools-3"
+            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].Container" = "{\"Image\":\"#{Project.ExecutionContainer.K8s}\",\"FeedId\":\"Feeds-1283\",\"GitUrl\":null,\"Dockerfile\":null}"
+            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].WorkerPoolId" = "WorkerPools-423"
             "Octopus.Step[Notify DBAs].Action[Notify DBAs].Environments" = "Environments-81"
             Template.Database.ChangeReportDirectory = "#{Project.ChangeReport.Path}"
             Template.Database.ConnectionString = "#{Project.Connection.String}"
@@ -196,7 +210,12 @@ step "verify-deployment" {
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
 
@@ -216,7 +235,12 @@ step "update-load-balancer" {
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
 
@@ -243,6 +267,11 @@ step "notify-team-of-deployment-status" {
             ssn_Title = "#{Notification.DeploymentStatus.Subject.Text}"
             ssn_Username = "Octopus Deploy"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
     }
 }
