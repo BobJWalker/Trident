@@ -105,9 +105,8 @@ step "deploy-databases" {
             Template.Database.ChangeReportDirectory = "#{Project.ChangeReport.Path}"
             Template.Database.ConnectionString = "#{Project.Connection.String}"
             Template.Database.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
-            Template.DbUp.Executable = "Trident.Database.DbUp.dll"
+            Template.DbUp.Executable = "Trident.Database.DbUp"
             Template.Notification.Email = "bob.walker@octopus.com"
-            Template.Skip.OptionalSteps = "True"
         }
         worker_pool_variable = ""
 
