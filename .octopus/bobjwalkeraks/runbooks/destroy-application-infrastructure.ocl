@@ -17,13 +17,13 @@ run_retention_policy {
 
 process {
     step "azure-sql-delete-tenanted-database" {
-        name = "Azure SQL Delete Main Database"
+        name = "SQL Delete Main Database"
 
         action {
             notes = <<-EOT
                     **Always Runs**
                     
-                    Deletes the main database from Azure SQL Server
+                    Deletes the database from SQL Server
                     EOT
             properties = {
                 createSqlLoginPasswordWhoHasRights = "#{SQLServer.User.Password}"
@@ -35,7 +35,12 @@ process {
                 Octopus.Action.Template.Version = "1"
                 OctopusUseBundledTooling = "False"
             }
-            worker_pool = "hosted-ubuntu"
+            worker_pool = "homelab-k8s"
+
+            container {
+                feed = "dockerhub"
+                image = "#{Project.ExecutionContainer.K8s}"
+            }
         }
     }
 
@@ -74,6 +79,11 @@ process {
                 OctopusUseBundledTooling = "False"
             }
             worker_pool = "azure-aks"
+
+            container {
+                feed = "dockerhub"
+                image = "#{Project.ExecutionContainer.K8s}"
+            }
         }
     }
 
@@ -99,7 +109,12 @@ process {
                 ssn_Title = "#{Notification.RunbookStatus.Subject.Text}"
                 ssn_Username = "Octopus Deploy"
             }
-            worker_pool = "hosted-ubuntu"
+            worker_pool = "homelab-k8s"
+
+            container {
+                feed = "dockerhub"
+                image = "#{Project.ExecutionContainer.K8s}"
+            }
         }
     }
 }
