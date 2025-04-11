@@ -16,6 +16,49 @@ run_retention_policy {
 }
 
 process {
+    step "delete-kubernetes-namespace" {
+        name = "Delete Kubernetes Namespace"
+        properties = {
+            Octopus.Action.TargetRoles = "trident-web"
+        }
+
+        action {
+            action_type = "Octopus.KubernetesRunScript"
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Deletes the tenant namespace from the Kubernetes Cluster.
+                    EOT
+            properties = {
+                Octopus.Action.KubernetesContainers.Namespace = "default"
+                Octopus.Action.Script.ScriptBody = <<-EOT
+                    $namespace = $OctopusParameters["Project.K8s.Namespace"]
+                    
+                    kubectl delete namespace $namespace --now --wait
+                        
+                    if ($lastexitcode -eq 0)
+                    {
+                         write-host "The namespace $namespace was successfully deleted."
+                    }
+                    else
+                    {
+                         Write-Host "There was an error deleting the namespace $namespace.  Please check the Cluster UI to verify a deletion has occurred."
+                         Exit 0
+                    }
+                    EOT
+                Octopus.Action.Script.ScriptSource = "Inline"
+                Octopus.Action.Script.Syntax = "PowerShell"
+                OctopusUseBundledTooling = "False"
+            }
+            worker_pool = "azure-aks"
+
+            container {
+                feed = "dockerhub"
+                image = "#{Project.ExecutionContainer.K8s}"
+            }
+        }
+    }
+
     step "azure-sql-delete-tenanted-database" {
         name = "SQL Delete Main Database"
 
@@ -36,49 +79,6 @@ process {
                 OctopusUseBundledTooling = "False"
             }
             worker_pool = "homelab-k8s"
-
-            container {
-                feed = "dockerhub"
-                image = "#{Project.ExecutionContainer.K8s}"
-            }
-        }
-    }
-
-    step "delete-kubernetes-namespace" {
-        name = "Delete Kubernetes Namespace"
-        properties = {
-            Octopus.Action.TargetRoles = "trident-web"
-        }
-
-        action {
-            action_type = "Octopus.KubernetesRunScript"
-            notes = <<-EOT
-                    **Always Runs**
-                    
-                    Deletes the tenant namespace from the Kubernetes Cluster.
-                    EOT
-            properties = {
-                Octopus.Action.KubernetesContainers.Namespace = "default"
-                Octopus.Action.Script.ScriptBody = <<-EOT
-                    $namespace = $OctopusParameters["Project.K8s.Namespace"]
-                    
-                    kubectl delete namespace $namespace
-                        
-                    if ($lastexitcode -eq 0)
-                    {
-                         write-host "The namespace $namespace was successfully deleted."
-                    }
-                    else
-                    {
-                         Write-Host "There was an error deleting the namespace $namespace.  Please check the Cluster UI to verify a deletion has occurred."
-                         Exit 0
-                    }
-                    EOT
-                Octopus.Action.Script.ScriptSource = "Inline"
-                Octopus.Action.Script.Syntax = "PowerShell"
-                OctopusUseBundledTooling = "False"
-            }
-            worker_pool = "azure-aks"
 
             container {
                 feed = "dockerhub"
