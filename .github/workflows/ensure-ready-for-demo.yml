@@ -3,7 +3,7 @@ name: Auto Demo Creation
 on:
     workflow_dispatch:
     schedule:
-    - cron: '*/45 7-20 * * 1-5'
+    - cron: '*/20 7-20 * * 1-5'
 jobs:
     Update_Version:
         runs-on: ubuntu-latest                
@@ -58,70 +58,4 @@ jobs:
                     {
                         Write-Host "The task has not been waiting for approval for 5 minutes yet.  Skipping approval."
                     }
-                }
-            - name: Check_for_existing_releases
-              shell: pwsh
-              run: |
-                $instanceURL = '${{ vars.OCTOPUS_SERVER_URL }}'
-                $apiKey = '${{ secrets.OCTOPUSSERVERAPIKEY }} '
-                $spaceName = '${{ vars.OCTOPUS_SPACE }}'
-                $projectName = '${{ vars.OCTOPUS_PROJECT_NAME }}'                
-
-                $environmentName = 'Production'
-
-                $header = @{ "X-Octopus-ApiKey" = $apiKey }
-
-                Write-Host "Pulling Octopus Space and Project information for $projectName in $spaceName"
-                $space = (Invoke-RestMethod -Method Get -Uri "$instanceURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
-                $project = (Invoke-RestMethod -Method Get -Uri "$instanceURL/api/$($space.Id)/projects/all" -Headers $header) | Where-Object {$_.Name -eq $projectName}
-
-                Write-Host "Pulling Octopus Progression information for $projectName in $spaceName"
-                $progressionResults = (Invoke-RestMethod "$($instanceURL)/api/$($space.Id)/projects/$($Project.id)/progression" -Method Get -Headers $header)
-
-                Write-Host "Getting environment information for $environmentName"                
-                $stagingEnvironment = $progressionResults.Environments | Where-Object {$_.Name -eq $environmentName}
-                
-                $createNewRelease = $true
-
-                foreach ($release in $progressionResults.Releases)
-                {
-                    Write-Host "Checking release $($release.Release.Version) for $projectName in $spaceName"
-                    if ($release.Channel.Name -ne "Release")
-                    {
-                        Write-Host "Skipping release $($release.Release.Version) because it is not a Release channel"
-                        continue
-                    }
-
-                    Write-Host "Checking the next deployments for $($release.Release.Version)"    
-                    foreach ($nextDeploymentId in $release.NextDeployments)
-                    {
-                        if ($nextDeploymentId -eq $stagingEnvironment.Id)
-                        {
-                            Write-Host "$environmentName environment is the next deployment for $($release.Release.Version)"
-                            $createNewRelease = $false
-                        }
-                    }
-
-                    if ($createNewRelease -eq $false)
-                    {
-                        Write-Host "Found a release that is ready to deploy to Staging.  Stopping the check."
-                        break
-                    }
-                }
-
-                $eventName = '${{github.event_name}}'
-                if ($createNewRelease -eq $false)
-                {
-                  gh run cancel ${{ github.run_id }}
-                  gh run watch ${{ github.run_id }}
-                }
-                else
-                {
-                  Write-Host "No releases are ready to deploy to Staging.  Proceeding with the workflow."
-                }
-              env:
-                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}  
-                OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}
-                OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
-                OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}                 
+                }             
