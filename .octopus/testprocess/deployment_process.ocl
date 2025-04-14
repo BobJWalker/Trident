@@ -1,0 +1,276 @@
+step "attach-sbom-to-release" {
+    name = "Attach SBOM to Release"
+
+    action {
+        action_type = "Octopus.Script"
+        environments = ["development", "production"]
+        notes = <<-EOT
+                **Always Runs**
+                
+                In the first environment for each pipeline, extract the SBOM package and attach the file as an artifact to the release.
+                EOT
+        properties = {
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                $extractedPath = $OctopusParameters["Octopus.Action.Package[Trident.Artifact.SBOM].ExtractedPath"]
+                $releaseNumber = $OctopusParameters["Octopus.Release.Number"]
+                
+                # Get all .json files recursively
+                $jsonFiles = Get-ChildItem -Path $extractedPath -Filter *.json -Recurse
+                
+                # Iterate through each .json file
+                foreach ($file in $jsonFiles) {
+                    Write-Host "Processing file: $($file.FullName)"
+                    
+                    New-OctopusArtifact -Path "$($file.FullName)" -Name "$releaseNumber.SBOM.JSON"
+                }
+                EOT
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
+
+        packages "Trident.Artifact.SBOM" {
+            acquisition_location = "Server"
+            feed = "octopus-server-built-in"
+            package_id = "Trident.Artifact.SBOM"
+            properties = {
+                Extract = "True"
+                Purpose = ""
+                SelectionMode = "immediate"
+            }
+        }
+    }
+}
+
+step "configure-database-server" {
+    name = "Configure Infrastructure"
+
+    action {
+        notes = <<-EOT
+                **Always Runs**
+                
+                Runs a runbook to verify the database and namespace application / environment exists.  If it doesn't exist, it will create it automatically.
+                EOT
+        properties = {
+            Octopus.Action.Template.Id = "ActionTemplates-141"
+            Octopus.Action.Template.Version = "17"
+            OctopusUseBundledTooling = "False"
+            Run.Runbook.Api.Key = "#{IaC.Runbook.API.Key}"
+            Run.Runbook.AutoApproveManualInterventions = "No"
+            Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
+            Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
+            Run.Runbook.CancelInSeconds = "1800"
+            Run.Runbook.DateTime = "N/A"
+            Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
+            Run.Runbook.Machines = "N/A"
+            Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
+            Run.Runbook.Name = "Configure Application Infrastructure"
+            Run.Runbook.Project.Name = "#{Octopus.Project.Name}"
+            Run.Runbook.Space.Name = "#{Octopus.Space.Name}"
+            Run.Runbook.UsePublishedSnapShot = "True"
+            Run.Runbook.Waitforfinish = "True"
+        }
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
+    }
+}
+
+step "deploy-databases" {
+    name = "Deploy Databases"
+
+    action {
+        action_type = "Octopus.ProcessTemplate"
+        properties = {
+            Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-database"
+            Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
+            Octopus.Action.RunOnServer = "false"
+            "Octopus.Step[Build Delta Report].Action[Build Delta Report].Container" = "{\"Image\":\"#{Project.ExecutionContainer.K8s}\",\"FeedId\":\"Feeds-1283\",\"GitUrl\":null,\"Dockerfile\":null}"
+            "Octopus.Step[Build Delta Report].Action[Build Delta Report].WorkerPoolId" = "WorkerPools-423"
+            "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].Container" = "{\"Image\":\"#{Project.ExecutionContainer.K8s}\",\"FeedId\":\"Feeds-1283\",\"GitUrl\":null,\"Dockerfile\":null}"
+            "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].WorkerPoolId" = "WorkerPools-423"
+            "Octopus.Step[DBAs Approve Delta Script].Action[DBAs Approve Delta Script].Environments" = "Environments-81"
+            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].Container" = "{\"Image\":\"#{Project.ExecutionContainer.K8s}\",\"FeedId\":\"Feeds-1283\",\"GitUrl\":null,\"Dockerfile\":null}"
+            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].WorkerPoolId" = "WorkerPools-423"
+            "Octopus.Step[Notify DBAs].Action[Notify DBAs].Environments" = "Environments-81"
+            Template.Database.ChangeReportDirectory = "#{Project.ChangeReport.Path}"
+            Template.Database.ConnectionString = "#{Project.Connection.String}"
+            Template.Database.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
+            Template.DbUp.Executable = "Trident.Database.DbUp"
+            Template.Notification.Email = "bob.walker@octopus.com"
+        }
+        worker_pool_variable = ""
+
+        packages "Template.Database.Package" {
+            acquisition_location = ""
+            feed = "octopus-server-built-in"
+            package_id = "Trident.Database.DbUp"
+            properties = {
+                PackageParameterName = "Template.Database.Package"
+                SelectionMode = "deferred"
+            }
+        }
+    }
+}
+
+step "create-connectionstring-secret" {
+    name = "Create ConnectionString Secret"
+    properties = {
+        Octopus.Action.TargetRoles = "trident-web"
+    }
+
+    action {
+        action_type = "Octopus.KubernetesDeployRawYaml"
+        notes = <<-EOT
+                **Always Runs**
+                
+                Ensures the connection string secret has been properly created.
+                EOT
+        properties = {
+            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-app-secrets.yaml"
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-app-secrets.yaml"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
+            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "hosted-ubuntu"
+    }
+}
+
+step "deploy-trident-website" {
+    name = "Deploy Trident Website"
+    properties = {
+        Octopus.Action.TargetRoles = "trident-web"
+    }
+
+    action {
+        action_type = "Octopus.KubernetesDeployRawYaml"
+        notes = <<-EOT
+                **Always Runs**
+                
+                Deploys the website container to the Kubernetes Cluster using a manifest file.
+                EOT
+        properties = {
+            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-deployment.yaml"
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-deployment.yaml"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
+            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "hosted-ubuntu"
+
+        packages "Trident" {
+            acquisition_location = "NotAcquired"
+            feed = "dockerhub"
+            package_id = "bobjwalker99/trident"
+            properties = {
+                Extract = "False"
+                Purpose = "DockerImageReference"
+                SelectionMode = "immediate"
+            }
+        }
+    }
+}
+
+step "verify-deployment" {
+    name = "Verify Deployment"
+
+    action {
+        action_type = "Octopus.Script"
+        notes = <<-EOT
+                **Always runs**
+                
+                Runs a series of tests to ensure the deployment was successful.
+                EOT
+        properties = {
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Script.ScriptFileName = "scripts/VerifySuccessfulDeployment.ps1"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
+    }
+}
+
+step "update-load-balancer" {
+    name = "Update Load Balancer"
+
+    action {
+        action_type = "Octopus.Script"
+        notes = <<-EOT
+                **Always Runs**
+                
+                When the verification is successful, the script will update the load balancer to point to the new version of the application. 
+                EOT
+        properties = {
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Script.ScriptFileName = "scripts/UpdateLoadBalancer.ps1"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
+    }
+}
+
+step "notify-team-of-deployment-status" {
+    condition = "Always"
+    name = "Notify Team of Deployment Status"
+
+    action {
+        channels = ["release"]
+        notes = <<-EOT
+                **Always Runs**
+                
+                Notifies the team of the deployment status of the application.
+                EOT
+        properties = {
+            Octopus.Action.Template.Id = "ActionTemplates-101"
+            Octopus.Action.Template.Version = "15"
+            OctopusUseBundledTooling = "False"
+            ssn_Channel = "trident-status"
+            ssn_Color = "#{unless Octopus.Deployment.Error}good#{else}danger#{/unless}"
+            ssn_HookUrl = "#{Notification.Slack.Webhook.Url}"
+            ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
+            ssn_Message = "#{Notification.Body.Text}"
+            ssn_Title = "#{Notification.DeploymentStatus.Subject.Text}"
+            ssn_Username = "Octopus Deploy"
+        }
+        worker_pool = "homelab-k8s"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
+    }
+}
