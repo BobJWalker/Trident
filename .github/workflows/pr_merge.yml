@@ -14,14 +14,18 @@ env:
   OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}
 jobs:
   destroy-feature-branch:       
-    runs-on: ubuntu-latest        
+    runs-on: ubuntu-latest  
+    permissions:
+      # Add any additional permissions your job requires here
+      id-token: write # This is required to obtain the ID token from GitHub Actions
+      contents: read # For example: this is required to check out code, remove if not needed      
     steps:
       - name: Login to Octopus Deploy 
         uses: OctopusDeploy/login@v1
         with: 
           server: ${{ env.OCTOPUS_URL }}
           service_account_id: ${{ env.OCTOPUS_OIDC_SERVICE_ACCOUNT}}
-          
+
       - name: run destroy infrastructure runbook
         uses: OctopusDeploy/run-runbook-action@v3
         with:
