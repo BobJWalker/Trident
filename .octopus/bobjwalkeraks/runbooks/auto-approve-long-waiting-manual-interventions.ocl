@@ -14,4 +14,91 @@ run_retention_policy {
     quantity_to_keep = 100
 }
 
-process {}
+process {
+    step "auto-approve-manual-interventions" {
+        name = "Auto Approve Manual Interventions"
+
+        action {
+            action_type = "Octopus.Script"
+            properties = {
+                Octopus.Action.Script.ScriptBody = <<-EOT
+                    $instanceURL = $OctopusParameters["Octopus.Web.BaseUrl"]
+                    $apiKey =  $OctopusParameters["IaC.Runbook.API.Key"]
+                    $spaceName = $OctopusParameters["Octopus.Space.Name"]
+                    
+                    $header = @{ "X-Octopus-ApiKey" = $apiKey }
+                    
+                    Write-Host "Pulling Octopus Space and Project information for $spaceName"
+                    $space = (Invoke-RestMethod -Method Get -Uri "$instanceURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
+                    $pendingTasks = Invoke-RestMethod -Method Get -Uri "$instanceURL/api/$($space.Id)/interruptions?pendingOnly=True" -Headers $header
+                    
+                    Write-Host "Found $($pendingTasks.Items.Count) awaiting manual intervention."
+                                    
+                    $currentDate = [DateTime]::UtcNow
+                    Write-Host "The current date is $currentDate"
+                                    
+                    foreach ($task in $pendingTasks.Items)
+                    {
+                      Write-Host "The pending task is $($task.Id) created at $($task.Created)"
+                      $timeWaiting = $currentDate - $task.Created
+                      Write-Host "Task $($task.Id) has been waiting for $($timeWaiting.TotalMinutes) minutes"
+                                    
+                      if ($timeWaiting.TotalMinutes -ge 5)
+                      {
+                        Write-Host "The task has been waiting for approval for over 5 minutes.  Approving it now."
+                                    
+                        $body = @{
+                          Instructions= $null
+                          Notes = "Auto-Approving because it was pending for over 5 minutes"
+                          Result = "Proceed"  
+                        } | ConvertTo-Json
+                                    
+                        # Take responsibility for the Intervention
+                        Invoke-RestMethod "$instanceURL/api/$($space.Id)/interruptions/$($task.Id)/responsible" -Method Put -Headers $header
+                                    
+                        #Approve/abort the intervention
+                        Invoke-RestMethod "$instanceURL/api/$($space.Id)/interruptions/$($task.Id)/submit" -Body $body -Method Post -Headers $header
+                      }
+                      else
+                      {
+                        Write-Host "The task has not been waiting for approval for 5 minutes yet.  Skipping approval."
+                      }
+                    }             
+                    EOT
+                Octopus.Action.Script.ScriptSource = "Inline"
+                Octopus.Action.Script.Syntax = "PowerShell"
+                OctopusUseBundledTooling = "False"
+            }
+            worker_pool = "homelab-k8s"
+
+            container {
+                feed = "dockerhub"
+                image = "#{Project.ExecutionContainer.K8s}"
+            }
+        }
+    }
+
+    step "notify-team-of-runbook-status" {
+        name = "Notify team of runbook status"
+
+        action {
+            properties = {
+                Octopus.Action.Template.Id = "ActionTemplates-101"
+                Octopus.Action.Template.Version = "15"
+                OctopusUseBundledTooling = "False"
+                ssn_Color = "good"
+                ssn_HookUrl = "#{Notification.Slack.Webhook.Url}"
+                ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
+                ssn_Message = "#{Notification.Body.Text}"
+                ssn_Title = "#{Notification.Subject.Text}"
+                ssn_Username = "Octopus Deploy"
+            }
+            worker_pool = "homelab-k8s"
+
+            container {
+                feed = "dockerhub"
+                image = "#{Project.ExecutionContainer.K8s}"
+            }
+        }
+    }
+}
