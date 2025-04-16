@@ -30,6 +30,9 @@ process {
                     
                     $header = @{ "X-Octopus-ApiKey" = $apiKey }
                     
+                    Write-Host "The endpoint to hit is $instanceUrl"
+                    Write-Host "The space to check is $spaceName"
+                    
                     Write-Host "Pulling Octopus Space and Project information for $spaceName"
                     $space = (Invoke-RestMethod -Method Get -Uri "$instanceURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
                     $pendingTasks = Invoke-RestMethod -Method Get -Uri "$instanceURL/api/$($space.Id)/interruptions?pendingOnly=True" -Headers $header
