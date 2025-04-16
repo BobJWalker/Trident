@@ -1,0 +1,17 @@
+name = "Auto Approve Long Waiting Manual Interventions"
+default_guided_failure_mode = "EnvironmentDefault"
+description = <<-EOT
+        **Action:** Looks at the current project and auto-approves any long-running manual interventions.
+        
+        **Affects:** Any deployments to the **Staging** environment.
+        EOT
+
+connectivity_policy {
+    allow_deployments_to_no_targets = true
+}
+
+run_retention_policy {
+    quantity_to_keep = 100
+}
+
+process {}
