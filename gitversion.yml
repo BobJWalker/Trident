@@ -21,7 +21,7 @@ strategies:
 - VersionInBranchName
 branches:
   main:
-    mode: ContinuousDelivery
+    mode: ContinuousDeployment
     label: ''
     increment: Patch
     track-merge-target: false
