@@ -29,7 +29,7 @@ jobs:
     permissions:
       # Add any additional permissions your job requires here
       id-token: write # This is required to obtain the ID token from GitHub Actions
-      contents: read # For example: this is required to check out code, remove if not needed    
+      contents: write
     steps:      
       - uses: actions/checkout@v1
         with:
