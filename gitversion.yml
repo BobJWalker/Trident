@@ -21,11 +21,9 @@ strategies:
 - VersionInBranchName
 branches:
   main:
-    mode: ContinuousDeployment
+    mode: ContinuousDelivery
     label: ''
     increment: Patch
-    prevent-increment:
-      of-merged-branch: true
     track-merge-target: false
     track-merge-message: true
     regex: ^master$|^main$
@@ -37,8 +35,8 @@ branches:
     pre-release-weight: 55000
   feature:
     mode: ContinuousDelivery
-    label: '{BranchName}'
-    increment: Patch
+    label: 'feature/{BranchName}'
+    increment: None
     prevent-increment:
       when-current-commit-tagged: false
     track-merge-message: true
@@ -51,7 +49,7 @@ branches:
   pull-request:
     mode: ContinuousDelivery
     label: PullRequest
-    increment: Inherit
+    increment: None
     prevent-increment:
       of-merged-branch: true
       when-current-commit-tagged: false
@@ -61,12 +59,13 @@ branches:
     source-branches:
     - main    
     - feature
+    - hotfix
     is-source-branch-for: []
     pre-release-weight: 30000    
   hotfix:
     mode: ContinuousDelivery
-    label: '{BranchName}'
-    increment: Patch
+    label: 'hotfix/{BranchName}'
+    increment: None
     prevent-increment:
       when-current-commit-tagged: false
     track-merge-message: true
