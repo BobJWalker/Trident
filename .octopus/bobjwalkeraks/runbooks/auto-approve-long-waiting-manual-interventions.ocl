@@ -24,7 +24,7 @@ process {
             action_type = "Octopus.Script"
             properties = {
                 Octopus.Action.Script.ScriptBody = <<-EOT
-                    $instanceURL = $OctopusParameters["Octopus.Web.BaseUrl"]
+                    $instanceURL = $OctopusParameters["Octopus.Web.ServerUri"]
                     $apiKey =  $OctopusParameters["IaC.Runbook.API.Key"]
                     $spaceName = $OctopusParameters["Octopus.Space.Name"]
                     
