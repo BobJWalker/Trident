@@ -35,7 +35,7 @@ branches:
     pre-release-weight: 55000
   feature:
     mode: ContinuousDelivery
-    label: 'nf_{BranchName}'
+    label: '{BranchName}'
     increment: None
     prevent-increment:
       when-current-commit-tagged: false
@@ -64,7 +64,7 @@ branches:
     pre-release-weight: 30000    
   hotfix:
     mode: ContinuousDelivery
-    label: 'hf_{BranchName}'
+    label: '{BranchName}'
     increment: None
     prevent-increment:
       when-current-commit-tagged: false
