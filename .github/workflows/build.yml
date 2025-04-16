@@ -20,7 +20,7 @@ env:
   OCTOPUS_FEATURE_BRANCH_CHANNEL: ${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}  
   OCTOPUS_RELEASE_CHANNEL: ${{ vars.OCTOPUS_RELEASE_CHANNEL }} 
   OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}
-  OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
+  OCTOPUS_OIDC_SERVICE_ACCOUNT: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }} 
   OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}
   DOCKER_REPO: ${{ vars.DOCKER_HUB_REPO }}
 jobs:
@@ -152,6 +152,11 @@ jobs:
           git commit -am "TRID-18: Updating previous version to ${{ steps.determine_version.outputs.SemVer }} and run number to ${{ github.run_number }}"
           git push --set-upstream origin ${GITHUB_REF:11}  
 
+      - name: Login to Octopus Deploy 
+        uses: OctopusDeploy/login@v1
+        with: 
+          server: ${{ env.OCTOPUS_URL }}
+          service_account_id: ${{ env.OCTOPUS_OIDC_SERVICE_ACCOUNT}}
       - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
         with:

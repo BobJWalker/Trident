@@ -2,8 +2,6 @@ name: Auto Demo Creation
 
 on:
     workflow_dispatch:
-    schedule:
-    - cron: '*/20 7-20 * * 1-5'
 jobs:
     Update_Version:
         runs-on: ubuntu-latest                

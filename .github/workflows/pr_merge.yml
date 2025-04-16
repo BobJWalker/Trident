@@ -10,12 +10,18 @@ env:
   OCTOPUS_RUNBOOK_NAME: "Destroy Application Infrastructure"
   OCTOPUS_ENVIRONMENT_NAME: "Development"
   OCTOPUS_SPACE: Default
-  OCTOPUS_API_KEY: ${{ secrets.OCTOPUSSERVERAPIKEY }}  
+  OCTOPUS_OIDC_SERVICE_ACCOUNT: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}   
   OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}
 jobs:
   destroy-feature-branch:       
     runs-on: ubuntu-latest        
     steps:
+      - name: Login to Octopus Deploy 
+        uses: OctopusDeploy/login@v1
+        with: 
+          server: ${{ env.OCTOPUS_URL }}
+          service_account_id: ${{ env.OCTOPUS_OIDC_SERVICE_ACCOUNT}}
+          
       - name: run destroy infrastructure runbook
         uses: OctopusDeploy/run-runbook-action@v3
         with:

@@ -38,14 +38,13 @@ branches:
   feature:
     mode: ContinuousDelivery
     label: '{BranchName}'
-    increment: Minor
+    increment: Patch
     prevent-increment:
       when-current-commit-tagged: false
     track-merge-message: true
     regex: ^feature?[/-](?<BranchName>.+)
     source-branches:
     - main
-    - release
     is-source-branch-for: []
     is-main-branch: false
     pre-release-weight: 30000  
@@ -60,8 +59,7 @@ branches:
     track-merge-message: true
     regex: ^(pull|pull\-requests|pr)[/-]
     source-branches:
-    - main
-    - release
+    - main    
     - feature
     is-source-branch-for: []
     pre-release-weight: 30000    
@@ -74,8 +72,7 @@ branches:
     track-merge-message: true
     regex: ^hotfix?[/-](?<BranchName>.+)
     source-branches:
-    - main
-    - release
+    - main    
     is-source-branch-for: []
     is-main-branch: false
     pre-release-weight: 30000 
