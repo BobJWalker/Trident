@@ -104,6 +104,11 @@ jobs:
         run: | 
             docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
       
+      - name: Login to Octopus Deploy 
+        uses: OctopusDeploy/login@v1
+        with: 
+          server: ${{ env.OCTOPUS_URL }}
+          service_account_id: ${{ env.OCTOPUS_OIDC_SERVICE_ACCOUNT}}
       - name: push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3
         with:
@@ -152,11 +157,6 @@ jobs:
           git commit -am "TRID-18: Updating previous version to ${{ steps.determine_version.outputs.SemVer }} and run number to ${{ github.run_number }}"
           git push --set-upstream origin ${GITHUB_REF:11}  
 
-      - name: Login to Octopus Deploy 
-        uses: OctopusDeploy/login@v1
-        with: 
-          server: ${{ env.OCTOPUS_URL }}
-          service_account_id: ${{ env.OCTOPUS_OIDC_SERVICE_ACCOUNT}}
       - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
         with:
