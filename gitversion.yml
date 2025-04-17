@@ -37,8 +37,6 @@ branches:
     mode: ContinuousDelivery
     label: '{BranchName}'
     increment: None
-    assembly-versioning-scheme: MajorMinor
-    assembly-file-versioning-scheme: MajorMinor
     prevent-increment:
       when-current-commit-tagged: false
     track-merge-message: true
