@@ -50,7 +50,7 @@ process {
                 Octopus.Action.Script.Syntax = "PowerShell"
                 OctopusUseBundledTooling = "False"
             }
-            worker_pool = "azure-aks"
+            worker_pool = "homelab-k8s"
 
             container {
                 feed = "dockerhub"
