@@ -38,14 +38,16 @@ jobs:
           
           if [ "$BRANCH_NAME" = "main" ]; then
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_RELEASE_CHANNEL }}" >> $GITHUB_ENV
-            echo "GIT_VERSION_ASSEMBLY_SCHEME=MajorMinorPatch" >> $GITHUB_ENV
+            echo "GIT_VERSION_ASSEMBLY_SCHEME={Major}.{Minor}.{Patch}" >> $GITHUB_ENV
             echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
-            echo "GIT_VERSION_MODE=ContinuousDeployment" >> $GITHUB_ENV        
+            echo "GIT_VERSION_MODE=ContinuousDeployment" >> $GITHUB_ENV 
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}" >> $GITHUB_ENV        
           else
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV
-            echo "GIT_VERSION_ASSEMBLY_SCHEME=MajorMinor" >> $GITHUB_ENV
+            echo "GIT_VERSION_ASSEMBLY_SCHEME={Major}.{Minor}.9999.{CommitsSinceVersionSource}" >> $GITHUB_ENV
             echo "GIT_VERSION_INCREMENT=None" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}-{PreReleaseTag}" >> $GITHUB_ENV
           fi
       - uses: actions/checkout@v1
         with:
@@ -58,7 +60,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /overrideconfig assembly-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /overrideconfig assembly-file-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /config gitversion.yml
+            additionalArguments: /overrideconfig assembly-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /overrideconfig assembly-file-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /format "${{ env.GIT_VERSION_FORMAT }}"
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -141,8 +143,8 @@ jobs:
           version: "${{ steps.determine_version.outputs.SemVer }}"  
           base_path: "./"          
           files: |
-            "${{ steps.gensbom.outputs.fileName }}"
-            "packagehashes.yaml"
+            ${{ steps.gensbom.outputs.fileName }}
+            packagehashes.yaml
           output_folder: packaged
 
       - name: Create Release for GitHub
