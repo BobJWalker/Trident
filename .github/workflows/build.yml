@@ -37,17 +37,15 @@ jobs:
           echo "Branch detected: $BRANCH_NAME"
           
           if [ "$BRANCH_NAME" = "main" ]; then
-            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_RELEASE_CHANNEL }}" >> $GITHUB_ENV
-            echo "GIT_VERSION_ASSEMBLY_SCHEME=MajorMinorPatch" >> $GITHUB_ENV
+            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_RELEASE_CHANNEL }}" >> $GITHUB_ENV            
             echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDeployment" >> $GITHUB_ENV 
             echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}" >> $GITHUB_ENV        
           else
-            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV
-            echo "GIT_VERSION_ASSEMBLY_SCHEME=MajorMinorPatchTag" >> $GITHUB_ENV
+            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV            
             echo "GIT_VERSION_INCREMENT=None" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
-            echo "GIT_VERSION_FORMAT={Major}.{Minor}-{PreReleaseTag}" >> $GITHUB_ENV
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
           fi
       - uses: actions/checkout@v1
         with:
@@ -60,7 +58,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /overrideconfig assembly-file-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig assembly-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /overrideconfig update-build-number=true
+            additionalArguments: /overrideconfig assembly-file-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /overrideconfig update-build-number=true
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -90,7 +88,7 @@ jobs:
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
           package_id: Trident.Database.DbUp
-          version: "${{ steps.determine_version.outputs.SemVer }}"  
+          version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"  
           base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
           output_folder: packaged
@@ -107,17 +105,17 @@ jobs:
         id: build_and_push_container
         working-directory: src
         run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:latest .
+            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:latest .
 
             # Get the sha256 digest of the image                                   
-            dockersha256=$(docker buildx imagetools inspect "${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }}" --format "{{json .Manifest}}" | jq -r .digest)
+            dockersha256=$(docker buildx imagetools inspect "${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }}" --format "{{json .Manifest}}" | jq -r .digest)
             echo "TRIDENT_DOCKER_SHA=$dockersha256" >> "$GITHUB_OUTPUT"            
 
       - name: get database package hash
         id: get-db-package-hash
         uses: seepine/hash-files@v1
         with: 
-          patterns: "packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip"
+          patterns: "packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip"
 
       - name: update version file with latest version
         uses: mikefarah/yq@master              
@@ -129,7 +127,7 @@ jobs:
 
             yq -i '.tridentDbUpPackageHash = "${{ steps.get-db-package-hash.outputs.hash }}"' 'packagehashes.yaml'
 
-            yq -i '.latestVersion = "${{ steps.determine_version.outputs.SemVer }}"' 'version.yml' 
+            yq -i '.latestVersion = "${{ steps.determine_version.outputs.AssemblySemFileVer }}"' 'version.yml' 
             yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'
 
       - name: Generate SBOM
@@ -140,7 +138,7 @@ jobs:
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
           package_id: Trident.Artifact.SBOM
-          version: "${{ steps.determine_version.outputs.SemVer }}"  
+          version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"  
           base_path: "./"          
           files: |
             ${{ steps.gensbom.outputs.fileName }}
@@ -154,8 +152,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag: "${{ steps.determine_version.outputs.SemVer }}"
-          name: Release ${{ steps.determine_version.outputs.SemVer }}
+          tag: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"
+          name: Release ${{ steps.determine_version.outputs.AssemblySemFileVer }}
           body: |
             Automatic Release creation by GitHub Action
             Commit Message: ${{ github.event.head_commit.message }}
@@ -171,7 +169,7 @@ jobs:
 
           git checkout "${GITHUB_REF:11}" 
           git stage 'version.yml'
-          git commit -am "TRID-18: Updating previous version to ${{ steps.determine_version.outputs.SemVer }} and run number to ${{ github.run_number }}"
+          git commit -am "TRID-18: Updating previous version to ${{ steps.determine_version.outputs.AssemblySemFileVer }} and run number to ${{ github.run_number }}"
           git push --set-upstream origin ${GITHUB_REF:11} 
 
       - name: Login to Octopus Deploy 
@@ -192,14 +190,14 @@ jobs:
             ${{ env.DOCKER_REPO }}         
             Trident.Database.DbUp 
             Trident.Artifact.SBOM                    
-          version: "${{ steps.determine_version.outputs.SemVer }}"         
+          version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"         
 
       - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
           channel: ${{ env.OCTOPUS_CHANNEL }}
-          package_version: "${{ steps.determine_version.outputs.SemVer }}" 
-          release_number: "${{ steps.determine_version.outputs.SemVer }}"          
+          package_version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}" 
+          release_number: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
