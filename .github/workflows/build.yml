@@ -53,17 +53,12 @@ jobs:
         run: dotnet restore src/Trident.sln 
         
       - name: Run unit tests
-        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults
-      
+        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults      
       - name: Upload unit tests results
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: /tmp/testresults
-
-      - name: Generate SBOM
-        id: gensbom
-        uses: advanced-security/generate-sbom-action@v1
 
       - name: Create artifacts folder
         run: |
@@ -71,8 +66,7 @@ jobs:
             mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" 
 
       - name: Publish Database
-        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"              
-      
+        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"                    
       - name: package database
         id: "database_package"
         uses: OctopusDeploy/create-zip-package-action@v3
@@ -83,6 +77,44 @@ jobs:
           files: "**/*"
           output_folder: packaged
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:             
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_PAT }}      
+      - name: install buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1        
+      - name: build and push website container
+        id: build_and_push_container
+        working-directory: src
+        run: | 
+            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
+            dockersha256=$(docker buildx imagetools inspect "${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }}" --format "{{json .Manifest}}" | jq -r .digest)
+            echo "dockersha256=$dockersha256" >> "$GITHUB_OUTPUT"            
+
+      - name: get database package hash
+        id: get-db-package-hash
+        uses: seepine/hash-files@v1
+        with: 
+          patterns: $GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp/packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip
+
+      - name: update version file with latest version
+        uses: mikefarah/yq@master              
+        with:
+          cmd: |
+            yq eval ".tridentWebSiteSha = \"${{ steps.build_and_push_container.outputs.dockersha256 }}\"" - > packagehashes.yaml <<EOF
+            {}
+            EOF
+
+            yq -i '.tridentDbUpPackageHash = "${{ steps.get-db-package-hash.outputs.hash }}"' 'packagehashes.yaml'
+
+            yq -i '.latestVersion = "${{ steps.determine_version.outputs.SemVer }}"' 'version.yml' 
+            yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'
+
+      - name: Generate SBOM
+        id: gensbom
+        uses: advanced-security/generate-sbom-action@v1
       - name: package sbom
         id: "package_sbom"
         uses: OctopusDeploy/create-zip-package-action@v3
@@ -90,7 +122,9 @@ jobs:
           package_id: Trident.Artifact.SBOM
           version: "${{ steps.determine_version.outputs.SemVer }}"  
           base_path: "./"          
-          files: "${{ steps.gensbom.outputs.fileName }}"
+          files: |
+            "${{ steps.gensbom.outputs.fileName }}"
+            "packagehashes.yaml"
           output_folder: packaged
 
       - name: Create Release for GitHub
@@ -106,29 +140,8 @@ jobs:
             Automatic Release creation by GitHub Action
             Commit Message: ${{ github.event.head_commit.message }}
           draft: false          
-          artifacts: "${{ steps.gensbom.outputs.fileName }},$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp/packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip,/tmp/testresults/*.trx"
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:             
-            username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_PAT }}
-        
-      - name: install buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1
-        
-      - name: build and push website container
-        working-directory: src
-        run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
-
-      - name: update version file with latest version
-        uses: mikefarah/yq@master              
-        with:
-          cmd: |
-            yq -i '.latestVersion = "${{ steps.determine_version.outputs.SemVer }}"' 'version.yml' 
-            yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'      
+          artifacts: "${{ steps.gensbom.outputs.fileName }},$GITHUB_WORKSPACE/artifacts/Trident.Artifact.SBOM/packaged/Trident.Artifact.SBOM.${{ steps.determine_version.outputs.SemVer }}.zip,$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp/packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip,/tmp/testresults/*.trx"      
+            
       - id: commit_file_change
         name: commit file change
         run : |
