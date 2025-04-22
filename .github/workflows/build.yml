@@ -60,7 +60,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /overrideconfig assembly-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /overrideconfig assembly-file-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /format "${{ env.GIT_VERSION_FORMAT }}"
+            additionalArguments: /overrideconfig assembly-file-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig assembly-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /overrideconfig update-build-number=true
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
