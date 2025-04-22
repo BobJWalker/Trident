@@ -16,9 +16,7 @@ on:
       - 'gitversion.yml'
   workflow_dispatch:      
 env:    
-  OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}
-  OCTOPUS_FEATURE_BRANCH_CHANNEL: ${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}  
-  OCTOPUS_RELEASE_CHANNEL: ${{ vars.OCTOPUS_RELEASE_CHANNEL }} 
+  OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}      
   OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}
   OCTOPUS_OIDC_SERVICE_ACCOUNT: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }} 
   OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}
@@ -31,6 +29,25 @@ jobs:
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy
       contents: write # This is required to push the version file changes back to the repo
     steps:      
+      - name: Set environment variable based on branch
+        id: set_env_var
+        run: |
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_HEAD_REF: $GITHUB_HEAD_REF"
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          echo "Branch detected: $BRANCH_NAME"
+          
+          if [ "$BRANCH_NAME" = "main" ]; then
+            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_RELEASE_CHANNEL }}" >> $GITHUB_ENV
+            echo "GIT_VERSION_ASSEMBLY_SCHEME=MajorMinorPatch" >> $GITHUB_ENV
+            echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
+            echo "GIT_VERSION_MODE=ContinuousDeployment" >> $GITHUB_ENV        
+          else
+            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV
+            echo "GIT_VERSION_ASSEMBLY_SCHEME=MajorMinor" >> $GITHUB_ENV
+            echo "GIT_VERSION_INCREMENT=None" >> $GITHUB_ENV
+            echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
+          fi
       - uses: actions/checkout@v1
         with:
           fetch-depth: '0'            
@@ -42,7 +59,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /config gitversion.yml            
+            additionalArguments: /overrideconfig  /overrideconfig assembly-file-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} 
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -90,14 +107,14 @@ jobs:
         working-directory: src
         run: | 
             docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
-            dockersha256=$(docker buildx imagetools inspect "${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }}" --format "{{json .Manifest}}" | jq -r .digest)
+            dockersha256=$(docker inspect --format='{{index .RepoDigests 0}}' "${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }}")
             echo "dockersha256=$dockersha256" >> "$GITHUB_OUTPUT"            
 
       - name: get database package hash
         id: get-db-package-hash
         uses: seepine/hash-files@v1
         with: 
-          patterns: $GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp/packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip
+          patterns: "packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip"
 
       - name: update version file with latest version
         uses: mikefarah/yq@master              
@@ -140,7 +157,7 @@ jobs:
             Automatic Release creation by GitHub Action
             Commit Message: ${{ github.event.head_commit.message }}
           draft: false          
-          artifacts: "${{ steps.gensbom.outputs.fileName }},$GITHUB_WORKSPACE/artifacts/Trident.Artifact.SBOM/packaged/Trident.Artifact.SBOM.${{ steps.determine_version.outputs.SemVer }}.zip,$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp/packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip,/tmp/testresults/*.trx"      
+          artifacts: "${{ steps.gensbom.outputs.fileName }},$GITHUB_WORKSPACE/packaged/*.zip,/tmp/testresults/*.trx"      
             
       - id: commit_file_change
         name: commit file change
@@ -178,7 +195,8 @@ jobs:
         uses: OctopusDeploy/create-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
-          channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
+          channel: ${{ env.OCTOPUS_CHANNEL }}
+          package_version: "${{ steps.determine_version.outputs.SemVer }}" 
           release_number: "${{ steps.determine_version.outputs.SemVer }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
