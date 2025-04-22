@@ -105,10 +105,8 @@ jobs:
         id: build_and_push_container
         working-directory: src
         run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:latest .
-
-            # Get the sha256 digest of the image                                   
-            dockersha256=$(docker buildx imagetools inspect "${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }}" --format "{{json .Manifest}}" | jq -r .digest)
+            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                               
+            dockersha256=$(docker buildx imagetools inspect "${{ env.DOCKER_REPO }}:latest" --format "{{json .Manifest}}" | jq -r .digest)
             echo "TRIDENT_DOCKER_SHA=$dockersha256" >> "$GITHUB_OUTPUT"            
 
       - name: get database package hash
