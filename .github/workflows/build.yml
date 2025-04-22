@@ -17,8 +17,7 @@ on:
   workflow_dispatch:      
 env:    
   OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}      
-  OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}
-  OCTOPUS_OIDC_SERVICE_ACCOUNT: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }} 
+  OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}   
   OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}
   DOCKER_REPO: ${{ vars.DOCKER_HUB_REPO }}
 jobs:
@@ -59,7 +58,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /overrideconfig assembly-file-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} 
+            additionalArguments: /overrideconfig assembly-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /overrideconfig assembly-file-versioning-scheme=${{ env.GIT_VERSION_ASSEMBLY_SCHEME }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} 
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -106,7 +105,11 @@ jobs:
         id: build_and_push_container
         working-directory: src
         run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
+            docker build -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:latest .
+            docker push ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }}
+            docker push ${{ env.DOCKER_REPO }}:latest
+
+            # Get the sha256 digest of the image                                   
             dockersha256=$(docker inspect --format='{{index .RepoDigests 0}}' "${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }}")
             echo "dockersha256=$dockersha256" >> "$GITHUB_OUTPUT"            
 
@@ -175,7 +178,7 @@ jobs:
         uses: OctopusDeploy/login@v1
         with: 
           server: ${{ env.OCTOPUS_URL }}
-          service_account_id: ${{ env.OCTOPUS_OIDC_SERVICE_ACCOUNT}}
+          service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
       - name: push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3
         with:
