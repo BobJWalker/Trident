@@ -74,17 +74,6 @@ variable "spec:rules:0:host" {
     }
 }
 
-variable "Project.Formatted.Branch.Name" {
-    value "#{Octopus.RunbookRun.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\"}" {
-        description = ""
-        process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
-    }
-
-    value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" }" {
-        process = ["deployment-process"]
-    }
-}
-
 variable "stringData:connectionString" {
     value "#{Project.Connection.String}" {}
 }
@@ -110,4 +99,15 @@ variable "Project.ExecutionContainer.K8s" {
 
 variable "stringData:environment" {
     value "#{Octopus.Environment.Name}" {}
+}
+
+variable "Project.Formatted.Branch.Name" {
+    value "#{Octopus.RunbookRun.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" | Replace \"feature-\" \"\" | replace \"hotfix-\" \"\"}" {
+        description = ""
+        process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
+    }
+
+    value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" | Replace \"feature-\" \"\" | replace \"hotfix-\" \"\" }" {
+        process = ["deployment-process"]
+    }
 }
