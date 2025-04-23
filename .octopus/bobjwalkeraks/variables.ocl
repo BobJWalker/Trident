@@ -102,12 +102,12 @@ variable "stringData:environment" {
 }
 
 variable "Project.Formatted.Branch.Name" {
-    value "#{Octopus.RunbookRun.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" | Replace \"feature-\" \"\" | replace \"hotfix-\" \"\"}" {
+    value "#{Octopus.RunbookRun.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" | Replace \"feature\" \"\" | Replace \"hotfix\" \"\"}" {
         description = ""
         process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
     }
 
-    value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" | Replace \"feature-\" \"\" | replace \"hotfix-\" \"\" }" {
+    value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" | Replace \"feature\" \"\" | Replace \"hotfix\" \"\" }" {
         process = ["deployment-process"]
     }
 }
