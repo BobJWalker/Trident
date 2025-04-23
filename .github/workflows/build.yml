@@ -151,7 +151,6 @@ jobs:
           path: |
             /tmp/testresults/*.trx
             ${{ steps.gensbom.outputs.fileName }}
-            packagehashes.yaml
             packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
             packaged/Trident.Artifact.SBOM.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
 
