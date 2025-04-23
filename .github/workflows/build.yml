@@ -108,11 +108,10 @@ jobs:
             docker build -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                               
             docker push ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }}
             docker push ${{ env.DOCKER_REPO }}:latest
-            
+
             dockerSha=$(docker images --no-trunc --quiet ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }})
-            echo "Docker sha is $dockerSha"
-            tridentSha=$(docker buildx imagetools inspect "${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }}" --format "{{json .Manifest}}" | jq -r .digest)
-            echo "TRIDENT_DOCKER_SHA=$tridentSha" >> $GITHUB_ENV
+            echo "Docker sha is $dockerSha"            
+            echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV
 
       - name: get database package hash
         id: get-db-package-hash
