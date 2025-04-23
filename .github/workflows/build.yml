@@ -106,7 +106,7 @@ jobs:
         working-directory: src
         run: | 
             docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                               
-            tridentSha=$(docker images --no-trunc --quiet "${{ env.DOCKER_REPO }}:latest")
+            tridentSha=$(docker buildx imagetools inspect "${{ env.DOCKER_REPO }}:latest" --format "{{json .Manifest}}" | jq -r .digest)
             echo "TRIDENT_DOCKER_SHA=$tridentSha" >> $GITHUB_ENV
 
       - name: get database package hash
