@@ -42,7 +42,7 @@ variable "Project.Connection.String" {
 variable "Project.K8s.Namespace" {
     value "trident-#{Octopus.Environment.Name | ToLower }" {}
 
-    value "trident-#{Project.Formatted.Branch.Name}-dev" {
+    value "trident#{Project.Formatted.Branch.Name}-dev" {
         description = ""
         environment = ["development"]
     }
