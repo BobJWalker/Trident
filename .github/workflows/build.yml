@@ -45,7 +45,7 @@ jobs:
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV            
             echo "GIT_VERSION_INCREMENT=None" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
-            echo "GIT_VERSION_FORMAT={Major}.{Minor}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}.9999-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
           fi
       - uses: actions/checkout@v1
         with:
@@ -69,12 +69,7 @@ jobs:
         run: dotnet restore src/Trident.sln 
         
       - name: Run unit tests
-        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults      
-      - name: Upload unit tests results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: /tmp/testresults
+        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults            
 
       - name: Create artifacts folder
         run: |
@@ -151,10 +146,20 @@ jobs:
             packagehashes.yaml
           output_folder: packaged
 
+      - name: Upload unit tests results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            /tmp/testresults/*.trx
+            ${{ steps.gensbom.outputs.fileName }}
+            packagehashes.yaml
+            packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
+            packaged/Trident.Artifact.SBOM.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
+
       - name: Create Release for GitHub
         id: create_release
-        uses: ncipollo/release-action@v1
-        if: github.ref == 'refs/heads/main'
+        uses: ncipollo/release-action@v1        
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
@@ -163,7 +168,8 @@ jobs:
           body: |
             Automatic Release creation by GitHub Action
             Commit Message: ${{ github.event.head_commit.message }}
-          draft: false          
+          draft: false 
+          prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }}
           artifacts: "${{ steps.gensbom.outputs.fileName }},$GITHUB_WORKSPACE/packaged/*.zip,/tmp/testresults/*.trx"      
             
       - id: commit_file_change
