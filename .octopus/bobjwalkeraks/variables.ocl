@@ -11,7 +11,7 @@ variable "Project.Database.Name" {
         environment = ["production"]
     }
 
-    value "Trident_Dev_#{Project.Formatted.Branch.Name}" {
+    value "Trident_Dev#{Project.Formatted.Branch.Name}" {
         environment = ["development"]
     }
 }
