@@ -107,7 +107,7 @@ jobs:
         run: | 
             docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                               
             tridentSha=$(docker images --no-trunc --quiet "${{ env.DOCKER_REPO }}:latest")
-            echo "TRIDENT_DOCKER_SHA=$tridentSha" >> "$GITHUB_OUTPUT"            
+            echo "TRIDENT_DOCKER_SHA=$tridentSha" >> $GITHUB_ENV
 
       - name: get database package hash
         id: get-db-package-hash
