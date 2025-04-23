@@ -115,19 +115,17 @@ jobs:
         run: |
           $packageHash = Get-FileHash -path "packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip" -Algorithm SHA256
           $hashToSave = $packageHash.Hash
-          Write-Host "The hash of the database package is $hashToSave"
-          "`nTRIDENT_DATABASE_HASH=$hashToSave" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $hashedFile = @{
+            "tridentDbUpPackageHash" = "$hashToSave"
+            "tridentWebSiteSha" = "${{ env.TRIDENT_DOCKER_SHA }}"
+          }
+          
+          $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "packagehashes.json" -Encoding utf8
 
       - name: update version file with latest version
         uses: mikefarah/yq@master              
         with:
           cmd: |
-            cat <<EOF > packagehashes.yaml
-            tridentWebSiteSha: "${{env.TRIDENT_DOCKER_SHA}}"
-            EOF
-
-            yq -i '.tridentDbUpPackageHash = "${{ env.TRIDENT_DATABASE_HASH }}"' 'packagehashes.yaml'
-
             yq -i '.latestVersion = "${{ steps.determine_version.outputs.AssemblySemFileVer }}"' 'version.yml' 
             yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'
 
@@ -143,7 +141,7 @@ jobs:
           base_path: "./"          
           files: |
             ${{ steps.gensbom.outputs.fileName }}
-            packagehashes.yaml
+            packagehashes.json
           output_folder: packaged
 
       - name: Upload unit tests results
