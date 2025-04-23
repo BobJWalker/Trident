@@ -18,7 +18,7 @@ step "verify-build-artifacts" {
             "Octopus.Step[Verify Package].Action[Verify Package].WorkerPoolId" = "WorkerPools-423"
             Template.Docker.Containers = "bobjwalker99/trident:#{Octopus.Action.Package[Trident].PackageVersion}"
             Template.SBOM.Package = "{\"PackageId\":\"Trident.Artifact.SBOM\",\"FeedId\":\"octopus-server-built-in\"}"
-            Template.Sha.FileName = "packagehashes.yaml"
+            Template.Sha.FileName = "packagehashes.json"
             Template.Verify.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
             Template.Verify.Package.Enable = "True"
         }
