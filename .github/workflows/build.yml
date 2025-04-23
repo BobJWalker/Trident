@@ -113,11 +113,14 @@ jobs:
             echo "Docker sha is $dockerSha"            
             echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV
 
+      
       - name: get database package hash
         id: get-db-package-hash
-        uses: seepine/hash-files@v1
-        with: 
-          patterns: "packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip"
+        shell: pwsh
+        run: |
+          $packageHash = Get-FileHash -path $GITHUB_WORKSPACE/packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip -Algorithm SHA256
+          $hashToSave = $packageHash.Hash
+          Write-Host "TRIDENT_DATABASE_HASH=$hashToSave" >> $GITHUB_ENV        
 
       - name: update version file with latest version
         uses: mikefarah/yq@master              
@@ -127,7 +130,7 @@ jobs:
             tridentWebSiteSha: "${{env.TRIDENT_DOCKER_SHA}}"
             EOF
 
-            yq -i '.tridentDbUpPackageHash = "${{ steps.get-db-package-hash.outputs.hash }}"' 'packagehashes.yaml'
+            yq -i '.tridentDbUpPackageHash = "${{ env.TRIDENT_DATABASE_HASH }}"' 'packagehashes.yaml'
 
             yq -i '.latestVersion = "${{ steps.determine_version.outputs.AssemblySemFileVer }}"' 'version.yml' 
             yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'
