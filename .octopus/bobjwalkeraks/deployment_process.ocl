@@ -1,48 +1,46 @@
-step "attach-sbom-to-release" {
-    name = "Attach SBOM to Release"
+step "verify-build-artifacts" {
+    name = "Verify Build Artifacts"
 
     action {
-        action_type = "Octopus.Script"
-        environments = ["development", "production"]
-        notes = <<-EOT
-                **Always Runs**
-                
-                In the first environment for each pipeline, extract the SBOM package and attach the file as an artifact to the release.
-                EOT
+        action_type = "Octopus.ProcessTemplate"
         properties = {
-            Octopus.Action.Script.ScriptBody = <<-EOT
-                $extractedPath = $OctopusParameters["Octopus.Action.Package[Trident.Artifact.SBOM].ExtractedPath"]
-                $releaseNumber = $OctopusParameters["Octopus.Release.Number"]
-                
-                # Get all .json files recursively
-                $jsonFiles = Get-ChildItem -Path $extractedPath -Filter *.json -Recurse
-                
-                # Iterate through each .json file
-                foreach ($file in $jsonFiles) {
-                    Write-Host "Processing file: $($file.FullName)"
-                    
-                    New-OctopusArtifact -Path "$($file.FullName)" -Name "$releaseNumber.SBOM.JSON"
-                }
-                EOT
-            Octopus.Action.Script.ScriptSource = "Inline"
-            Octopus.Action.Script.Syntax = "PowerShell"
-            OctopusUseBundledTooling = "False"
+            Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-process-verify-application"
+            Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
+            Octopus.Action.RunOnServer = "false"
+            "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
+            "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Properties[Octopus.Action.RunOnServer]" = "true"
+            "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].WorkerPoolId" = "WorkerPools-423"
+            "Octopus.Step[Verify Docker Containers].Action[Verify Docker Containers].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
+            "Octopus.Step[Verify Docker Containers].Action[Verify Docker Containers].Properties[Octopus.Action.RunOnServer]" = "true"
+            "Octopus.Step[Verify Docker Containers].Action[Verify Docker Containers].WorkerPoolId" = "WorkerPools-423"
+            "Octopus.Step[Verify Package].Action[Verify Package].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
+            "Octopus.Step[Verify Package].Action[Verify Package].Properties[Octopus.Action.RunOnServer]" = "true"
+            "Octopus.Step[Verify Package].Action[Verify Package].WorkerPoolId" = "WorkerPools-423"
+            Template.Docker.Containers = "bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}"
+            Template.SBOM.Package = "{\"PackageId\":\"Trident.Artifact.SBOM\",\"FeedId\":\"octopus-server-built-in\"}"
+            Template.Sha.FileName = "packagehashes.json"
+            Template.Verify.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
+            Template.Verify.Package.Enable = "True"
         }
-        worker_pool = "homelab-k8s"
+        worker_pool_variable = ""
 
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
-
-        packages "Trident.Artifact.SBOM" {
-            acquisition_location = "Server"
+        packages "Template.SBOM.Package" {
+            acquisition_location = ""
             feed = "octopus-server-built-in"
             package_id = "Trident.Artifact.SBOM"
             properties = {
-                Extract = "True"
-                Purpose = ""
-                SelectionMode = "immediate"
+                PackageParameterName = "Template.SBOM.Package"
+                SelectionMode = "deferred"
+            }
+        }
+
+        packages "Template.Verify.Package" {
+            acquisition_location = ""
+            feed = "octopus-server-built-in"
+            package_id = "Trident.Database.DbUp"
+            properties = {
+                PackageParameterName = "Template.Verify.Package"
+                SelectionMode = "deferred"
             }
         }
     }

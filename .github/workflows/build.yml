@@ -16,11 +16,8 @@ on:
       - 'gitversion.yml'
   workflow_dispatch:      
 env:    
-  OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}
-  OCTOPUS_FEATURE_BRANCH_CHANNEL: ${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}  
-  OCTOPUS_RELEASE_CHANNEL: ${{ vars.OCTOPUS_RELEASE_CHANNEL }} 
-  OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}
-  OCTOPUS_OIDC_SERVICE_ACCOUNT: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }} 
+  OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}      
+  OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}   
   OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}
   DOCKER_REPO: ${{ vars.DOCKER_HUB_REPO }}
 jobs:
@@ -31,6 +28,25 @@ jobs:
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy
       contents: write # This is required to push the version file changes back to the repo
     steps:      
+      - name: Set environment variable based on branch
+        id: set_env_var
+        run: |
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_HEAD_REF: $GITHUB_HEAD_REF"
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          echo "Branch detected: $BRANCH_NAME"
+          
+          if [ "$BRANCH_NAME" = "main" ]; then
+            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_RELEASE_CHANNEL }}" >> $GITHUB_ENV            
+            echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
+            echo "GIT_VERSION_MODE=ContinuousDeployment" >> $GITHUB_ENV 
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}" >> $GITHUB_ENV        
+          else
+            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV            
+            echo "GIT_VERSION_INCREMENT=None" >> $GITHUB_ENV
+            echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
+          fi
       - uses: actions/checkout@v1
         with:
           fetch-depth: '0'            
@@ -42,7 +58,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /config gitversion.yml            
+            additionalArguments: /overrideconfig assembly-file-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /overrideconfig update-build-number=true
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -53,17 +69,7 @@ jobs:
         run: dotnet restore src/Trident.sln 
         
       - name: Run unit tests
-        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults
-      
-      - name: Upload unit tests results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: /tmp/testresults
-
-      - name: Generate SBOM
-        id: gensbom
-        uses: advanced-security/generate-sbom-action@v1
+        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults            
 
       - name: Create artifacts folder
         run: |
@@ -71,66 +77,101 @@ jobs:
             mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" 
 
       - name: Publish Database
-        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"              
-      
+        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"                    
       - name: package database
         id: "database_package"
         uses: OctopusDeploy/create-zip-package-action@v3
         with:
           package_id: Trident.Database.DbUp
-          version: "${{ steps.determine_version.outputs.SemVer }}"  
+          version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"  
           base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
           output_folder: packaged
 
-      - name: package sbom
-        id: "package_sbom"
-        uses: OctopusDeploy/create-zip-package-action@v3
-        with:
-          package_id: Trident.Artifact.SBOM
-          version: "${{ steps.determine_version.outputs.SemVer }}"  
-          base_path: "./"          
-          files: "${{ steps.gensbom.outputs.fileName }}"
-          output_folder: packaged
-
-      - name: Create Release for GitHub
-        id: create_release
-        uses: ncipollo/release-action@v1
-        if: github.ref == 'refs/heads/main'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag: "${{ steps.determine_version.outputs.SemVer }}"
-          name: Release ${{ steps.determine_version.outputs.SemVer }}
-          body: |
-            Automatic Release creation by GitHub Action
-            Commit Message: ${{ github.event.head_commit.message }}
-          draft: false          
-          artifacts: "${{ steps.gensbom.outputs.fileName }},$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp/packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.SemVer }}.zip,/tmp/testresults/*.trx"
-      
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:             
             username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_PAT }}
-        
+            password: ${{ secrets.DOCKERHUB_PAT }}      
       - name: install buildx
         id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1
-        
+        uses: crazy-max/ghaction-docker-buildx@v1        
       - name: build and push website container
+        id: build_and_push_container
         working-directory: src
         run: | 
-            docker buildx build --push --platform linux/amd64,linux/arm64 -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.SemVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                   
+            docker build -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                               
+            docker push ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }}
+            docker push ${{ env.DOCKER_REPO }}:latest
+
+            dockerSha=$(docker manifest inspect ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} -v | jq -r '.Descriptor.digest')
+            echo "Docker sha is $dockerSha"            
+            echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV
+
+      
+      - name: get database package hash
+        id: get-db-package-hash
+        shell: pwsh        
+        run: |
+          $packageHash = Get-FileHash -path "packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip" -Algorithm SHA256
+          $hashToSave = $packageHash.Hash
+          $hashedFile = @{
+            "tridentDbUpPackageHash" = "$hashToSave"
+            "tridentWebSiteSha" = "${{ env.TRIDENT_DOCKER_SHA }}"
+          }
+          
+          $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "packagehashes.json" -Encoding utf8
 
       - name: update version file with latest version
         uses: mikefarah/yq@master              
         with:
           cmd: |
-            yq -i '.latestVersion = "${{ steps.determine_version.outputs.SemVer }}"' 'version.yml' 
-            yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'      
+            yq -i '.latestVersion = "${{ steps.determine_version.outputs.AssemblySemFileVer }}"' 'version.yml' 
+            yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'
+
+      - name: Generate SBOM
+        id: gensbom
+        uses: advanced-security/generate-sbom-action@v1
+      - name: package sbom
+        id: "package_sbom"
+        uses: OctopusDeploy/create-zip-package-action@v3
+        with:
+          package_id: Trident.Artifact.SBOM
+          version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"  
+          base_path: "./"          
+          files: |
+            ${{ steps.gensbom.outputs.fileName }}
+            packagehashes.json
+          output_folder: packaged
+
+      - name: Upload unit tests results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            /tmp/testresults/*.trx
+            ${{ steps.gensbom.outputs.fileName }}
+            packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
+            packaged/Trident.Artifact.SBOM.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
+
+      - name: Create Release for GitHub
+        id: create_release
+        uses: ncipollo/release-action@v1        
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"
+          name: Release ${{ steps.determine_version.outputs.AssemblySemFileVer }}
+          body: |
+            Automatic Release creation by GitHub Action
+            Commit Message: ${{ github.event.head_commit.message }}
+          draft: false 
+          prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }}
+          artifacts: "${{ steps.gensbom.outputs.fileName }},packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,packaged/Trident.Artifact.SBOM.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,/tmp/testresults/*.trx"      
+            
       - id: commit_file_change
         name: commit file change
+        if: github.ref == 'refs/heads/main'
         run : |
           git config --global user.name '${{ github.actor }}'
           git config --global user.email '${{ github.actor }}@users.noreply.github.com'
@@ -138,14 +179,14 @@ jobs:
 
           git checkout "${GITHUB_REF:11}" 
           git stage 'version.yml'
-          git commit -am "TRID-18: Updating previous version to ${{ steps.determine_version.outputs.SemVer }} and run number to ${{ github.run_number }}"
+          git commit -am "TRID-18: Updating previous version to ${{ steps.determine_version.outputs.AssemblySemFileVer }} and run number to ${{ github.run_number }}"
           git push --set-upstream origin ${GITHUB_REF:11} 
 
       - name: Login to Octopus Deploy 
         uses: OctopusDeploy/login@v1
         with: 
           server: ${{ env.OCTOPUS_URL }}
-          service_account_id: ${{ env.OCTOPUS_OIDC_SERVICE_ACCOUNT}}
+          service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
       - name: push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3
         with:
@@ -159,13 +200,14 @@ jobs:
             ${{ env.DOCKER_REPO }}         
             Trident.Database.DbUp 
             Trident.Artifact.SBOM                    
-          version: "${{ steps.determine_version.outputs.SemVer }}"         
+          version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"         
 
       - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
-          channel: ${{ github.ref == 'refs/heads/main' && env.OCTOPUS_RELEASE_CHANNEL || env.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
-          release_number: "${{ steps.determine_version.outputs.SemVer }}"          
+          channel: ${{ env.OCTOPUS_CHANNEL }}
+          package_version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}" 
+          release_number: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
