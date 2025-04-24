@@ -104,7 +104,7 @@ jobs:
             docker push ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }}
             docker push ${{ env.DOCKER_REPO }}:latest
 
-            dockerSha=$(docker images --no-trunc --quiet ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }})
+            dockerSha=$(docker manifest inspect ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} -v | jq -r '.Descriptor.digest')
             echo "Docker sha is $dockerSha"            
             echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV
 
