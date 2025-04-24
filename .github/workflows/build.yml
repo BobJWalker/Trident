@@ -45,7 +45,7 @@ jobs:
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV            
             echo "GIT_VERSION_INCREMENT=None" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
-            echo "GIT_VERSION_FORMAT={Major}.{Minor}.9999-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
           fi
       - uses: actions/checkout@v1
         with:
@@ -167,7 +167,7 @@ jobs:
             Commit Message: ${{ github.event.head_commit.message }}
           draft: false 
           prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }}
-          artifacts: "${{ steps.gensbom.outputs.fileName }},$GITHUB_WORKSPACE/packaged/*.zip,/tmp/testresults/*.trx"      
+          artifacts: "${{ steps.gensbom.outputs.fileName }},/packaged/*.zip,/tmp/testresults/*.trx"      
             
       - id: commit_file_change
         name: commit file change
