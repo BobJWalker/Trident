@@ -109,8 +109,7 @@ jobs:
             echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV
 
       
-      - name: get database package hash
-        id: get-db-package-hash
+      - name: save the package and docker sha to a file        
         shell: pwsh        
         run: |
           $packageHash = Get-FileHash -path "packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip" -Algorithm SHA256
