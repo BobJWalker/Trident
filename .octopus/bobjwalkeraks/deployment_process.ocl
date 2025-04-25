@@ -24,7 +24,7 @@ step "verify-build-artifacts" {
                 Trident.Database.DbUp:#{Octopus.Action[Deploy Databases-Build Delta Report].Package[Template.Database.Package].PackageVersion}
                 EOT
             Template.SBOM.Package = "{\"PackageId\":\"Trident.Artifact.SBOM\",\"FeedId\":\"octopus-server-built-in\"}"
-            Template.Sha.FileName = "packagehashes.json"
+            Template.Sha.FileName = "buildartifacthashes.json"
             Template.Verify.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
             Template.Verify.Package.Enable = "True"
         }
