@@ -143,16 +143,12 @@ jobs:
             buildartifacthashes.json            
           output_folder: packaged
 
-      - name: Upload unit tests results
+      - name: Attach test results as build artifact
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: |
             /tmp/testresults/*.trx
-            ${{ steps.gensbom.outputs.fileName }}
-            buildartifacthashes.json
-            packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
-            packaged/Trident.Artifact.SBOM.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
 
       - name: Create Release for GitHub
         id: create_release
