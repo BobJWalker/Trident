@@ -45,7 +45,7 @@ jobs:
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV            
             echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
-            echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}-{PreReleaseLabel}" >> $GITHUB_ENV
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
           fi
       - uses: actions/checkout@v1
         with:
