@@ -43,9 +43,9 @@ jobs:
             echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}" >> $GITHUB_ENV        
           else
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV            
-            echo "GIT_VERSION_INCREMENT=None" >> $GITHUB_ENV
+            echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
-            echo "GIT_VERSION_FORMAT={Major}.{Minor}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
           fi
       - uses: actions/checkout@v1
         with:
@@ -119,7 +119,7 @@ jobs:
             "tridentWebSiteSha" = "${{ env.TRIDENT_DOCKER_SHA }}"
           }
           
-          $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "packagehashes.json" -Encoding utf8
+          $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "buildartifacthashes.json" -Encoding utf8
 
       - name: update version file with latest version
         uses: mikefarah/yq@master              
@@ -131,27 +131,13 @@ jobs:
       - name: Generate SBOM
         id: gensbom
         uses: advanced-security/generate-sbom-action@v1
-      - name: package sbom
-        id: "package_sbom"
-        uses: OctopusDeploy/create-zip-package-action@v3
-        with:
-          package_id: Trident.Artifact.SBOM
-          version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"  
-          base_path: "./"          
-          files: |
-            ${{ steps.gensbom.outputs.fileName }}
-            packagehashes.json
-          output_folder: packaged
 
-      - name: Upload unit tests results
+      - name: Attach test results as build artifact
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: |
             /tmp/testresults/*.trx
-            ${{ steps.gensbom.outputs.fileName }}
-            packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
-            packaged/Trident.Artifact.SBOM.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip
 
       - name: Create Release for GitHub
         id: create_release
@@ -166,7 +152,7 @@ jobs:
             Commit Message: ${{ github.event.head_commit.message }}
           draft: false 
           prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }}
-          artifacts: "${{ steps.gensbom.outputs.fileName }},packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,packaged/Trident.Artifact.SBOM.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,/tmp/testresults/*.trx"      
+          artifacts: "${{ steps.gensbom.outputs.fileName }},packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,/tmp/testresults/*.trx,buildartifacthashes.json"      
             
       - id: commit_file_change
         name: commit file change
@@ -197,8 +183,7 @@ jobs:
         with:
           packages: |   
             ${{ env.DOCKER_REPO }}         
-            Trident.Database.DbUp 
-            Trident.Artifact.SBOM                    
+            Trident.Database.DbUp                                
           version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"         
 
       - name: create release in Octopus

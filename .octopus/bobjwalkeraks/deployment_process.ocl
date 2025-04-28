@@ -4,51 +4,24 @@ step "verify-build-artifacts" {
     action {
         action_type = "Octopus.ProcessTemplate"
         properties = {
-            Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-process-verify-application"
+            Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-process-verify-build-artifacts"
             Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
             Octopus.Action.RunOnServer = "false"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Properties[Octopus.Action.RunOnServer]" = "true"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].WorkerPoolId" = "WorkerPools-423"
-            "Octopus.Step[Verify Docker Containers].Action[Verify Docker Containers].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-            "Octopus.Step[Verify Docker Containers].Action[Verify Docker Containers].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Verify Docker Containers].Action[Verify Docker Containers].WorkerPoolId" = "WorkerPools-423"
             "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
             "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].Properties[Octopus.Action.RunOnServer]" = "true"
             "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].WorkerPoolId" = "WorkerPools-423"
-            "Octopus.Step[Verify Package].Action[Verify Package].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-            "Octopus.Step[Verify Package].Action[Verify Package].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Verify Package].Action[Verify Package].WorkerPoolId" = "WorkerPools-423"
-            Template.Docker.Containers = <<-EOT
+            Template.Artifacts = <<-EOT
                 bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}
                 Trident.Database.DbUp:#{Octopus.Action[Deploy Databases-Build Delta Report].Package[Template.Database.Package].PackageVersion}
                 EOT
-            Template.SBOM.Package = "{\"PackageId\":\"Trident.Artifact.SBOM\",\"FeedId\":\"octopus-server-built-in\"}"
-            Template.Sha.FileName = "packagehashes.json"
-            Template.Verify.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
-            Template.Verify.Package.Enable = "True"
+            Template.Git.Release.Number = "#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}"
+            Template.Git.Repo = "bobjwalker/trident"
+            Template.Sha.FileName = "buildartifacthashes.json"
         }
         worker_pool_variable = ""
-
-        packages "Template.SBOM.Package" {
-            acquisition_location = ""
-            feed = "octopus-server-built-in"
-            package_id = "Trident.Artifact.SBOM"
-            properties = {
-                PackageParameterName = "Template.SBOM.Package"
-                SelectionMode = "deferred"
-            }
-        }
-
-        packages "Template.Verify.Package" {
-            acquisition_location = ""
-            feed = "octopus-server-built-in"
-            package_id = "Trident.Database.DbUp"
-            properties = {
-                PackageParameterName = "Template.Verify.Package"
-                SelectionMode = "deferred"
-            }
-        }
     }
 }
 
