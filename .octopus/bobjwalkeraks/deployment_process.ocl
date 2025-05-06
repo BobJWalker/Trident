@@ -17,9 +17,7 @@ step "verify-build-artifacts" {
                 bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}
                 Trident.Database.DbUp:#{Octopus.Action[Deploy Databases-Build Delta Report].Package[Template.Database.Package].PackageVersion}
                 EOT
-            Template.Git.Release.Number = "#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}"
-            Template.Git.Repo = "bobjwalker/trident"
-            Template.Sha.FileName = "buildartifacthashes.json"
+            Template.Git.AuthToken = "#{Project.GitHub.Token}"
         }
         worker_pool_variable = ""
     }
