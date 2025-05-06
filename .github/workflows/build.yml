@@ -13,7 +13,6 @@ on:
       - 'k8s/**'
       - '.github/workflows/build.yml'
       - 'scripts/**'
-      - 'gitversion.yml'
   workflow_dispatch:      
 env:    
   OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}      
