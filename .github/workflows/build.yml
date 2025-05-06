@@ -69,7 +69,13 @@ jobs:
         run: dotnet restore src/Trident.sln 
         
       - name: Run unit tests
-        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults            
+        run: dotnet test src/Trident.Web.Test/Trident.Web.Test.csproj --configuration Release --collect "Code coverage" --logger trx --results-directory /tmp/testresults        
+      - name: Attach test results as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            /tmp/testresults/*.trx           
 
       - name: Create artifacts folder
         run: |
@@ -107,7 +113,6 @@ jobs:
             dockerSha=$(docker manifest inspect ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} -v | jq -r '.Descriptor.digest')
             echo "Docker sha is $dockerSha"            
             echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV
-
       
       - name: save the package and docker sha to a file        
         shell: pwsh        
@@ -119,33 +124,23 @@ jobs:
             "tridentWebSiteSha" = "${{ env.TRIDENT_DOCKER_SHA }}"
           }
           
-          $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "buildartifacthashes.json" -Encoding utf8
-
-      - name: update version file with latest version
-        uses: mikefarah/yq@master              
+          $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "buildartifacthashes.json" -Encoding utf8 
+      - name: Attach SBOM and package hash as build artifact
+        uses: actions/upload-artifact@v4
         with:
-          cmd: |
-            yq -i '.latestVersion = "${{ steps.determine_version.outputs.AssemblySemFileVer }}"' 'version.yml' 
-            yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'
+          name: artifact-hashes
+          path: |
+            buildartifacthashes.json    
 
       - name: Generate SBOM
         id: gensbom
         uses: advanced-security/generate-sbom-action@v1
-
-      - name: Attach test results as build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            /tmp/testresults/*.trx
-
       - name: Attach SBOM and package hash as build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-metadata
+          name: artifact-sbom
           path: |
-            ${{ steps.gensbom.outputs.fileName }}
-            buildartifacthashes.json
+            ${{ steps.gensbom.outputs.fileName }}                       
 
       - name: Create Release for GitHub
         id: create_release
@@ -161,7 +156,13 @@ jobs:
           draft: false 
           prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }}
           artifacts: "${{ steps.gensbom.outputs.fileName }},packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,/tmp/testresults/*.trx,buildartifacthashes.json"      
-            
+           
+      - name: update version file with latest version
+        uses: mikefarah/yq@master              
+        with:
+          cmd: |
+            yq -i '.latestVersion = "${{ steps.determine_version.outputs.AssemblySemFileVer }}"' 'version.yml' 
+            yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'
       - id: commit_file_change
         name: commit file change
         if: github.ref == 'refs/heads/main'
