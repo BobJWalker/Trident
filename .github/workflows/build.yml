@@ -139,6 +139,14 @@ jobs:
           path: |
             /tmp/testresults/*.trx
 
+      - name: Attach SBOM and package hash as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-metadata
+          path: |
+            ${{ steps.gensbom.outputs.fileName }}
+            buildartifacthashes.json
+
       - name: Create Release for GitHub
         id: create_release
         uses: ncipollo/release-action@v1        
