@@ -11,8 +11,7 @@ on:
       - 'src/**'
       - 'db/**'
       - 'k8s/**'
-      - '.github/workflows/build.yml'
-      - 'scripts/**'
+      - '.github/workflows/build.yml'      
   workflow_dispatch:      
 env:    
   OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}      
