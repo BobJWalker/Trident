@@ -155,7 +155,7 @@ jobs:
             Commit Message: ${{ github.event.head_commit.message }}
           draft: false 
           prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }}
-          artifacts: "${{ steps.gensbom.outputs.fileName }},packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,/tmp/testresults/*.trx,buildartifacthashes.json"      
+          artifacts: "${{ steps.gensbom.outputs.fileName }},packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,/tmp/testresults/*.trx"      
            
       - name: update version file with latest version
         uses: mikefarah/yq@master              
