@@ -193,31 +193,6 @@ step "verify-deployment" {
     }
 }
 
-step "update-load-balancer" {
-    name = "Update Load Balancer"
-
-    action {
-        action_type = "Octopus.Script"
-        notes = <<-EOT
-                **Always Runs**
-                
-                When the verification is successful, the script will update the load balancer to point to the new version of the application. 
-                EOT
-        properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/UpdateLoadBalancer.ps1"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-            OctopusUseBundledTooling = "False"
-        }
-        worker_pool = "homelab-k8s"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
-    }
-}
-
 step "notify-team-of-deployment-status" {
     condition = "Always"
     name = "Notify Team of Deployment Status"
