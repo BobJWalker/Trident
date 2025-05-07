@@ -7,6 +7,7 @@ step "verify-build-artifacts" {
             Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-process-verify-build-artifacts"
             Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
             Octopus.Action.RunOnServer = "false"
+            "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Channels" = "Channels-722"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Properties[Octopus.Action.RunOnServer]" = "true"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].WorkerPoolId" = "WorkerPools-423"
