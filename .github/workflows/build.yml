@@ -37,17 +37,15 @@ jobs:
           if [ "$BRANCH_NAME" = "main" ]; then
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_RELEASE_CHANNEL }}" >> $GITHUB_ENV            
             echo "OCTOPUS_ENVIRONMENT=${{ vars.OCTOPUS_RELEASE_ENV }}" >> $GITHUB_ENV            
-            echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
-            echo "GIT_VERSION_LABEL=main" >> $GITHUB_ENV
+            echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV            
             echo "GIT_VERSION_MODE=ContinuousDeployment" >> $GITHUB_ENV 
             echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}" >> $GITHUB_ENV        
           else
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV 
             echo "OCTOPUS_ENVIRONMENT=${{ vars.OCTOPUS_FEATURE_BRANCH_ENV }}" >> $GITHUB_ENV            
-            echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
-            echo "GIT_VERSION_LABEL={BranchName}" >> $GITHUB_ENV
+            echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV            
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
-            echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
+            echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}-{EscapedBranchName}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
           fi
       - uses: actions/checkout@v1
         with:
@@ -60,7 +58,7 @@ jobs:
         name: Determine Version
         uses: gittools/actions/gitversion/execute@v1
         with:
-            additionalArguments: /overrideconfig assembly-file-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /overrideconfig label=${{ env.GIT_VERSION_LABEL }} /overrideconfig update-build-number=true
+            additionalArguments: /overrideconfig assembly-file-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /overrideconfig update-build-number=true
       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
