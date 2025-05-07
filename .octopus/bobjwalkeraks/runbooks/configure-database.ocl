@@ -36,7 +36,7 @@ process {
                 Octopus.Action.Template.Version = "5"
                 OctopusUseBundledTooling = "False"
             }
-            worker_pool = "homelab-k8s"
+            worker_pool_variable = "Project.Worker.Pool"
 
             container {
                 feed = "dockerhub"
@@ -66,7 +66,7 @@ process {
                 Octopus.Action.Template.Version = "0"
                 OctopusUseBundledTooling = "False"
             }
-            worker_pool = "homelab-k8s"
+            worker_pool_variable = "Project.Worker.Pool"
 
             container {
                 feed = "dockerhub"
@@ -99,7 +99,7 @@ process {
                 Octopus.Action.Script.Syntax = "PowerShell"
                 OctopusUseBundledTooling = "False"
             }
-            worker_pool = "homelab-k8s"
+            worker_pool_variable = "Project.Worker.Pool"
 
             container {
                 feed = "dockerhub"
@@ -130,7 +130,7 @@ process {
                 ssn_Title = "#{Notification.RunbookStatus.Subject.Text}"
                 ssn_Username = "Octopus Deploy"
             }
-            worker_pool = "homelab-k8s"
+            worker_pool_variable = "Project.Worker.Pool"
 
             container {
                 feed = "dockerhub"
