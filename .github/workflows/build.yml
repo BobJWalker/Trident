@@ -157,12 +157,12 @@ jobs:
           prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }}
           artifacts: "${{ steps.gensbom.outputs.fileName }},packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,/tmp/testresults/*.trx"                 
 
-      - name: Login to Octopus Deploy 
+      - name: Login to Octopus Deploy 🐙
         uses: OctopusDeploy/login@v1
         with: 
           server: ${{ env.OCTOPUS_URL }}
           service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
-      - name: Push packages to Octopus
+      - name: Push packages to Octopus 🐙
         uses: OctopusDeploy/push-package-action@v3
         with:
           packages: |
