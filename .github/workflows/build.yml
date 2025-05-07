@@ -36,14 +36,16 @@ jobs:
           
           if [ "$BRANCH_NAME" = "main" ]; then
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_RELEASE_CHANNEL }}" >> $GITHUB_ENV            
-            echo "OCTOPUS_ENVIRONMENT=Test" >> $GITHUB_ENV            
+            echo "OCTOPUS_ENVIRONMENT=${{ vars.OCTOPUS_RELEASE_ENV }}" >> $GITHUB_ENV            
             echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
+            echo "GIT_VERSION_LABEL=main" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDeployment" >> $GITHUB_ENV 
             echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}" >> $GITHUB_ENV        
           else
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV 
-            echo "OCTOPUS_ENVIRONMENT=Development" >> $GITHUB_ENV            
+            echo "OCTOPUS_ENVIRONMENT=${{ vars.OCTOPUS_FEATURE_BRANCH_ENV }}" >> $GITHUB_ENV            
             echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
+            echo "GIT_VERSION_LABEL={BranchName}" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
             echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
           fi
