@@ -74,7 +74,7 @@ process {
                 Octopus.Action.Script.Syntax = "PowerShell"
                 OctopusUseBundledTooling = "False"
             }
-            worker_pool = "homelab-k8s"
+            worker_pool_variable = "Project.Worker.Pool"
 
             container {
                 feed = "dockerhub"
@@ -98,7 +98,7 @@ process {
                 ssn_Title = "#{Notification.Subject.Text}"
                 ssn_Username = "Octopus Deploy"
             }
-            worker_pool = "homelab-k8s"
+            worker_pool_variable = "Project.Worker.Pool"
 
             container {
                 feed = "dockerhub"
