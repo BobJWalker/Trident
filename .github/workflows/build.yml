@@ -162,19 +162,19 @@ jobs:
         with: 
           server: ${{ env.OCTOPUS_URL }}
           service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
-      - name: push packages to Octopus
+      - name: Push packages to Octopus
         uses: OctopusDeploy/push-package-action@v3
         with:
           packages: |
             packaged/**/*.zip       
-      - name: push build information to Octopus
+      - name: Push build information to Octopus 🐙
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |   
             ${{ env.DOCKER_REPO }}         
             Trident.Database.DbUp                                
           version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"         
-      - name: create release in Octopus
+      - name: Create release in Octopus 🐙
         uses: OctopusDeploy/create-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
@@ -193,5 +193,5 @@ jobs:
       - name: Await deployment from Octopus Deploy 🐙
         uses: OctopusDeploy/await-task-action@v3        
         with:
-          server_task_id: ${{ fromJson(steps.deploy_release.outputs.server_tasks)[0].serverTaskId }}
+          server_task_id: ${{ fromJson(steps.deploy_release.outputs.server_tasks)[0].serverTaskId }}          
       
