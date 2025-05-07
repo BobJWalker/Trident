@@ -36,11 +36,13 @@ jobs:
           
           if [ "$BRANCH_NAME" = "main" ]; then
             echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_RELEASE_CHANNEL }}" >> $GITHUB_ENV            
+            echo "OCTOPUS_ENVIRONMENT=Staging" >> $GITHUB_ENV            
             echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDeployment" >> $GITHUB_ENV 
             echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}" >> $GITHUB_ENV        
           else
-            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV            
+            echo "OCTOPUS_CHANNEL=${{ vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}" >> $GITHUB_ENV 
+            echo "OCTOPUS_ENVIRONMENT=Development" >> $GITHUB_ENV            
             echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
             echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}-{PreReleaseLabel}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
@@ -153,26 +155,7 @@ jobs:
             Commit Message: ${{ github.event.head_commit.message }}
           draft: false 
           prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }}
-          artifacts: "${{ steps.gensbom.outputs.fileName }},packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,/tmp/testresults/*.trx"      
-           
-      - name: update version file with latest version
-        uses: mikefarah/yq@master              
-        with:
-          cmd: |
-            yq -i '.latestVersion = "${{ steps.determine_version.outputs.AssemblySemFileVer }}"' 'version.yml' 
-            yq -i '.runNumber = "${{ github.run_number }}"' 'version.yml'
-      - id: commit_file_change
-        name: commit file change
-        if: github.ref == 'refs/heads/main'
-        run : |
-          git config --global user.name '${{ github.actor }}'
-          git config --global user.email '${{ github.actor }}@users.noreply.github.com'
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY                
-
-          git checkout "${GITHUB_REF:11}" 
-          git stage 'version.yml'
-          git commit -am "TRID-18: Updating previous version to ${{ steps.determine_version.outputs.AssemblySemFileVer }} and run number to ${{ github.run_number }}"
-          git push --set-upstream origin ${GITHUB_REF:11} 
+          artifacts: "${{ steps.gensbom.outputs.fileName }},packaged/Trident.Database.DbUp.${{ steps.determine_version.outputs.AssemblySemFileVer }}.zip,/tmp/testresults/*.trx"                 
 
       - name: Login to Octopus Deploy 
         uses: OctopusDeploy/login@v1
@@ -183,8 +166,7 @@ jobs:
         uses: OctopusDeploy/push-package-action@v3
         with:
           packages: |
-            packaged/**/*.zip 
-      
+            packaged/**/*.zip       
       - name: push build information to Octopus
         uses: OctopusDeploy/push-build-information-action@v3
         with:
@@ -192,7 +174,6 @@ jobs:
             ${{ env.DOCKER_REPO }}         
             Trident.Database.DbUp                                
           version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"         
-
       - name: create release in Octopus
         uses: OctopusDeploy/create-release-action@v3
         with:
@@ -202,3 +183,15 @@ jobs:
           release_number: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
+      - name: Deploy a release in Octopus Deploy 🐙
+        id: deploy_release
+        uses: OctopusDeploy/deploy-release-action@v3
+        with:
+          project: ${{ env.OCTOPUS_PROJECT_NAME }}
+          release_number: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"
+          environments: ${{ env.OCTOPUS_ENVIRONMENT }}      
+      - name: Await deployment from Octopus Deploy 🐙
+        uses: OctopusDeploy/await-task-action@v3        
+        with:
+          server_task_id: ${{ fromJson(steps.deploy_release.outputs.server_tasks)[0].serverTaskId }}
+      
