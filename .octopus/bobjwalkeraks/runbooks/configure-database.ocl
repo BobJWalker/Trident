@@ -27,7 +27,7 @@ process {
                     EOT
             properties = {
                 Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
-                Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
+                Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "True"
                 Azure.KeyVault.RetrieveSecrets.VaultName = "bobjwalker-vault"
                 Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{Project.Azure.KeyVault.Secrets}"
                 Octopus.Action.Template.Id = "ActionTemplates-561"
