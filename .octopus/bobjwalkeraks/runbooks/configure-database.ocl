@@ -20,10 +20,15 @@ process {
         name = "SQL - Create Database If Not Exists - Azure"
 
         action {
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Will check to see if the database exists, and if it does not then attempt to create it.
+                    EOT
             properties = {
-                createCommandTimeout = "30"
+                createCommandTimeout = "60"
                 createDatabaseName = "#{Project.Database.Name}"
-                createSqlDatabaseRetryAttempts = "0"
+                createSqlDatabaseRetryAttempts = "1"
                 createSqlLoginPasswordWhoHasRights = "#{SQLServer.User.Password}"
                 createSqlLoginUserWhoHasCreateUserRights = "#{SQLServer.User.Name}"
                 createSqlServer = "#{SQLServer.Server.Name}"
