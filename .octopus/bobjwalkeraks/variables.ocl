@@ -115,5 +115,5 @@ variable "Project.Formatted.Branch.Name" {
 variable "Project.Worker.Pool" {
     type = "WorkerPool"
 
-    value "hosted-ubuntu" {}
+    value "azure-aks" {}
 }
