@@ -117,3 +117,25 @@ variable "Project.Worker.Pool" {
 
     value "azure-aks" {}
 }
+
+variable "SQLServer.User.Password" {
+    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserPassword}" {}
+}
+
+variable "SQLServer.User.Name" {
+    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserName}" {}
+}
+
+variable "SQLServer.Server.Name" {
+    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLServerName}" {}
+}
+
+variable "Project.Azure.KeyVault.Secrets" {
+    value {
+        value = <<-EOT
+                azure-sql-server | SQLServerName
+                azure-sql-password | SQLUserPassword
+                azure-sql-username | SQLUserName
+                EOT
+    }
+}

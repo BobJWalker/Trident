@@ -16,14 +16,45 @@ run_retention_policy {
 }
 
 process {
+    step "azure-key-vault-retrieve-secrets" {
+        name = "Azure Key Vault - Retrieve Secrets"
+
+        action {
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Pulls the database secrets out of Azure Key Vault
+                    EOT
+            properties = {
+                Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
+                Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "True"
+                Azure.KeyVault.RetrieveSecrets.VaultName = "bobjwalker-vault"
+                Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{Project.Azure.KeyVault.Secrets}"
+                Octopus.Action.Template.Id = "ActionTemplates-561"
+                Octopus.Action.Template.Version = "2"
+            }
+            worker_pool_variable = "Project.Worker.Pool"
+
+            container {
+                feed = "dockerhub"
+                image = "#{Azure.ExecutionContainer.Name}"
+            }
+        }
+    }
+
     step "sql-create-database-if-not-exists-azure" {
         name = "SQL - Create Database If Not Exists - Azure"
 
         action {
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Will check to see if the database exists, and if it does not then attempt to create it.
+                    EOT
             properties = {
-                createCommandTimeout = "30"
+                createCommandTimeout = "60"
                 createDatabaseName = "#{Project.Database.Name}"
-                createSqlDatabaseRetryAttempts = "0"
+                createSqlDatabaseRetryAttempts = "1"
                 createSqlLoginPasswordWhoHasRights = "#{SQLServer.User.Password}"
                 createSqlLoginUserWhoHasCreateUserRights = "#{SQLServer.User.Name}"
                 createSqlServer = "#{SQLServer.Server.Name}"
