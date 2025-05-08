@@ -65,6 +65,11 @@ step "azure-key-vault-retrieve-secrets" {
     name = "Azure Key Vault - Retrieve Secrets"
 
     action {
+        notes = <<-EOT
+                **Always Runs**
+                
+                Pulls the database credentials from Azure Key Vault for database and code deployment steps to use.
+                EOT
         properties = {
             Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
             Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
