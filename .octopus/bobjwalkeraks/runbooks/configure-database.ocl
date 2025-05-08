@@ -16,6 +16,32 @@ run_retention_policy {
 }
 
 process {
+    step "azure-key-vault-retrieve-secrets" {
+        name = "Azure Key Vault - Retrieve Secrets"
+
+        action {
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Pulls the database secrets out of Azure Key Vault
+                    EOT
+            properties = {
+                Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
+                Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
+                Azure.KeyVault.RetrieveSecrets.VaultName = "bobjwalker-vault"
+                Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{Project.Azure.KeyVault.Secrets}"
+                Octopus.Action.Template.Id = "ActionTemplates-561"
+                Octopus.Action.Template.Version = "2"
+            }
+            worker_pool_variable = "Project.Worker.Pool"
+
+            container {
+                feed = "dockerhub"
+                image = "#{Azure.ExecutionContainer.Name}"
+            }
+        }
+    }
+
     step "sql-create-database-if-not-exists-azure" {
         name = "SQL - Create Database If Not Exists - Azure"
 
