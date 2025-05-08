@@ -34,36 +34,6 @@ process {
         }
     }
 
-    step "sql-create-database-if-not-exists" {
-        name = "SQL - Create Database If Not Exists"
-
-        action {
-            is_disabled = true
-            notes = <<-EOT
-                    **Always Runs**
-                    
-                    Runs a script on the Sql Server to ensure the database exists and is configured properly.
-                    EOT
-            properties = {
-                createCommandTimeout = "30"
-                createDatabaseName = "#{Project.Database.Name}"
-                createSqlDatabaseRetryAttempts = "0"
-                createSqlLoginPasswordWhoHasRights = "#{SQLServer.User.Password}"
-                createSqlLoginUserWhoHasCreateUserRights = "#{SQLServer.User.Name}"
-                createSqlServer = "#{SQLServer.Server.Name}"
-                Octopus.Action.Template.Id = "ActionTemplates-21"
-                Octopus.Action.Template.Version = "5"
-                OctopusUseBundledTooling = "False"
-            }
-            worker_pool_variable = "Project.Worker.Pool"
-
-            container {
-                feed = "dockerhub"
-                image = "#{Project.ExecutionContainer.K8s}"
-            }
-        }
-    }
-
     step "run-script-on-primary-database" {
         name = "Run Script on Primary Database"
 
