@@ -16,10 +16,29 @@ run_retention_policy {
 }
 
 process {
+    step "sql-create-database-if-not-exists-azure" {
+        name = "SQL - Create Database If Not Exists - Azure"
+
+        action {
+            properties = {
+                createCommandTimeout = "30"
+                createDatabaseName = "#{Project.Database.Name}"
+                createSqlDatabaseRetryAttempts = "0"
+                createSqlLoginPasswordWhoHasRights = "#{SQLServer.User.Password}"
+                createSqlLoginUserWhoHasCreateUserRights = "#{SQLServer.User.Name}"
+                createSqlServer = "#{SQLServer.Server.Name}"
+                Octopus.Action.Template.Id = "ActionTemplates-481"
+                Octopus.Action.Template.Version = "0"
+            }
+            worker_pool_variable = "Project.Worker.Pool"
+        }
+    }
+
     step "sql-create-database-if-not-exists" {
         name = "SQL - Create Database If Not Exists"
 
         action {
+            is_disabled = true
             notes = <<-EOT
                     **Always Runs**
                     
