@@ -111,3 +111,9 @@ variable "Project.Formatted.Branch.Name" {
         process = ["deployment-process"]
     }
 }
+
+variable "Project.Worker.Pool" {
+    type = "WorkerPool"
+
+    value "azure-aks" {}
+}

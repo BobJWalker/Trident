@@ -107,13 +107,26 @@ jobs:
         working-directory: src
         run: | 
             docker build -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} --tag ${{ env.DOCKER_REPO }}:latest .                                               
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: '${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: push docker image
+        working-directory: src
+        run: |
             docker push ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }}
             docker push ${{ env.DOCKER_REPO }}:latest
 
             dockerSha=$(docker manifest inspect ${{ env.DOCKER_REPO }}:${{ steps.determine_version.outputs.AssemblySemFileVer }} -v | jq -r '.Descriptor.digest')
             echo "Docker sha is $dockerSha"            
-            echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV
-      
+            echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV      
       - name: save the package and docker sha to a file        
         shell: pwsh        
         run: |

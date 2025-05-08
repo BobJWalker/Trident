@@ -134,7 +134,7 @@ namespace Trident.Web.BusinessLogic.Tests.Converters
             var result = _converter.ConvertFromOctopusToTenantModel(tenantOctopusModel, spaceId);
 
             // Assert
-            Assert.IsNotNull(result);
+            Assert.That(result, Is.Not.Null);
             Assert.That(result.Name, Is.EqualTo(tenantOctopusModel.Name));
             Assert.That(result.OctopusId, Is.EqualTo(tenantOctopusModel.Id));
             Assert.That(result.SpaceId, Is.EqualTo(spaceId));

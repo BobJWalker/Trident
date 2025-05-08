@@ -66,10 +66,10 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
             var result = await _environmentSyncer.ProcessEnvironments(syncJobCompositeModel, space, stoppingToken);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.AreEqual(2, result.Count);
-            Assert.Contains("1", result.Keys);
-            Assert.Contains("2", result.Keys);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count, Is.EqualTo(2));
+            Assert.That(result.Keys, Does.Contain("1"));
+            Assert.That(result.Keys, Does.Contain("2"));
         }
 
         [Test]
@@ -104,10 +104,10 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
             var result = await _environmentSyncer.ProcessEnvironments(syncJobCompositeModel, space, stoppingToken);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.AreEqual(1, result.Count);
-            Assert.Contains("1", result.Keys);
-            Assert.AreEqual(1, result["1"].Id);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result.Keys, Does.Contain("1"));
+            Assert.That(result["1"].Id, Is.EqualTo(1));
         }
 
         [Test]
@@ -138,8 +138,8 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
             var result = await _environmentSyncer.ProcessEnvironments(syncJobCompositeModel, space, stoppingToken);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.IsEmpty(result);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Is.Empty);
         }
     }
 }
