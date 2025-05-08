@@ -14,10 +14,7 @@ step "verify-build-artifacts" {
             "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
             "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].Properties[Octopus.Action.RunOnServer]" = "true"
             "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].WorkerPoolVariable" = "Project.Worker.Pool"
-            Template.Artifacts = <<-EOT
-                bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}
-                Trident.Database.DbUp:#{Octopus.Action[Deploy Databases-Deploy Database Changes].Package[Template.Database.Package].PackageVersion}
-                EOT
+            Template.Artifacts = "bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}"
             Template.Git.AuthToken = "#{Project.GitHub.Token}"
         }
         worker_pool_variable = ""
