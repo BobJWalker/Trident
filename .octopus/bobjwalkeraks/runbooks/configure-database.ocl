@@ -28,7 +28,7 @@ process {
                 createSqlLoginUserWhoHasCreateUserRights = "#{SQLServer.User.Name}"
                 createSqlServer = "#{SQLServer.Server.Name}"
                 Octopus.Action.Template.Id = "ActionTemplates-481"
-                Octopus.Action.Template.Version = "0"
+                Octopus.Action.Template.Version = "1"
             }
             worker_pool_variable = "Project.Worker.Pool"
         }
