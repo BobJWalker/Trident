@@ -16,7 +16,7 @@ step "verify-build-artifacts" {
             "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].WorkerPoolVariable" = "Project.Worker.Pool"
             Template.Artifacts = <<-EOT
                 bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}
-                Trident.Database.DbUp:#{Octopus.Action[Deploy Databases-Deploy Database Changes].Package[Trident.Database.DbUp].PackageVersion}
+                Trident.Database.DbUp:#{Octopus.Action[Deploy Databases-Deploy Database Changes].Package[Template.Database.Package].PackageVersion}
                 EOT
             Template.Git.AuthToken = "#{Project.GitHub.Token}"
         }
