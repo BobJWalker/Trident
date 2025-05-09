@@ -42,89 +42,32 @@ process {
         }
     }
 
-    step "sql-create-database-if-not-exists-azure" {
-        name = "SQL - Create Database If Not Exists - Azure"
-
-        action {
-            notes = <<-EOT
-                    **Always Runs**
-                    
-                    Will check to see if the database exists, and if it does not then attempt to create it.
-                    EOT
-            properties = {
-                createCommandTimeout = "60"
-                createDatabaseName = "#{Project.Database.Name}"
-                createSqlDatabaseRetryAttempts = "1"
-                createSqlLoginPasswordWhoHasRights = "#{SQLServer.User.Password}"
-                createSqlLoginUserWhoHasCreateUserRights = "#{SQLServer.User.Name}"
-                createSqlServer = "#{SQLServer.Server.Name}"
-                Octopus.Action.Template.Id = "ActionTemplates-481"
-                Octopus.Action.Template.Version = "2"
-            }
-            worker_pool_variable = "Project.Worker.Pool"
-        }
-    }
-
-    step "run-script-on-primary-database" {
-        name = "Run Script on Primary Database"
-
-        action {
-            notes = <<-EOT
-                    **Always Runs**
-                    
-                    Runs a script on the primary database to ensure that it is running as the databases are configured to go to sleep after an hour of inactivity.
-                    EOT
-            properties = {
-                Adhoc.Database.Name = "#{Project.Database.Name}"
-                Adhoc.Database.Password = "#{SQLServer.User.Password}"
-                Adhoc.Database.Script = "Select 1 as Number"
-                Adhoc.Database.Server = "#{SQLServer.Server.Name}"
-                Adhoc.Database.UserName = "#{SQLServer.User.Name}"
-                Octopus.Action.AutoRetry.MaximumCount = "3"
-                Octopus.Action.ExecutionTimeout.Minutes = "10"
-                Octopus.Action.Template.Id = "ActionTemplates-383"
-                Octopus.Action.Template.Version = "0"
-                OctopusUseBundledTooling = "False"
-            }
-            worker_pool_variable = "Project.Worker.Pool"
-
-            container {
-                feed = "dockerhub"
-                image = "#{Project.ExecutionContainer.K8s}"
-            }
-        }
-    }
-
-    step "create-tenant-namespace" {
-        name = "Create application namespace"
+    step "create-k8s-and-sql-infrastructure" {
+        name = "Create K8s and SQL Infrastructure"
         properties = {
-            Octopus.Action.TargetRoles = "trident-web"
+            "Octopus.Step[Create Application Namespace].Properties[Octopus.Action.TargetRoles]" = "trident-web"
         }
 
         action {
-            action_type = "Octopus.KubernetesRunScript"
-            notes = <<-EOT
-                    **Always Runs**
-                    
-                    Applies the manifest file to ensure the namespace exists for this particular application.
-                    EOT
+            action_type = "Octopus.ProcessTemplate"
             properties = {
-                Octopus.Action.KubernetesContainers.Namespace = "default"
-                Octopus.Action.Script.ScriptBody = <<-EOT
-                    $namespace = $OctopusParameters["Project.K8s.Namespace"]
-                    
-                    kubectl create namespace $namespace --dry-run=client -o yaml | kubectl apply -f -
-                    EOT
-                Octopus.Action.Script.ScriptSource = "Inline"
-                Octopus.Action.Script.Syntax = "PowerShell"
-                OctopusUseBundledTooling = "False"
+                Octopus.Action.ProcessTemplate.Reference.Slug = "create-container-infrastructure"
+                Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
+                Octopus.Action.RunOnServer = "false"
+                "Octopus.Step[Create Application Namespace].Action[Create Application Namespace].WorkerPoolVariable" = "Project.Worker.Pool"
+                "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
+                "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].Properties[Octopus.Action.RunOnServer]" = "true"
+                "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].WorkerPoolVariable" = "Project.Worker.Pool"
+                "Octopus.Step[Verify Database Creation].Action[Verify Database Creation].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
+                "Octopus.Step[Verify Database Creation].Action[Verify Database Creation].Properties[Octopus.Action.RunOnServer]" = "true"
+                "Octopus.Step[Verify Database Creation].Action[Verify Database Creation].WorkerPoolVariable" = "Project.Worker.Pool"
+                Template.Kubernetes.Namespace.Name = "#{Project.K8s.Namespace}"
+                Template.SQLServer.Database.Name = "#{Project.Database.Name}"
+                Template.SQLServer.Name = "#{SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{SQLServer.User.Password}"
             }
-            worker_pool_variable = "Project.Worker.Pool"
-
-            container {
-                feed = "dockerhub"
-                image = "#{Project.ExecutionContainer.K8s}"
-            }
+            worker_pool_variable = ""
         }
     }
 
