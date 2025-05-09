@@ -99,9 +99,7 @@ jobs:
         with:             
             username: ${{ secrets.DOCKERHUB_USERNAME }}
             password: ${{ secrets.DOCKERHUB_PAT }}      
-      - name: install buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1        
+             
       - name: build and push website container
         id: build_and_push_container
         working-directory: src
