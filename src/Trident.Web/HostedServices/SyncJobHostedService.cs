@@ -29,7 +29,7 @@ namespace Trident.Web.HostedServices
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using (var timer = new PeriodicTimer(TimeSpan.FromSeconds(30)))
+            using (var timer = new PeriodicTimer(TimeSpan.FromSeconds(15)))
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
