@@ -60,7 +60,6 @@ jobs:
             additionalArguments: /overrideconfig assembly-file-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /overrideconfig update-build-number=true
   test:
     name: Run Unit Tests
-    needs: prep
     runs-on: ubuntu-latest
 
     steps:
@@ -86,7 +85,7 @@ jobs:
             /tmp/testresults/*.trx
 
   build_and_publish: 
-    name: Create, Scan and Publish build artifacts 
+    name: Create, Scan, and Publish 
     needs: [prep, test]  
     runs-on: ubuntu-latest 
     permissions:
@@ -189,12 +188,9 @@ jobs:
           version: "${{ needs.prep.outputs.sem_Ver }}"    
 
   sbom_and_gh_release:  
-    name: Generate SBOM and create GitHub Release
+    name: Generate SBOM and GitHub Release
     needs: [prep, test, build_and_publish]  
-    runs-on: ubuntu-latest 
-    permissions:
-      # Add any additional permissions your job requires here
-      id-token: write # This is required to obtain the OIDC Token for Octopus Deploy
+    runs-on: ubuntu-latest
     steps:      
       - uses: actions/checkout@v1
         with:
@@ -224,7 +220,7 @@ jobs:
           prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }} 
 
   octopus_deploy:  
-    name: Handover to Octopus Deploy for Deployments
+    name: Handover to Octopus Deploy
     needs: [prep, test, build_and_publish, sbom_and_gh_release]  
     runs-on: ubuntu-latest
     permissions:
