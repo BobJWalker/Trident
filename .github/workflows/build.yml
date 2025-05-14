@@ -186,7 +186,7 @@ jobs:
           packages: |   
             ${{ env.DOCKER_REPO }}         
             Trident.Database.DbUp                                
-          version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"    
+          version: "${{ needs.prep.outputs.sem_Ver }}"    
 
   sbom_and_gh_release:  
     name: Generate SBOM and create GitHub Release
@@ -241,8 +241,8 @@ jobs:
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
           channel: ${{ env.OCTOPUS_CHANNEL }}
-          package_version: "${{ steps.determine_version.outputs.AssemblySemFileVer }}" 
-          release_number: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"          
+          package_version: "${{ needs.prep.outputs.sem_Ver }}" 
+          release_number: "${{ needs.prep.outputs.sem_Ver }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
       - name: Deploy a release in Octopus Deploy 🐙
@@ -250,7 +250,7 @@ jobs:
         uses: OctopusDeploy/deploy-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
-          release_number: "${{ steps.determine_version.outputs.AssemblySemFileVer }}"
+          release_number: "${{ needs.prep.outputs.sem_Ver }}"
           environments: ${{ env.OCTOPUS_ENVIRONMENT }}      
       - name: Await deployment from Octopus Deploy 🐙
         uses: OctopusDeploy/await-task-action@v3        
