@@ -250,5 +250,7 @@ jobs:
       - name: Await deployment from Octopus Deploy 🐙
         uses: OctopusDeploy/await-task-action@v3        
         with:
-          server_task_id: ${{ fromJson(steps.deploy_release.outputs.server_tasks)[0].serverTaskId }}          
+          server_task_id: ${{ fromJson(steps.deploy_release.outputs.server_tasks)[0].serverTaskId }}    
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}      
       
