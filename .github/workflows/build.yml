@@ -13,11 +13,6 @@ on:
       - 'k8s/**'
       - '.github/workflows/build.yml'      
   workflow_dispatch:      
-env:    
-  OCTOPUS_PROJECT_NAME: ${{ vars.OCTOPUS_PROJECT_NAME }}      
-  OCTOPUS_SPACE: ${{ vars.OCTOPUS_SPACE }}   
-  OCTOPUS_URL: ${{ vars.OCTOPUS_SERVER_URL }}
-  DOCKER_REPO: ${{ vars.DOCKER_HUB_REPO }}
 jobs:
   prep:
     runs-on: ubuntu-latest
@@ -127,12 +122,12 @@ jobs:
         id: build_and_push_container
         working-directory: src
         run: | 
-            docker build -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ needs.prep.outputs.sem_Ver }} --tag ${{ env.DOCKER_REPO }}:${{ needs.prep.outputs.sem_Ver }} --tag ${{ env.DOCKER_REPO }}:latest .                                               
+            docker build -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ needs.prep.outputs.sem_Ver }} --tag ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }} --tag ${{ vars.DOCKER_HUB_REPO }}:latest .                                               
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: '${{ env.DOCKER_REPO }}:${{ needs.prep.outputs.sem_Ver }}'
+          image-ref: '${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -142,10 +137,10 @@ jobs:
       - name: push docker image
         working-directory: src
         run: |
-            docker push ${{ env.DOCKER_REPO }}:${{ needs.prep.outputs.sem_Ver }}
-            docker push ${{ env.DOCKER_REPO }}:latest
+            docker push ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}
+            docker push ${{ vars.DOCKER_HUB_REPO }}:latest
 
-            dockerSha=$(docker manifest inspect ${{ env.DOCKER_REPO }}:${{ needs.prep.outputs.sem_Ver }} -v | jq -r '.Descriptor.digest')
+            dockerSha=$(docker manifest inspect ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }} -v | jq -r '.Descriptor.digest')
             echo "Docker sha is $dockerSha"            
             echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV      
       - name: save the package and docker sha to a file        
@@ -168,20 +163,24 @@ jobs:
       - name: Login to Octopus Deploy 🐙
         uses: OctopusDeploy/login@v1
         with: 
-          server: ${{ env.OCTOPUS_URL }}
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
           service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
       - name: Push packages to Octopus 🐙
         uses: OctopusDeploy/push-package-action@v3
         with:
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}
           packages: |
             packaged/**/*.zip       
       - name: Push build information to Octopus 🐙
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |   
-            ${{ env.DOCKER_REPO }}         
+            ${{ vars.DOCKER_HUB_REPO }}         
             Trident.Database.DbUp                                
-          version: "${{ needs.prep.outputs.sem_Ver }}"    
+          version: "${{ needs.prep.outputs.sem_Ver }}"
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}    
 
   sbom_and_gh_release:  
     name: Generate SBOM and GitHub Release
@@ -226,12 +225,14 @@ jobs:
       - name: Login to Octopus Deploy 🐙
         uses: OctopusDeploy/login@v1
         with: 
-          server: ${{ env.OCTOPUS_URL }}
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
           service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}         
       - name: Create release in Octopus 🐙
         uses: OctopusDeploy/create-release-action@v3
         with:
-          project: ${{ env.OCTOPUS_PROJECT_NAME }}
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}
+          project: ${{ vars.OCTOPUS_PROJECT_NAME }}
           channel: ${{ github.ref == 'refs/heads/main' && vars.OCTOPUS_RELEASE_CHANNEL || vars.OCTOPUS_FEATURE_BRANCH_CHANNEL }}
           package_version: "${{ needs.prep.outputs.sem_Ver }}" 
           release_number: "${{ needs.prep.outputs.sem_Ver }}"          
@@ -241,9 +242,11 @@ jobs:
         id: deploy_release
         uses: OctopusDeploy/deploy-release-action@v3
         with:
-          project: ${{ github.ref == 'refs/heads/main' && vars.OCTOPUS_RELEASE_ENV || vars.OCTOPUS_FEATURE_BRANCH_ENV }}
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}
+          project: ${{ vars.OCTOPUS_PROJECT_NAME }}
           release_number: "${{ needs.prep.outputs.sem_Ver }}"
-          environments: ${{ needs.prep.outputs.octopus_environment }}      
+          environments: ${{ github.ref == 'refs/heads/main' && vars.OCTOPUS_RELEASE_ENV || vars.OCTOPUS_FEATURE_BRANCH_ENV }}    
       - name: Await deployment from Octopus Deploy 🐙
         uses: OctopusDeploy/await-task-action@v3        
         with:
