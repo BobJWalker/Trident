@@ -24,6 +24,8 @@ jobs:
     name: Determine version
     outputs:       
       sem_ver: ${{ steps.determine_version.outputs.AssemblySemFileVer }}
+      octopus_channel: ${{ steps.set_env_var.outputs.OCTOPUS_CHANNEL }}
+      octopus_environment: ${{ steps.set_env_var.outputs.OCTOPUS_ENVIRONMENT }}
     steps:      
       - name: Set environment variable based on branch
         id: set_env_var
@@ -236,7 +238,7 @@ jobs:
         uses: OctopusDeploy/create-release-action@v3
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
-          channel: ${{ env.OCTOPUS_CHANNEL }}
+          channel: ${{ needs.prep.outputs.octopus_channel }}
           package_version: "${{ needs.prep.outputs.sem_Ver }}" 
           release_number: "${{ needs.prep.outputs.sem_Ver }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
@@ -247,7 +249,7 @@ jobs:
         with:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}
           release_number: "${{ needs.prep.outputs.sem_Ver }}"
-          environments: ${{ env.OCTOPUS_ENVIRONMENT }}      
+          environments: ${{ needs.prep.outputs.octopus_environment }}      
       - name: Await deployment from Octopus Deploy 🐙
         uses: OctopusDeploy/await-task-action@v3        
         with:
