@@ -11,49 +11,35 @@ using Trident.Web.Core.Configuration;
 
 namespace Trident.Web.Controllers
 {
-    public class HomeController : Controller
-    {
-        private readonly ILogger<HomeController> _logger;
-        private readonly IInstanceRepository _instanceRepository;
-        private readonly ISyncModelFactory _syncModelFactory;
-        private readonly ISyncRepository _syncRepository;
-        private readonly IMetricConfiguration _metricConfiguration;
-
-        public HomeController(ILogger<HomeController> logger, 
+    public class HomeController (ILogger<HomeController> logger,
             IInstanceRepository instanceRepository,
             ISyncModelFactory syncModelFactory,
             ISyncRepository syncRepository,
             IMetricConfiguration metricConfiguration)
-        {
-            _logger = logger;
-            _instanceRepository = instanceRepository;
-            _syncModelFactory = syncModelFactory;
-            _syncRepository = syncRepository;
-            _metricConfiguration = metricConfiguration;
-        }
-
+        : Controller
+    {        
         public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
         {            
-            var allInstances = await _instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);      
+            var allInstances = await instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);      
 
-            if (allInstances.Items.Count == 0 && string.IsNullOrWhiteSpace(_metricConfiguration.DefaultInstanceUrl) == false && _metricConfiguration.DefaultInstanceUrl != "blah")  
+            if (allInstances.Items.Count == 0 && string.IsNullOrWhiteSpace(metricConfiguration.DefaultInstanceUrl) == false && metricConfiguration.DefaultInstanceUrl != "blah")  
             {
-                _logger.LogDebug("No instances found, creating default instance");
+                logger.LogDebug("No instances found, creating default instance");
                 var defaultInstance = new InstanceModel
                 {
                     Name = "Default Instance",
-                    OctopusId = _metricConfiguration.DefaultInstanceId,
-                    Url = _metricConfiguration.DefaultInstanceUrl,
-                    ApiKey = _metricConfiguration.DefaultInstanceApiKey
+                    OctopusId = metricConfiguration.DefaultInstanceId,
+                    Url = metricConfiguration.DefaultInstanceUrl,
+                    ApiKey = metricConfiguration.DefaultInstanceApiKey
                 };
 
-                await _instanceRepository.InsertAsync(defaultInstance);
+                await instanceRepository.InsertAsync(defaultInstance);
 
-                allInstances = await _instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);
+                allInstances = await instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);
             }
             else
             {
-                _logger.LogDebug("Instances found");
+                logger.LogDebug("Instances found");
             }
 
             return View(allInstances);
@@ -61,12 +47,12 @@ namespace Trident.Web.Controllers
 
         public async Task<IActionResult> StartSync(int id)
         {
-            var instance = await _instanceRepository.GetByIdAsync(id);
-            var previousSync = await _syncRepository.GetLastSuccessfulSync(id);
+            var instance = await instanceRepository.GetByIdAsync(id);
+            var previousSync = await syncRepository.GetLastSuccessfulSync(id);
 
-            var newSync = _syncModelFactory.CreateModel(id, instance.Name, previousSync);
+            var newSync = syncModelFactory.CreateModel(id, instance.Name, previousSync);
 
-            await _syncRepository.InsertAsync(newSync);
+            await syncRepository.InsertAsync(newSync);
 
             return RedirectToAction("Index", "Sync");
         }
@@ -80,7 +66,7 @@ namespace Trident.Web.Controllers
 
         public async Task<IActionResult> EditInstance(int id)
         {
-            var instance = await _instanceRepository.GetByIdAsync(id);
+            var instance = await instanceRepository.GetByIdAsync(id);
 
             return View("InstanceMaintenance", instance);
         }
@@ -95,11 +81,11 @@ namespace Trident.Web.Controllers
 
             if (model.Id > 0)
             {
-                await _instanceRepository.UpdateAsync(model);
+                await instanceRepository.UpdateAsync(model);
             }
             else
             {
-                await _instanceRepository.InsertAsync(model);
+                await instanceRepository.InsertAsync(model);
             }
 
             return RedirectToAction("Index");

@@ -124,3 +124,7 @@ variable "Project.Azure.KeyVault.Secrets" {
                 EOT
     }
 }
+
+variable "stringData:openFeatureClientId" {
+    value "#{Octopus.FeatureToggles.ClientIdentifier}" {}
+}

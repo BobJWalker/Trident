@@ -3,32 +3,30 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenFeature;
 using Trident.Web.BusinessLogic.Facades;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.DataAccess;
 
 namespace Trident.Web.HostedServices
 {
-    public class SyncJobHostedService : BackgroundService, IDisposable
-    {
-        private readonly ILogger<SyncJobHostedService> _logger;
-        private readonly ISyncRepository _syncRepository;
-        private readonly ISyncJobCompositeModelFactory _syncJobCompositeModelFactory;
-        private readonly ISyncJobFacade _syncJobFacade;        
-
-        public SyncJobHostedService(ILogger<SyncJobHostedService> logger,
+    public class SyncJobHostedService(ILogger<SyncJobHostedService> logger,
             ISyncRepository syncRepository,
             ISyncJobCompositeModelFactory syncJobCompositeModelFactory,
-            ISyncJobFacade syncJobFacade) : base()
-        {
-            _logger = logger;
-            _syncRepository = syncRepository;
-            _syncJobCompositeModelFactory = syncJobCompositeModelFactory;
-            _syncJobFacade = syncJobFacade;
-        }
-
+            ISyncJobFacade syncJobFacade,
+            IFeatureClient featureClient) 
+        : BackgroundService, IDisposable
+    {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            var isEnabled = await featureClient.GetBooleanValueAsync("BackgroundSyncJob", false);
+
+            if (isEnabled == false)
+            {
+                logger.LogInformation("Background sync job is disabled.");
+                return;
+            }
+
             using (var timer = new PeriodicTimer(TimeSpan.FromSeconds(15)))
             {
                 while (!stoppingToken.IsCancellationRequested)
@@ -43,20 +41,20 @@ namespace Trident.Web.HostedServices
 
         private async Task RunJobAsync(CancellationToken stoppingToken)
         {
-            var recordsToProcess = await _syncRepository.GetNextRecordsToProcessAsync();
+            var recordsToProcess = await syncRepository.GetNextRecordsToProcessAsync();
 
-            _logger.LogInformation($"Found {recordsToProcess.Items.Count} record(s) to process.");
+            logger.LogInformation($"Found {recordsToProcess.Items.Count} record(s) to process.");
 
             foreach (var syncJob in recordsToProcess.Items)
             {
-                var syncJobCompositeModel = await _syncJobCompositeModelFactory.MakeSyncJobCompositeModelAsync(syncJob);
+                var syncJobCompositeModel = await syncJobCompositeModelFactory.MakeSyncJobCompositeModelAsync(syncJob);
 
                 if (stoppingToken.IsCancellationRequested)
                 {
                     break;
                 }
 
-                await _syncJobFacade.ProcessSyncJob(syncJobCompositeModel, stoppingToken);
+                await syncJobFacade.ProcessSyncJob(syncJobCompositeModel, stoppingToken);
             }
         }               
     }

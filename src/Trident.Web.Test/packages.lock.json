@@ -1311,6 +1311,30 @@
         "resolved": "1.21.15",
         "contentHash": "Vxwg0EjbM/gmILPtzfmzlf0MDu9a17OQb8b57oTgoHoRsZNHWIFQFa00Izcvuam3Hbw2eH272TfczDRHSXgSlA=="
       },
+      "Octopus.OpenFeature": {
+        "type": "Transitive",
+        "resolved": "1.1.3",
+        "contentHash": "mEkABIyXkC8CyrNGoKXKdrVWZ6UpUBcKh0QHlGdqMnVY1dftVfr3Q5isVyNenhyhTSVPdcIz5lJSo9/9riu7YQ==",
+        "dependencies": {
+          "OpenFeature": "2.0.0"
+        }
+      },
+      "OpenFeature": {
+        "type": "Transitive",
+        "resolved": "2.0.0",
+        "contentHash": "c+GvS9Epe4/BsXisbemyDDkEg20FSzbqdKTx+pP0Wf849w7fgk2qnVRVDKIwEWDzdr1+jmflg7I4px2rr5tSkA==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.1"
+        }
+      },
+      "OpenFeature.Contrib.Providers.EnvVar": {
+        "type": "Transitive",
+        "resolved": "0.0.7",
+        "contentHash": "1zhPsni15bMpPkBI7EMzeApDxIqXhGp0tQm9IumH+aEWLva7TthLPsBwpbdkN0DdAMOg80XmXkhCJi34neqjhQ==",
+        "dependencies": {
+          "OpenFeature": "[2.0.0, 3.0.0)"
+        }
+      },
       "Polly.Contrib.WaitAndRetry": {
         "type": "Transitive",
         "resolved": "1.1.1",
@@ -1544,6 +1568,8 @@
           "NLog.Targets.Syslog": "[7.0.0, )",
           "NLog.Web.AspNetCore": "[5.4.0, )",
           "Newtonsoft.Json": "[13.0.3, )",
+          "Octopus.OpenFeature": "[1.1.3, )",
+          "OpenFeature.Contrib.Providers.EnvVar": "[0.0.7, )",
           "RestSharp": "[112.1.0, )",
           "SumoLogic.Logging.NLog": "[1.0.1.8, )"
         }

@@ -45,6 +45,11 @@ spec:
                secretKeyRef:
                  name: trident-credentials
                  key: environment
+           - name: TRIDENT_OPEN_FEATURE_CLIENT_ID
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: openFeatureClientId
 ---
 apiVersion: v1
 kind: Service
