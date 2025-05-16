@@ -8,9 +8,14 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog.Config;
 using NLog.Web;
+using Octopus.OpenFeature.Provider;
+using OpenFeature;
+using OpenFeature.Model;
+using OpenFeature.Contrib.Providers.EnvVar;
 using SumoLogic.Logging.NLog;
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
 using Trident.Web.HostedServices;
 
 namespace Trident.Web
@@ -21,6 +26,7 @@ namespace Trident.Web
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            ConfigureOpenFeature(builder).GetAwaiter().GetResult();
             ConfigureConfigurationFiles(builder);
             ConfigureDependencyInjection(builder);
             ConfigureLogging(builder);
@@ -29,7 +35,7 @@ namespace Trident.Web
             builder.Host.UseNLog();
 
             var app = builder.Build();
-            app.UseDeveloperExceptionPage();            
+            app.UseDeveloperExceptionPage();
             app.UseWebOptimizer();
             app.UseStaticFiles();
             app.UseRouting();
@@ -78,6 +84,10 @@ namespace Trident.Web
                     autofacBuilder.RegisterGeneric(typeof(Logger<>))
                         .As(typeof(ILogger<>))
                         .InstancePerLifetimeScope();
+
+                    autofacBuilder.RegisterInstance(GetFeatureClient())
+                        .As<IFeatureClient>()
+                        .SingleInstance();
                 });
         }
 
@@ -113,6 +123,29 @@ namespace Trident.Web
             logConfig.LoggingRules.Add(new LoggingRule("*", NLog.LogLevel.Info, sumoTarget));
 
             builder.Logging.AddNLog(logConfig);
+        }
+
+        private static async Task ConfigureOpenFeature(WebApplicationBuilder builder)
+        {
+            var clientIdentifier = Environment.GetEnvironmentVariable("TRIDENT_OPEN_FEATURE_CLIENT_ID");
+
+            if (builder.Environment.IsDevelopment())
+            {
+                await OpenFeature.Api.Instance.SetProviderAsync(new EnvVarProvider("FeatureToggle_"));
+            }
+            else
+            {
+                await OpenFeature.Api.Instance.SetProviderAsync(new OctopusFeatureProvider(new OctopusFeatureConfiguration(clientIdentifier)));
+            }
+        }
+
+        private static IFeatureClient GetFeatureClient()
+        {
+            var client = OpenFeature.Api.Instance.GetClient();
+
+            client.SetContext(EvaluationContext.Builder().Build());
+
+            return client;
         }
     }
 }

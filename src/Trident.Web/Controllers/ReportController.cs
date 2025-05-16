@@ -5,21 +5,13 @@ using Trident.Web.DataAccess;
 
 namespace Trident.Web.Controllers
 {
-    public class ReportController : Controller
-    {
-        private readonly IInstanceRepository _instanceRepository;
-        private readonly ISpaceRepository _spaceRepository;
-
-        public ReportController(IInstanceRepository instanceRepository, ISpaceRepository spaceRepository)
-        {
-            _instanceRepository = instanceRepository;
-            _spaceRepository = spaceRepository;
-        }
-
+    public class ReportController(IInstanceRepository instanceRepository, ISpaceRepository spaceRepository)
+        : Controller
+    {        
         public async Task<IActionResult> Index(int instanceId)
         {
-            var instanceModel = await _instanceRepository.GetByIdAsync(instanceId);
-            var spaceList = await _spaceRepository.GetAllAsync(currentPageNumber: 1, rowsPerPage: int.MaxValue, "Name", true, instanceId);
+            var instanceModel = await instanceRepository.GetByIdAsync(instanceId);
+            var spaceList = await spaceRepository.GetAllAsync(currentPageNumber: 1, rowsPerPage: int.MaxValue, "Name", true, instanceId);
 
             var viewModel = new ReportingViewModel
             {
