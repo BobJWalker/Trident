@@ -53,6 +53,7 @@ process {
             properties = {
                 Octopus.Action.ProcessTemplate.Reference.Slug = "runbook-destroy-container-infrastructure"
                 Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
+                Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
                 Octopus.Action.RunOnServer = "false"
                 "Octopus.Step[Delete Kubernetes Namespace].Action[Delete Kubernetes Namespace].WorkerPoolVariable" = "Project.Worker.Pool"
                 "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
