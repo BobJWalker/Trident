@@ -5,7 +5,7 @@ USER app
 WORKDIR /app
 EXPOSE 8080
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0.408 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0.409 AS build
 ARG TARGETARCH
 ARG APP_VERSION="6.13.0"
 WORKDIR /src
