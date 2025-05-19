@@ -53,6 +53,7 @@ process {
             properties = {
                 Octopus.Action.ProcessTemplate.Reference.Slug = "create-container-infrastructure"
                 Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
+                Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
                 Octopus.Action.RunOnServer = "false"
                 "Octopus.Step[Create Application Namespace].Action[Create Application Namespace].WorkerPoolVariable" = "Project.Worker.Pool"
                 "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
