@@ -41,6 +41,7 @@ process {
             properties = {
                 Octopus.Action.ProcessTemplate.Reference.Slug = "runbook-run-adhoc-data-update-script"
                 Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
+                Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
                 Octopus.Action.RunOnServer = "false"
                 "Octopus.Step[Check Script For Auto Approval].Action[Check Script For Auto Approval].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
                 "Octopus.Step[Check Script For Auto Approval].Action[Check Script For Auto Approval].Properties[Octopus.Action.RunOnServer]" = "true"
