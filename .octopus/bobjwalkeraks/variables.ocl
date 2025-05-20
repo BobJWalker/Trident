@@ -97,12 +97,6 @@ variable "Project.Formatted.Branch.Name" {
     }
 }
 
-variable "Project.Worker.Pool" {
-    type = "WorkerPool"
-
-    value "azure-aks" {}
-}
-
 variable "SQLServer.User.Password" {
     value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserPassword}" {}
 }
@@ -127,4 +121,10 @@ variable "Project.Azure.KeyVault.Secrets" {
 
 variable "stringData:openFeatureClientId" {
     value "#{Octopus.FeatureToggles.ClientIdentifier}" {}
+}
+
+variable "Project.Worker.Pool" {
+    type = "WorkerPool"
+
+    value "homelab-k8s" {}
 }
