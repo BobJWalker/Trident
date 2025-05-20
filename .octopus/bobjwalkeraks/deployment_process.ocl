@@ -6,7 +6,7 @@ step "verify-build-artifacts" {
         properties = {
             Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-process-verify-build-artifacts"
             Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
-            Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
+            Octopus.Action.ProcessTemplate.Reference.VersionMask = "1.X"
             Octopus.Action.RunOnServer = "false"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Channels" = "Channels-722"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
@@ -96,7 +96,7 @@ step "deploy-databases" {
         properties = {
             Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-database"
             Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
-            Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
+            Octopus.Action.ProcessTemplate.Reference.VersionMask = "1.X"
             Octopus.Action.RunOnServer = "false"
             "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Channels" = "Channels-722"
             "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
