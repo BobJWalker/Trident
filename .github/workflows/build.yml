@@ -202,7 +202,8 @@ jobs:
 
       - name: Create Release for GitHub
         id: create_release
-        uses: ncipollo/release-action@v1        
+        uses: ncipollo/release-action@v1 
+        if: github.ref == 'refs/heads/main'       
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
@@ -211,8 +212,7 @@ jobs:
           body: |
             Automatic Release creation by GitHub Action
             Commit Message: ${{ github.event.head_commit.message }}
-          draft: false 
-          prerelease: ${{ github.ref == 'refs/heads/main' && false || github.ref != 'refs/heads/main' && true }} 
+          draft: false           
 
   octopus_deploy:  
     name: Handover to Octopus Deploy
