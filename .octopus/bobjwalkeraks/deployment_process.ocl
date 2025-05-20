@@ -132,36 +132,6 @@ step "deploy-databases" {
     }
 }
 
-step "create-connectionstring-secret" {
-    name = "Create ConnectionString Secret"
-    properties = {
-        Octopus.Action.TargetRoles = "trident-web"
-    }
-
-    action {
-        action_type = "Octopus.KubernetesDeployRawYaml"
-        notes = <<-EOT
-                **Always Runs**
-                
-                Ensures the connection string secret has been properly created.
-                EOT
-        properties = {
-            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-app-secrets.yaml"
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
-            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
-            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-app-secrets.yaml"
-            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
-            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-            OctopusUseBundledTooling = "False"
-        }
-        worker_pool = "hosted-ubuntu"
-    }
-}
-
 step "deploy-trident-website" {
     name = "Deploy Trident Website"
     properties = {
@@ -176,13 +146,19 @@ step "deploy-trident-website" {
                 Deploys the website container to the Kubernetes Cluster using a manifest file.
                 EOT
         properties = {
-            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-deployment.yaml"
+            Octopus.Action.GitRepository.FilePathFilters = <<-EOT
+                k8s/base/trident-app-secrets.yaml
+                k8s/base/trident-deployment.yaml
+                EOT
             Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
             Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
             Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
-            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-deployment.yaml"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = <<-EOT
+                k8s/base/trident-app-secrets.yaml
+                k8s/base/trident-deployment.yaml
+                EOT
             Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
             Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
             Octopus.Action.Script.ScriptSource = "GitRepository"
