@@ -1,9 +1,8 @@
-﻿using Microsoft.Identity.Client;
-using System;
+﻿using System;
 
-namespace Trident.Web.Core.Models
+namespace Trident.Web.Core.Models.PubSub
 {
-    public class DeploymentMessageModel
+    internal class DeploymentMessageModel
     {
         public string InstanceId { get; set; }
         public string DeploymentId { get; set; }

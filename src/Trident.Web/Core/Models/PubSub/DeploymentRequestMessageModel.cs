@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace Trident.Web.Core.Models
+namespace Trident.Web.Core.Models.PubSub
 {
-    public class DeploymentRequestMessageModel
+    internal class DeploymentRequestMessageModel
     {
         public string InstanceId { get; set; }
         public string ApiKey { get; set; }
