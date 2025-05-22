@@ -6,7 +6,7 @@ step "verify-build-artifacts" {
         properties = {
             Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-process-verify-build-artifacts"
             Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
-            Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
+            Octopus.Action.ProcessTemplate.Reference.VersionMask = "1.X"
             Octopus.Action.RunOnServer = "false"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Channels" = "Channels-722"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
@@ -22,43 +22,6 @@ step "verify-build-artifacts" {
             Template.Git.AuthToken = "#{Project.GitHub.Token}"
         }
         worker_pool_variable = ""
-    }
-}
-
-step "configure-database-server" {
-    name = "Configure Infrastructure"
-
-    action {
-        notes = <<-EOT
-                **Always Runs**
-                
-                Runs a runbook to verify the database and namespace application / environment exists.  If it doesn't exist, it will create it automatically.
-                EOT
-        properties = {
-            Octopus.Action.Template.Id = "ActionTemplates-141"
-            Octopus.Action.Template.Version = "17"
-            OctopusUseBundledTooling = "False"
-            Run.Runbook.Api.Key = "#{IaC.Runbook.API.Key}"
-            Run.Runbook.AutoApproveManualInterventions = "No"
-            Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
-            Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
-            Run.Runbook.CancelInSeconds = "1800"
-            Run.Runbook.DateTime = "N/A"
-            Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
-            Run.Runbook.Machines = "N/A"
-            Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
-            Run.Runbook.Name = "Configure Application Infrastructure"
-            Run.Runbook.Project.Name = "#{Octopus.Project.Name}"
-            Run.Runbook.Space.Name = "#{Octopus.Space.Name}"
-            Run.Runbook.UsePublishedSnapShot = "True"
-            Run.Runbook.Waitforfinish = "True"
-        }
-        worker_pool_variable = "Project.Worker.Pool"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
     }
 }
 
@@ -88,6 +51,43 @@ step "azure-key-vault-retrieve-secrets" {
     }
 }
 
+step "configure-database-server" {
+    name = "Configure Infrastructure"
+
+    action {
+        notes = <<-EOT
+                **Always Runs**
+                
+                Runs a runbook to verify the database and namespace application / environment exists.  If it doesn't exist, it will create it automatically.
+                EOT
+        properties = {
+            Octopus.Action.Template.Id = "ActionTemplates-141"
+            Octopus.Action.Template.Version = "17"
+            OctopusUseBundledTooling = "False"
+            Run.Runbook.Api.Key = "#{Project.Runbook.API.Key}"
+            Run.Runbook.AutoApproveManualInterventions = "No"
+            Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
+            Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
+            Run.Runbook.CancelInSeconds = "1800"
+            Run.Runbook.DateTime = "N/A"
+            Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
+            Run.Runbook.Machines = "N/A"
+            Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
+            Run.Runbook.Name = "Configure Application Infrastructure"
+            Run.Runbook.Project.Name = "#{Octopus.Project.Name}"
+            Run.Runbook.Space.Name = "#{Octopus.Space.Name}"
+            Run.Runbook.UsePublishedSnapShot = "True"
+            Run.Runbook.Waitforfinish = "True"
+        }
+        worker_pool_variable = "Project.Worker.Pool"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
+        }
+    }
+}
+
 step "deploy-databases" {
     name = "Deploy Databases"
 
@@ -96,7 +96,7 @@ step "deploy-databases" {
         properties = {
             Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-database"
             Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
-            Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
+            Octopus.Action.ProcessTemplate.Reference.VersionMask = "2.X"
             Octopus.Action.RunOnServer = "false"
             "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Channels" = "Channels-722"
             "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
@@ -132,36 +132,6 @@ step "deploy-databases" {
     }
 }
 
-step "create-connectionstring-secret" {
-    name = "Create ConnectionString Secret"
-    properties = {
-        Octopus.Action.TargetRoles = "trident-web"
-    }
-
-    action {
-        action_type = "Octopus.KubernetesDeployRawYaml"
-        notes = <<-EOT
-                **Always Runs**
-                
-                Ensures the connection string secret has been properly created.
-                EOT
-        properties = {
-            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-app-secrets.yaml"
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
-            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "True"
-            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-app-secrets.yaml"
-            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
-            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-            OctopusUseBundledTooling = "False"
-        }
-        worker_pool = "hosted-ubuntu"
-    }
-}
-
 step "deploy-trident-website" {
     name = "Deploy Trident Website"
     properties = {
@@ -176,13 +146,19 @@ step "deploy-trident-website" {
                 Deploys the website container to the Kubernetes Cluster using a manifest file.
                 EOT
         properties = {
-            Octopus.Action.GitRepository.FilePathFilters = "k8s/base/trident-deployment.yaml"
+            Octopus.Action.GitRepository.FilePathFilters = <<-EOT
+                k8s/base/trident-app-secrets.yaml
+                k8s/base/trident-deployment.yaml
+                EOT
             Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Kubernetes.DeploymentTimeout = "180"
             Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
             Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
             Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
-            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = "k8s/base/trident-deployment.yaml"
+            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = <<-EOT
+                k8s/base/trident-app-secrets.yaml
+                k8s/base/trident-deployment.yaml
+                EOT
             Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
             Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
             Octopus.Action.Script.ScriptSource = "GitRepository"

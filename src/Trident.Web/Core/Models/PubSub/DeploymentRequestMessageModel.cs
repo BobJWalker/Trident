@@ -3,7 +3,7 @@
 namespace Trident.Web.Core.Models.PubSub
 {
     public class DeploymentRequestMessageModel
-    {               
+    {
         public string DeploymentRequestId { get; set; }
 
         public string InstanceUrl { get; set; }
