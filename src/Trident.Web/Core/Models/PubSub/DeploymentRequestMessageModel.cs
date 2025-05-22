@@ -2,9 +2,9 @@
 
 namespace Trident.Web.Core.Models.PubSub
 {
-    internal class DeploymentRequestMessageModel
+    public class DeploymentRequestMessageModel
     {
-        public string InstanceId { get; set; }
+        public string InstanceUrl { get; set; }
         public string ApiKey { get; set; }
         public string DeploymentRequestId { get; set; }
 
