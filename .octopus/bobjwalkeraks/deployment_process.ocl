@@ -25,43 +25,6 @@ step "verify-build-artifacts" {
     }
 }
 
-step "configure-database-server" {
-    name = "Configure Infrastructure"
-
-    action {
-        notes = <<-EOT
-                **Always Runs**
-                
-                Runs a runbook to verify the database and namespace application / environment exists.  If it doesn't exist, it will create it automatically.
-                EOT
-        properties = {
-            Octopus.Action.Template.Id = "ActionTemplates-141"
-            Octopus.Action.Template.Version = "17"
-            OctopusUseBundledTooling = "False"
-            Run.Runbook.Api.Key = "#{IaC.Runbook.API.Key}"
-            Run.Runbook.AutoApproveManualInterventions = "No"
-            Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
-            Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
-            Run.Runbook.CancelInSeconds = "1800"
-            Run.Runbook.DateTime = "N/A"
-            Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
-            Run.Runbook.Machines = "N/A"
-            Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
-            Run.Runbook.Name = "Configure Application Infrastructure"
-            Run.Runbook.Project.Name = "#{Octopus.Project.Name}"
-            Run.Runbook.Space.Name = "#{Octopus.Space.Name}"
-            Run.Runbook.UsePublishedSnapShot = "True"
-            Run.Runbook.Waitforfinish = "True"
-        }
-        worker_pool_variable = "Project.Worker.Pool"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
-    }
-}
-
 step "azure-key-vault-retrieve-secrets" {
     name = "Azure Key Vault - Retrieve Secrets"
 
@@ -84,6 +47,43 @@ step "azure-key-vault-retrieve-secrets" {
         container {
             feed = "dockerhub"
             image = "#{Azure.ExecutionContainer.Name}"
+        }
+    }
+}
+
+step "configure-database-server" {
+    name = "Configure Infrastructure"
+
+    action {
+        notes = <<-EOT
+                **Always Runs**
+                
+                Runs a runbook to verify the database and namespace application / environment exists.  If it doesn't exist, it will create it automatically.
+                EOT
+        properties = {
+            Octopus.Action.Template.Id = "ActionTemplates-141"
+            Octopus.Action.Template.Version = "17"
+            OctopusUseBundledTooling = "False"
+            Run.Runbook.Api.Key = "#{Project.Runbook.API.Key}"
+            Run.Runbook.AutoApproveManualInterventions = "No"
+            Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
+            Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
+            Run.Runbook.CancelInSeconds = "1800"
+            Run.Runbook.DateTime = "N/A"
+            Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
+            Run.Runbook.Machines = "N/A"
+            Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
+            Run.Runbook.Name = "Configure Application Infrastructure"
+            Run.Runbook.Project.Name = "#{Octopus.Project.Name}"
+            Run.Runbook.Space.Name = "#{Octopus.Space.Name}"
+            Run.Runbook.UsePublishedSnapShot = "True"
+            Run.Runbook.Waitforfinish = "True"
+        }
+        worker_pool_variable = "Project.Worker.Pool"
+
+        container {
+            feed = "dockerhub"
+            image = "#{Project.ExecutionContainer.K8s}"
         }
     }
 }
