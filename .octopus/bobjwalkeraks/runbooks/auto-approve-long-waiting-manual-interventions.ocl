@@ -25,7 +25,7 @@ process {
             properties = {
                 Octopus.Action.Script.ScriptBody = <<-EOT
                     $instanceURL = $OctopusParameters["Octopus.Web.ServerUri"]
-                    $apiKey =  $OctopusParameters["IaC.Runbook.API.Key"]
+                    $apiKey =  $OctopusParameters["Project.Runbook.API.Key"]
                     $spaceName = $OctopusParameters["Octopus.Space.Name"]
                     
                     $header = @{ "X-Octopus-ApiKey" = $apiKey }

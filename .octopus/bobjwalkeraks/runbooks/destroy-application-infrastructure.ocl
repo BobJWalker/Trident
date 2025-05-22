@@ -43,7 +43,7 @@ process {
     }
 
     step "destroy-k8s-and-sql-infrastructure" {
-        name = "Destroy K8s and SQL Infrastructure"
+        name = "Destroy K8s Infrastructure"
         properties = {
             "Octopus.Step[Delete Kubernetes Namespace].Properties[Octopus.Action.TargetRoles]" = "trident-web"
         }
@@ -60,6 +60,27 @@ process {
                 "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Properties[Octopus.Action.RunOnServer]" = "true"
                 "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].WorkerPoolVariable" = "Project.Worker.Pool"
                 Template.Kubernetes.Namespace.Name = "#{Project.K8s.Namespace}"
+                Template.SQLServer.Database.Name = "#{Project.Database.Name}"
+                Template.SQLServer.Name = "#{SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{SQLServer.User.Password}"
+            }
+            worker_pool_variable = ""
+        }
+    }
+
+    step "destroy-sql-infrastructure" {
+        name = "Destroy SQL Infrastructure"
+
+        action {
+            action_type = "Octopus.ProcessTemplate"
+            properties = {
+                Octopus.Action.ProcessTemplate.Reference.Slug = "runbook-destroy-database-infrastructure"
+                Octopus.Action.ProcessTemplate.Reference.VersionMask = "1.X"
+                Octopus.Action.RunOnServer = "false"
+                "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
+                "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Properties[Octopus.Action.RunOnServer]" = "true"
+                "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].WorkerPoolVariable" = "Project.Worker.Pool"
                 Template.SQLServer.Database.Name = "#{Project.Database.Name}"
                 Template.SQLServer.Name = "#{SQLServer.Server.Name}"
                 Template.SQLServer.User.Name = "#{SQLServer.User.Name}"
