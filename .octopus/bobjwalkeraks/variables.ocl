@@ -80,3 +80,9 @@ variable "Project.SQLServer.User.Name" {
 variable "Project.SQLServer.User.Password" {
     value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserPassword}" {}
 }
+
+variable "Project.Azure.Account" {
+    type = "AzureAccount"
+
+    value "azure-oidc" {}
+}
