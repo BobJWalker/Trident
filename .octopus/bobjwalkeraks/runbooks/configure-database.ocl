@@ -26,7 +26,7 @@ process {
                     Pulls the database secrets out of Azure Key Vault
                     EOT
             properties = {
-                Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
+                Azure.KeyVault.RetrieveSecrets.Account = "Project.Azure.Account"
                 Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "True"
                 Azure.KeyVault.RetrieveSecrets.VaultName = "bobjwalker-vault"
                 Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{Project.Azure.KeyVault.Secrets}"
