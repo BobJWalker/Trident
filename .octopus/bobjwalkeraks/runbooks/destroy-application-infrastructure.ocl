@@ -59,11 +59,7 @@ process {
                 "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
                 "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Properties[Octopus.Action.RunOnServer]" = "true"
                 "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].WorkerPoolVariable" = "Project.Worker.Pool"
-                Template.Kubernetes.Namespace.Name = "#{Project.K8s.Namespace}"
-                Template.SQLServer.Database.Name = "#{Project.Database.Name}"
-                Template.SQLServer.Name = "#{SQLServer.Server.Name}"
-                Template.SQLServer.User.Name = "#{SQLServer.User.Name}"
-                Template.SQLServer.User.Password = "#{SQLServer.User.Password}"
+                Template.Kubernetes.Namespace.Name = "#{Standards.K8s.Namespace}"
             }
             worker_pool_variable = ""
         }
