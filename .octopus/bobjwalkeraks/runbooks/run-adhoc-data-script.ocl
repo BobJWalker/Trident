@@ -21,6 +21,11 @@ process {
         name = "Azure Key Vault - Retrieve Secrets"
 
         action {
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Pulls the connection secrets from Azure Key Vault.
+                    EOT
             properties = {
                 Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
                 Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
@@ -29,7 +34,12 @@ process {
                 Octopus.Action.Template.Id = "ActionTemplates-561"
                 Octopus.Action.Template.Version = "2"
             }
-            worker_pool_variable = "Project.Worker.Pool"
+            worker_pool_variable = "Standards.Worker.Pool"
+
+            container {
+                feed = "dockerhub"
+                image = "#{Standards.Azure.ExecutionContainer}"
+            }
         }
     }
 
@@ -45,16 +55,17 @@ process {
                 Octopus.Action.RunOnServer = "false"
                 "Octopus.Step[Check Script For Auto Approval].Action[Check Script For Auto Approval].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
                 "Octopus.Step[Check Script For Auto Approval].Action[Check Script For Auto Approval].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[Check Script For Auto Approval].Action[Check Script For Auto Approval].WorkerPoolVariable" = "Project.Worker.Pool"
+                "Octopus.Step[Check Script For Auto Approval].Action[Check Script For Auto Approval].WorkerPoolVariable" = "Standards.Worker.Pool"
                 "Octopus.Step[DBA Approve Script].Action[DBA Approve Script].Properties[Octopus.Action.Manual.ResponsibleTeamIds]" = "teams-everyone"
+                "Octopus.Step[Notify DBAs of Pending Changes].Action[Notify DBAs of Pending Changes].Properties[Octopus.Action.Email.To]" = "rjwalker28@gmail.com"
                 "Octopus.Step[Run AdHoc Script].Action[Run AdHoc Script].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
                 "Octopus.Step[Run AdHoc Script].Action[Run AdHoc Script].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[Run AdHoc Script].Action[Run AdHoc Script].WorkerPoolVariable" = "Project.Worker.Pool"
+                "Octopus.Step[Run AdHoc Script].Action[Run AdHoc Script].WorkerPoolVariable" = "Standards.Worker.Pool"
                 Template.ScriptToRun.Text = "#{Project.ScriptToRun.Text}"
                 Template.SQLServer.Database.Name = "#{Project.Database.Name}"
-                Template.SQLServer.Name = "#{SQLServer.Server.Name}"
-                Template.SQLServer.User.Name = "#{SQLServer.User.Name}"
-                Template.SQLServer.User.Password = "#{SQLServer.User.Password}"
+                Template.SQLServer.Name = "#{Project.SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{Project.SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{Project.SQLServer.User.Password}"
             }
             worker_pool_variable = ""
         }
