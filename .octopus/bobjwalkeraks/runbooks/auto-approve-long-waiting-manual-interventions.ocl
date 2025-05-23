@@ -6,7 +6,7 @@ description = <<-EOT
         **Affects:** Any deployments to the **Staging** environment.
         EOT
 environment_scope = "Specified"
-environments = ["staging"]
+environments = ["production", "staging", "test"]
 
 connectivity_policy {
     allow_deployments_to_no_targets = true
