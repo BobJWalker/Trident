@@ -37,18 +37,6 @@ variable "stringData:environment" {
     value "#{Octopus.Environment.Name}" {}
 }
 
-variable "SQLServer.User.Password" {
-    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserPassword}" {}
-}
-
-variable "SQLServer.User.Name" {
-    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserName}" {}
-}
-
-variable "SQLServer.Server.Name" {
-    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLServerName}" {}
-}
-
 variable "stringData:openFeatureClientId" {
     value "#{Octopus.FeatureToggles.ClientIdentifier}" {}
 }
@@ -79,4 +67,16 @@ variable "Project.Database.Name" {
 
 variable "spec:rules:0:host" {
     value "#{Standards.K8s.HostName}" {}
+}
+
+variable "Project.SQLServer.Server.Name" {
+    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLServerName}" {}
+}
+
+variable "Project.SQLServer.User.Name" {
+    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserName}" {}
+}
+
+variable "Project.SQLServer.User.Password" {
+    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserPassword}" {}
 }
