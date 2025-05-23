@@ -17,10 +17,6 @@ variable "spec:template:spec:containers:0:image" {
     value "bobjwalker99/trident:#{Octopus.Action.Package[Trident].PackageVersion}" {}
 }
 
-variable "Project.Connection.String" {
-    value "Server=tcp:#{SQLServer.Server.Name},1433;Database=#{Project.Database.Name};User Id=#{SQLServer.User.Name};Password=#{SQLServer.User.Password};trustServerCertificate=true;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;" {}
-}
-
 variable "Project.K8s.Image.VersionTag" {
     value "#{Octopus.Action.Package[trident].PackageVersion}" {}
 }
@@ -85,4 +81,8 @@ variable "Project.Azure.Account" {
     type = "AzureAccount"
 
     value "azure-oidc" {}
+}
+
+variable "Project.Connection.String" {
+    value "Server=tcp:#{Project.SQLServer.Server.Name},1433;Database=#{Project.Database.Name};User Id=#{Project.SQLServer.User.Name};Password=#{Project.SQLServer.User.Password};trustServerCertificate=true;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;" {}
 }
