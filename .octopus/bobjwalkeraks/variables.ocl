@@ -1,21 +1,3 @@
-variable "Project.Database.Name" {
-    value "Trident_Test" {
-        environment = ["test"]
-    }
-
-    value "Trident_Stg" {
-        environment = ["staging"]
-    }
-
-    value "Trident_Prod" {
-        environment = ["production"]
-    }
-
-    value "Trident_Dev#{Project.Formatted.Branch.Name}" {
-        environment = ["development"]
-    }
-}
-
 variable "Project.ScriptToRun.Text" {
     value {
         process = ["runbook/run-adhoc-data-script"]
@@ -39,15 +21,6 @@ variable "Project.Connection.String" {
     value "Server=tcp:#{SQLServer.Server.Name},1433;Database=#{Project.Database.Name};User Id=#{SQLServer.User.Name};Password=#{SQLServer.User.Password};trustServerCertificate=true;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;" {}
 }
 
-variable "Project.K8s.Namespace" {
-    value "trident-#{Octopus.Environment.Name | ToLower }" {}
-
-    value "trident#{Project.Formatted.Branch.Name}-dev" {
-        description = ""
-        environment = ["development"]
-    }
-}
-
 variable "Project.K8s.Image.VersionTag" {
     value "#{Octopus.Action.Package[trident].PackageVersion}" {}
 }
@@ -56,45 +29,12 @@ variable "Project.ChangeReport.Path" {
     value "../../#{Octopus.Project.Name}/#{Octopus.Release.Number}/#{Octopus.Environment.Name}" {}
 }
 
-variable "spec:rules:0:host" {
-    value "tridenttest.local" {
-        environment = ["test"]
-    }
-
-    value "tridentstaging.local" {
-        environment = ["staging"]
-    }
-
-    value "tridentprod.local" {
-        environment = ["production"]
-    }
-
-    value "trident#{Project.Formatted.Branch.Name}dev.local" {
-        environment = ["development"]
-    }
-}
-
 variable "stringData:connectionString" {
     value "#{Project.Connection.String}" {}
 }
 
-variable "Project.ExecutionContainer.K8s" {
-    value "octopuslabs/k8s-workertools:1.31.0" {}
-}
-
 variable "stringData:environment" {
     value "#{Octopus.Environment.Name}" {}
-}
-
-variable "Project.Formatted.Branch.Name" {
-    value "#{Octopus.RunbookRun.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" | Replace \"feature\" \"\" | Replace \"hotfix\" \"\"}" {
-        description = ""
-        process = ["runbook/configure-database", "runbook/destroy-application-infrastructure"]
-    }
-
-    value "#{Octopus.Release.Git.BranchName | Replace \"/\" \"-\" | ToLower | Replace \"refs-heads-\" \"\" | Replace \"feature\" \"\" | Replace \"hotfix\" \"\" }" {
-        process = ["deployment-process"]
-    }
 }
 
 variable "SQLServer.User.Password" {
@@ -111,12 +51,6 @@ variable "SQLServer.Server.Name" {
 
 variable "stringData:openFeatureClientId" {
     value "#{Octopus.FeatureToggles.ClientIdentifier}" {}
-}
-
-variable "Project.Worker.Pool" {
-    type = "WorkerPool"
-
-    value "homelab-k8s" {}
 }
 
 variable "Project.Azure.KeyVault.Secrets" {
@@ -137,4 +71,12 @@ variable "Project.GitHub.Token" {
 
 variable "Project.Runbook.API.Key" {
     value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.OctopusApiKey}" {}
+}
+
+variable "Project.Database.Name" {
+    value "#{Standards.Database.Name}" {}
+}
+
+variable "spec:rules:0:host" {
+    value "#{Standards.K8s.HostName}" {}
 }
