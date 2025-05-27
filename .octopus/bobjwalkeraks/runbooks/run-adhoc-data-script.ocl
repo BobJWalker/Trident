@@ -62,7 +62,7 @@ process {
                 "Octopus.Step[Run AdHoc Script].Action[Run AdHoc Script].Properties[Octopus.Action.RunOnServer]" = "true"
                 "Octopus.Step[Run AdHoc Script].Action[Run AdHoc Script].WorkerPoolVariable" = "Standards.Worker.Pool"
                 Template.ScriptToRun.Text = "#{Project.ScriptToRun.Text}"
-                Template.SQLServer.Database.Name = "#{Project.Database.Name}"
+                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
                 Template.SQLServer.Name = "#{Project.SQLServer.Server.Name}"
                 Template.SQLServer.User.Name = "#{Project.SQLServer.User.Name}"
                 Template.SQLServer.User.Password = "#{Project.SQLServer.User.Password}"
