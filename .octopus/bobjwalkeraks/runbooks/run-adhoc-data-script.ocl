@@ -29,7 +29,7 @@ process {
             properties = {
                 Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
                 Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
-                Azure.KeyVault.RetrieveSecrets.VaultName = "bobjwalker-vault"
+                Azure.KeyVault.RetrieveSecrets.VaultName = "#{Project.Azure.KeyVault.Name}"
                 Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{Project.Azure.KeyVault.Secrets}"
                 Octopus.Action.Template.Id = "ActionTemplates-561"
                 Octopus.Action.Template.Version = "2"
