@@ -107,7 +107,7 @@ step "deploy-databases" {
             "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].Properties[Octopus.Action.RunOnServer]" = "true"
             "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].WorkerPoolVariable" = "Standards.Worker.Pool"
             "Octopus.Step[Notify DBAs].Action[Notify DBAs].Channels" = "Channels-722"
-            Template.Database.ChangeReportDirectory = "#{Project.ChangeReport.Path}"
+            Template.Database.ChangeReportDirectory = "#{Standards.Database.ChangeReport.Path}"
             Template.Database.ConnectionString = "#{Project.Connection.String}"
             Template.Database.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
             Template.DbUp.Executable = "Trident.Database.DbUp"
