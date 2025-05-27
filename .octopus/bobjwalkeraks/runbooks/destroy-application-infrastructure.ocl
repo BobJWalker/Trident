@@ -77,7 +77,7 @@ process {
                 "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
                 "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Properties[Octopus.Action.RunOnServer]" = "true"
                 "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].WorkerPoolVariable" = "Standards.Worker.Pool"
-                Template.SQLServer.Database.Name = "#{Project.Database.Name}"
+                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
                 Template.SQLServer.Name = "#{Project.SQLServer.Server.Name}"
                 Template.SQLServer.User.Name = "#{Project.SQLServer.User.Name}"
                 Template.SQLServer.User.Password = "#{Project.SQLServer.User.Password}"
