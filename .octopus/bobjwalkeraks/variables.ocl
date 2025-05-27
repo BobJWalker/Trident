@@ -84,3 +84,7 @@ variable "stringData:sumologicUrl" {
         description = ""
     }
 }
+
+variable "Project.Azure.KeyVault.Name" {
+    value "bobjwalker-vault" {}
+}
