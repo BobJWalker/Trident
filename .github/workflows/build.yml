@@ -118,8 +118,8 @@ jobs:
             username: ${{ secrets.DOCKERHUB_USERNAME }}
             password: ${{ secrets.DOCKERHUB_PAT }}      
              
-      - name: build and push website container
-        id: build_and_push_container
+      - name: build website container
+        id: build_container
         working-directory: src
         run: | 
             docker build -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ needs.prep.outputs.sem_Ver }} --tag ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }} --tag ${{ vars.DOCKER_HUB_REPO }}:latest .                                               

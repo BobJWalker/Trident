@@ -8,18 +8,18 @@ step "azure-key-vault-retrieve-secrets" {
                 Pulls the database credentials from Azure Key Vault for database and code deployment steps to use.
                 EOT
         properties = {
-            Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
+            Azure.KeyVault.RetrieveSecrets.Account = "Project.Azure.Account"
             Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
-            Azure.KeyVault.RetrieveSecrets.VaultName = "bobjwalker-vault"
+            Azure.KeyVault.RetrieveSecrets.VaultName = "#{Project.Azure.KeyVault.Name}"
             Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{Project.Azure.KeyVault.Secrets}"
             Octopus.Action.Template.Id = "ActionTemplates-561"
             Octopus.Action.Template.Version = "2"
         }
-        worker_pool_variable = "Project.Worker.Pool"
+        worker_pool_variable = "Standards.Worker.Pool"
 
         container {
             feed = "dockerhub"
-            image = "#{Azure.ExecutionContainer.Name}"
+            image = "#{Standards.Azure.ExecutionContainer}"
         }
     }
 }
@@ -37,10 +37,10 @@ step "verify-build-artifacts" {
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Channels" = "Channels-722"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
             "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].WorkerPoolVariable" = "Project.Worker.Pool"
+            "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].WorkerPoolVariable" = "Standards.Worker.Pool"
             "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
             "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].WorkerPoolVariable" = "Project.Worker.Pool"
+            "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].WorkerPoolVariable" = "Standards.Worker.Pool"
             Template.Artifacts = <<-EOT
                 bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}
                 Trident.Database.DbUp:#{Octopus.Action[Deploy Databases-Deploy Database Changes].Package[Template.Database.Package].PackageVersion}
@@ -79,12 +79,7 @@ step "configure-database-server" {
             Run.Runbook.UsePublishedSnapShot = "True"
             Run.Runbook.Waitforfinish = "True"
         }
-        worker_pool_variable = "Project.Worker.Pool"
-
-        container {
-            feed = "dockerhub"
-            image = "#{Project.ExecutionContainer.K8s}"
-        }
+        worker_pool_variable = "Standards.Worker.Pool"
     }
 }
 
@@ -101,7 +96,7 @@ step "deploy-databases" {
             "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Channels" = "Channels-722"
             "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
             "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].WorkerPoolVariable" = "Project.Worker.Pool"
+            "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].WorkerPoolVariable" = "Standards.Worker.Pool"
             "Octopus.Step[Build Delta Report].Action[Build Delta Report].Container" = "{\"Image\":\"#{Project.ExecutionContainer.K8s}\",\"FeedId\":\"Feeds-1283\",\"GitUrl\":null,\"Dockerfile\":null}"
             "Octopus.Step[Build Delta Report].Action[Build Delta Report].WorkerPoolId" = "WorkerPools-423"
             "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
@@ -110,9 +105,9 @@ step "deploy-databases" {
             "Octopus.Step[DBAs Approve Delta Script].Action[DBAs Approve Delta Script].Channels" = "Channels-722"
             "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
             "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].WorkerPoolVariable" = "Project.Worker.Pool"
+            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].WorkerPoolVariable" = "Standards.Worker.Pool"
             "Octopus.Step[Notify DBAs].Action[Notify DBAs].Channels" = "Channels-722"
-            Template.Database.ChangeReportDirectory = "#{Project.ChangeReport.Path}"
+            Template.Database.ChangeReportDirectory = "#{Standards.Database.ChangeReport.Path}"
             Template.Database.ConnectionString = "#{Project.Connection.String}"
             Template.Database.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
             Template.DbUp.Executable = "Trident.Database.DbUp"
@@ -159,12 +154,12 @@ step "deploy-trident-website" {
                 k8s/base/trident-app-secrets.yaml
                 k8s/base/trident-deployment.yaml
                 EOT
-            Octopus.Action.KubernetesContainers.Namespace = "#{Project.K8s.Namespace}"
+            Octopus.Action.KubernetesContainers.Namespace = "#{Standards.K8s.Namespace}"
             Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool = "hosted-ubuntu"
+        worker_pool_variable = "Standards.Worker.Pool"
 
         packages "Trident" {
             acquisition_location = "NotAcquired"
@@ -195,7 +190,7 @@ step "verify-deployment" {
             Octopus.Action.Script.ScriptSource = "GitRepository"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool_variable = "Project.Worker.Pool"
+        worker_pool_variable = "Standards.Worker.Pool"
     }
 }
 
@@ -222,6 +217,6 @@ step "notify-team-of-deployment-status" {
             ssn_Title = "#{Notification.DeploymentStatus.Subject.Text}"
             ssn_Username = "Octopus Deploy"
         }
-        worker_pool_variable = "Project.Worker.Pool"
+        worker_pool_variable = "Standards.Worker.Pool"
     }
 }
