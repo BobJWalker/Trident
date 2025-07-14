@@ -30,7 +30,7 @@ process_template "verify-build-artifacts" {
     version_mask = "X"
 
     parameter "Template.Artifacts" {
-        value = "bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}"                
+        value = "bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}"
     }
 
     parameter "Template.Git.AuthToken" {
@@ -42,7 +42,7 @@ process_template "verify-build-artifacts" {
     }
 
     parameter "Template.Verify.Environments" {
-        value = "Environments-42"
+        value = "Environments-42,Environments-81,Environments-43"
     }
 }
 
