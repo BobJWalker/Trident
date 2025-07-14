@@ -30,7 +30,7 @@ process_template "verify-build-artifacts" {
     version_mask = "X"
 
     parameter "Template.Artifacts" {
-        value = "bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}"                
+        value = "bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}"
     }
 
     parameter "Template.Git.AuthToken" {
@@ -75,6 +75,41 @@ step "configure-database-server" {
             Run.Runbook.Waitforfinish = "True"
         }
         worker_pool_variable = "Standards.Worker.Pool"
+    }
+}
+
+process_template "deploy-databases" {
+    name = "Deploy Databases"
+    process_template_slug = "deploy-database"
+    version_mask = "1.0.X"
+
+    package_parameter "Template.Database.Package" {
+        feed = "octopus-server-built-in"
+        package_id = "Trident.Database.DbUp"
+    }
+
+    parameter "Template.DbUp.Executable" {
+        value = "Trident.Database.DbUp"
+    }
+
+    parameter "Template.Database.ConnectionString" {
+        value = "#{Project.Connection.String}"
+    }
+
+    parameter "Template.Database.ChangeReportDirectory" {
+        value = "#{Standards.Database.ChangeReport.Path}"
+    }
+
+    parameter "Template.WorkerPool" {
+        value = "#{Standards.Worker.Pool}"
+    }
+
+    parameter "Template.Approval.Environments" {
+        value = "Environments-81"
+    }
+
+    parameter "Template.Approval.Teams" {
+        value = "Teams-321"
     }
 }
 
