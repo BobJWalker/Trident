@@ -30,10 +30,7 @@ process_template "verify-build-artifacts" {
     version_mask = "X"
 
     parameter "Template.Artifacts" {
-        value = <<-EOT
-                bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}
-                Trident.Database.DbUp:#{Octopus.Action[Deploy Databases-Deploy Database Changes].Package[Template.Database.Package].PackageVersion}
-                EOT
+        value = "bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}"                
     }
 
     parameter "Template.Git.AuthToken" {
