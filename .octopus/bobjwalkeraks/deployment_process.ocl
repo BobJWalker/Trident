@@ -24,31 +24,28 @@ step "azure-key-vault-retrieve-secrets" {
     }
 }
 
-step "verify-build-artifacts" {
+process_template "verify-build-artifacts" {
     name = "Verify Build Artifacts"
+    process_template_slug = "deploy-process-verify-build-artifacts"
+    version_mask = "X"
 
-    action {
-        action_type = "Octopus.ProcessTemplate"
-        properties = {
-            Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-process-verify-build-artifacts"
-            Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
-            Octopus.Action.ProcessTemplate.Reference.VersionMask = "2.0.X"
-            Octopus.Action.RunOnServer = "false"
-            "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-            "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Attach SBOM to Release].Action[Attach SBOM to Release].WorkerPoolVariable" = "Standards.Worker.Pool"
-            "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-            "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Verify Package SHA].Action[Verify Package SHA].WorkerPoolVariable" = "Standards.Worker.Pool"
-            Template.Artifacts = <<-EOT
+    parameter "Template.Artifacts" {
+        value = <<-EOT
                 bobjwalker99/trident:#{Octopus.Action[Deploy Trident Website].Package[Trident].PackageVersion}
                 Trident.Database.DbUp:#{Octopus.Action[Deploy Databases-Deploy Database Changes].Package[Template.Database.Package].PackageVersion}
                 EOT
-            Template.Git.AuthToken = "#{Project.GitHub.Token}"
-            Template.Verify.Environments = "Environments-42,Environments-81,Environments-43"
-            Template.Verify.WorkerPool = "#{Standards.Worker.Pool}"
-        }
-        worker_pool_variable = ""
+    }
+
+    parameter "Template.Git.AuthToken" {
+        value = "#{Project.GitHub.Token}"
+    }
+
+    parameter "Template.Verify.Environments" {
+        value = "Environments-42,Environments-81,Environments-43"
+    }
+
+    parameter "Template.Verify.WorkerPool" {
+        value = "#{Standards.Worker.Pool}"
     }
 }
 
@@ -84,49 +81,38 @@ step "configure-database-server" {
     }
 }
 
-step "deploy-databases" {
+process_template "deploy-databases" {
     name = "Deploy Databases"
+    process_template_slug = "deploy-database"
+    version_mask = "X"
 
-    action {
-        action_type = "Octopus.ProcessTemplate"
-        properties = {
-            Octopus.Action.ProcessTemplate.Reference.Slug = "deploy-database"
-            Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
-            Octopus.Action.ProcessTemplate.Reference.VersionMask = "4.0.X"
-            Octopus.Action.RunOnServer = "false"
-            "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Channels" = "Channels-722"
-            "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-            "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Build Delta Report and check for auto approval].Action[Build Delta Report and check for auto approval].WorkerPoolVariable" = "Standards.Worker.Pool"
-            "Octopus.Step[Build Delta Report].Action[Build Delta Report].Container" = "{\"Image\":\"#{Project.ExecutionContainer.K8s}\",\"FeedId\":\"Feeds-1283\",\"GitUrl\":null,\"Dockerfile\":null}"
-            "Octopus.Step[Build Delta Report].Action[Build Delta Report].WorkerPoolId" = "WorkerPools-423"
-            "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-            "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Calculate Deployment Mode].Action[Calculate Deployment Mode].WorkerPoolVariable" = "Project.Worker.Pool"
-            "Octopus.Step[DBAs Approve Delta Script].Action[DBAs Approve Delta Script].Channels" = "Channels-722"
-            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].Properties[Octopus.Action.RunOnServer]" = "true"
-            "Octopus.Step[Deploy Database Changes].Action[Deploy Database Changes].WorkerPoolVariable" = "Standards.Worker.Pool"
-            "Octopus.Step[Notify DBAs].Action[Notify DBAs].Channels" = "Channels-722"
-            Template.Approval.Environments = "Environments-81"
-            Template.Approval.Teams = "Teams-321"
-            Template.Database.ChangeReportDirectory = "#{Standards.Database.ChangeReport.Path}"
-            Template.Database.ConnectionString = "#{Project.Connection.String}"
-            Template.Database.Package = "{\"PackageId\":\"Trident.Database.DbUp\",\"FeedId\":\"octopus-server-built-in\"}"
-            Template.DbUp.Executable = "Trident.Database.DbUp"
-            Template.WorkerPool = "#{Standards.Worker.Pool}"
-        }
-        worker_pool_variable = ""
+    package_parameter "Template.Database.Package" {
+        feed = "octopus-server-built-in"
+        package_id = "Trident.Database.DbUp"
+    }
 
-        packages "Template.Database.Package" {
-            acquisition_location = ""
-            feed = "octopus-server-built-in"
-            package_id = "Trident.Database.DbUp"
-            properties = {
-                PackageParameterName = "Template.Database.Package"
-                SelectionMode = "deferred"
-            }
-        }
+    parameter "Template.Approval.Environments" {
+        value = "Environments-81"
+    }
+
+    parameter "Template.Approval.Teams" {
+        value = "Teams-321"
+    }
+
+    parameter "Template.Database.ChangeReportDirectory" {
+        value = "#{Standards.Database.ChangeReport.Path}"
+    }
+
+    parameter "Template.Database.ConnectionString" {
+        value = "#{Project.Connection.String}"
+    }
+
+    parameter "Template.DbUp.Executable" {
+        value = "Trident.Database.DbUp"
+    }
+
+    parameter "Template.WorkerPool" {
+        value = "#{Standards.Worker.Pool}"
     }
 }
 
