@@ -38,7 +38,7 @@ process_template "verify-build-artifacts" {
     }
 
     parameter "Template.Verify.WorkerPool" {
-        value = "WorkerPools-423"
+        value = "#{Standards.Worker.Pool}"
     }
 
     parameter "Template.Verify.Environments" {
