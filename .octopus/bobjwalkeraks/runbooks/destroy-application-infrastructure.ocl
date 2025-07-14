@@ -42,47 +42,43 @@ process {
         }
     }
 
-    step "destroy-k8s-and-sql-infrastructure" {
+    process_template "destroy-k8s-and-sql-infrastructure" {
         name = "Destroy K8s Infrastructure"
-        properties = {
-            "Octopus.Step[Delete Kubernetes Namespace].Properties[Octopus.Action.TargetRoles]" = "trident-web"
+        process_template_slug = "runbook-destroy-container-infrastructure"
+        version_mask = "1.0.X"
+
+        parameter "Template.Kubernetes.Namespace.Name" {
+            value = "#{Standards.K8s.Namespace}"
         }
 
-        action {
-            action_type = "Octopus.ProcessTemplate"
-            properties = {
-                Octopus.Action.ProcessTemplate.Reference.Slug = "runbook-destroy-container-infrastructure"
-                Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
-                Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
-                Octopus.Action.RunOnServer = "false"
-                "Octopus.Step[Delete Kubernetes Namespace].Action[Delete Kubernetes Namespace].WorkerPoolVariable" = "Standards.Worker.Pool"
-                "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-                "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].WorkerPoolVariable" = "Project.Worker.Pool"
-                Template.Kubernetes.Namespace.Name = "#{Standards.K8s.Namespace}"
-            }
-            worker_pool_variable = ""
+        parameter "Template.Kubernetes.TargetTags" {
+            value = "trident-web"
         }
     }
 
-    step "destroy-sql-infrastructure" {
+    process_template "destroy-sql-infrastructure" {
         name = "Destroy SQL Infrastructure"
+        process_template_slug = "runbook-destroy-database-infrastructure"
+        version_mask = "1.0.X"
 
-        action {
-            action_type = "Octopus.ProcessTemplate"
-            properties = {
-                Octopus.Action.ProcessTemplate.Reference.Slug = "runbook-destroy-database-infrastructure"
-                Octopus.Action.ProcessTemplate.Reference.VersionMask = "1.X"
-                Octopus.Action.RunOnServer = "false"
-                "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-                "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[SQL Delete Database].Action[SQL Delete Database].WorkerPoolVariable" = "Standards.Worker.Pool"
-                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
-                Template.SQLServer.Name = "#{Project.SQLServer.Server.Name}"
-                Template.SQLServer.User.Name = "#{Project.SQLServer.User.Name}"
-                Template.SQLServer.User.Password = "#{Project.SQLServer.User.Password}"
-            }
-            worker_pool_variable = ""
+        parameter "Template.SQLServer.Database.Name" {
+            value = "#{Standards.Database.Name}"
+        }
+
+        parameter "Template.SQLServer.Name" {
+            value = "#{Project.SQLServer.Server.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Name" {
+            value = "#{Project.SQLServer.User.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Password" {
+            value = "#{Project.SQLServer.User.Password}"
+        }
+
+        parameter "Template.WorkerPool" {
+            value = "#{Standards.Worker.Pool}"
         }
     }
 

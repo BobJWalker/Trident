@@ -43,31 +43,33 @@ process {
         }
     }
 
-    step "run-adhoc-data-update-script" {
+    process_template "run-adhoc-data-update-script" {
         name = "Run AdHoc Data Update Script"
+        process_template_slug = "runbook-run-adhoc-data-update-script"
+        version_mask = "1.0.X"
 
-        action {
-            action_type = "Octopus.ProcessTemplate"
-            properties = {
-                Octopus.Action.ProcessTemplate.Reference.Slug = "runbook-run-adhoc-data-update-script"
-                Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
-                Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
-                Octopus.Action.RunOnServer = "false"
-                "Octopus.Step[Check Script For Auto Approval].Action[Check Script For Auto Approval].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-                "Octopus.Step[Check Script For Auto Approval].Action[Check Script For Auto Approval].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[Check Script For Auto Approval].Action[Check Script For Auto Approval].WorkerPoolVariable" = "Standards.Worker.Pool"
-                "Octopus.Step[DBA Approve Script].Action[DBA Approve Script].Properties[Octopus.Action.Manual.ResponsibleTeamIds]" = "teams-everyone"
-                "Octopus.Step[Notify DBAs of Pending Changes].Action[Notify DBAs of Pending Changes].Properties[Octopus.Action.Email.To]" = "rjwalker28@gmail.com"
-                "Octopus.Step[Run AdHoc Script].Action[Run AdHoc Script].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-                "Octopus.Step[Run AdHoc Script].Action[Run AdHoc Script].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[Run AdHoc Script].Action[Run AdHoc Script].WorkerPoolVariable" = "Standards.Worker.Pool"
-                Template.ScriptToRun.Text = "#{Project.ScriptToRun.Text}"
-                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
-                Template.SQLServer.Name = "#{Project.SQLServer.Server.Name}"
-                Template.SQLServer.User.Name = "#{Project.SQLServer.User.Name}"
-                Template.SQLServer.User.Password = "#{Project.SQLServer.User.Password}"
-            }
-            worker_pool_variable = ""
+        parameter "Template.ScriptToRun.Text" {
+            value = "#{Project.ScriptToRun.Text}"
+        }
+
+        parameter "Template.SQLServer.Database.Name" {
+            value = "#{Standards.Database.Name}"
+        }
+
+        parameter "Template.SQLServer.Name" {
+            value = "#{Project.SQLServer.Server.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Name" {
+            value = "#{Project.SQLServer.User.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Password" {
+            value = "#{Project.SQLServer.User.Password}"
+        }
+
+        parameter "Template.WorkerPool" {
+            value = "#{Standards.Worker.Pool}"
         }
     }
 }

@@ -227,7 +227,7 @@ jobs:
         with: 
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}         
-      - name: Create release in Octopus 🐙
+      - name: Create and deploy release in Octopus 🐙
         uses: OctopusDeploy/create-release-action@v3
         with:
           server: ${{ vars.OCTOPUS_SERVER_URL }}
@@ -238,19 +238,5 @@ jobs:
           release_number: "${{ needs.prep.outputs.sem_Ver }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
-      - name: Deploy a release in Octopus Deploy 🐙
-        id: deploy_release
-        uses: OctopusDeploy/deploy-release-action@v3
-        with:
-          server: ${{ vars.OCTOPUS_SERVER_URL }}
-          space: ${{ vars.OCTOPUS_SPACE }}
-          project: ${{ vars.OCTOPUS_PROJECT_NAME }}
-          release_number: "${{ needs.prep.outputs.sem_Ver }}"
-          environments: ${{ github.ref == 'refs/heads/main' && vars.OCTOPUS_RELEASE_ENV || vars.OCTOPUS_FEATURE_BRANCH_ENV }}    
-      - name: Await deployment from Octopus Deploy 🐙
-        uses: OctopusDeploy/await-task-action@v3        
-        with:
-          server_task_id: ${{ fromJson(steps.deploy_release.outputs.server_tasks)[0].serverTaskId }}    
-          server: ${{ vars.OCTOPUS_SERVER_URL }}
-          space: ${{ vars.OCTOPUS_SPACE }}      
+      
       

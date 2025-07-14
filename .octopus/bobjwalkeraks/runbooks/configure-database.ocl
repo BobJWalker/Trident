@@ -42,53 +42,43 @@ process {
         }
     }
 
-    step "create-database" {
+    process_template "create-database" {
         name = "Create Database"
+        process_template_slug = "runbook-create-database-infrastructure"
+        version_mask = "1.0.X"
 
-        action {
-            action_type = "Octopus.ProcessTemplate"
-            properties = {
-                Octopus.Action.ProcessTemplate.Reference.Slug = "runbook-create-database-infrastructure"
-                Octopus.Action.ProcessTemplate.Reference.VersionMask = "1.X"
-                Octopus.Action.RunOnServer = "false"
-                "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-                "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].WorkerPoolVariable" = "Standards.Worker.Pool"
-                "Octopus.Step[Verify Database Creation].Action[Verify Database Creation].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-                "Octopus.Step[Verify Database Creation].Action[Verify Database Creation].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[Verify Database Creation].Action[Verify Database Creation].WorkerPoolVariable" = "Standards.Worker.Pool"
-                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
-                Template.SQLServer.Name = "#{Project.SQLServer.Server.Name}"
-                Template.SQLServer.User.Name = "#{Project.SQLServer.User.Name}"
-                Template.SQLServer.User.Password = "#{Project.SQLServer.User.Password}"
-            }
-            worker_pool_variable = ""
+        parameter "Template.SQLServer.Database.Name" {
+            value = "#{Standards.Database.Name}"
+        }
+
+        parameter "Template.SQLServer.Name" {
+            value = "#{Project.SQLServer.Server.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Name" {
+            value = "#{Project.SQLServer.User.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Password" {
+            value = "#{Project.SQLServer.User.Password}"
+        }
+
+        parameter "Template.WorkerPool" {
+            value = "#{Standards.Worker.Pool}"
         }
     }
 
-    step "create-k8s-and-sql-infrastructure" {
+    process_template "create-k8s-and-sql-infrastructure" {
         name = "Create K8s Infrastructure"
-        properties = {
-            "Octopus.Step[Create Application Namespace].Properties[Octopus.Action.TargetRoles]" = "trident-web"
+        process_template_slug = "create-container-infrastructure"
+        version_mask = "1.0.X"
+
+        parameter "Template.Kubernetes.Namespace.Name" {
+            value = "#{Standards.K8s.Namespace}"
         }
 
-        action {
-            action_type = "Octopus.ProcessTemplate"
-            properties = {
-                Octopus.Action.ProcessTemplate.Reference.Slug = "create-container-infrastructure"
-                Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
-                Octopus.Action.ProcessTemplate.Reference.VersionMask = "X"
-                Octopus.Action.RunOnServer = "false"
-                "Octopus.Step[Create Application Namespace].Action[Create Application Namespace].WorkerPoolVariable" = "Standards.Worker.Pool"
-                "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-                "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[SQL - Create Database If Not Exists - Azure or Local].Action[SQL - Create Database If Not Exists - Azure or Local].WorkerPoolVariable" = "Project.Worker.Pool"
-                "Octopus.Step[Verify Database Creation].Action[Verify Database Creation].Container" = "{\"FeedId\":null,\"Image\":null,\"GitUrl\":null,\"Dockerfile\":null}"
-                "Octopus.Step[Verify Database Creation].Action[Verify Database Creation].Properties[Octopus.Action.RunOnServer]" = "true"
-                "Octopus.Step[Verify Database Creation].Action[Verify Database Creation].WorkerPoolVariable" = "Project.Worker.Pool"
-                Template.Kubernetes.Namespace.Name = "#{Standards.K8s.Namespace}"
-            }
-            worker_pool_variable = ""
+        parameter "Template.Kubernetes.TargetTags" {
+            value = "trident-web"
         }
     }
 
