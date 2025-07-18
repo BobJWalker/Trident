@@ -52,7 +52,7 @@ step "verify-infrastructure" {
     action {
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-521"
-            Octopus.Action.Template.Version = "9"
+            Octopus.Action.Template.Version = "10"
             Run.Runbook.Api.Key = "#{Project.Runbook.API.Key}"
             Run.Runbook.AutoApproveManualInterventions = "No"
             Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
