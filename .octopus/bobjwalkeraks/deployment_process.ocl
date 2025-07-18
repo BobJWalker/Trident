@@ -46,26 +46,21 @@ process_template "verify-build-artifacts" {
     }
 }
 
-step "configure-database-server" {
-    name = "Configure Infrastructure"
+step "verify-infrastructure" {
+    name = "Verify Infrastructure"
 
     action {
-        notes = <<-EOT
-                **Always Runs**
-                
-                Runs a runbook to verify the database and namespace application / environment exists.  If it doesn't exist, it will create it automatically.
-                EOT
         properties = {
-            Octopus.Action.Template.Id = "ActionTemplates-141"
-            Octopus.Action.Template.Version = "17"
-            OctopusUseBundledTooling = "False"
+            Octopus.Action.Template.Id = "ActionTemplates-521"
+            Octopus.Action.Template.Version = "8"
             Run.Runbook.Api.Key = "#{Project.Runbook.API.Key}"
             Run.Runbook.AutoApproveManualInterventions = "No"
             Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
             Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
             Run.Runbook.CancelInSeconds = "1800"
+            Run.Runbook.CustomNotes.Toggle = "False"
             Run.Runbook.DateTime = "N/A"
-            Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
+            Run.Runbook.Environment.Name = "#{Octopus.Environment.Id}"
             Run.Runbook.Machines = "N/A"
             Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
             Run.Runbook.Name = "Configure Application Infrastructure"
