@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Build.Evaluation;
 using Microsoft.Extensions.Logging;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Extensions;
@@ -21,18 +20,18 @@ namespace Trident.Web.BusinessLogic.Syncers
         private readonly ILogger<ProjectSyncer> _logger;
         private readonly ISyncLogRepository _syncLogRepository;
         private readonly IOctopusRepository _octopusRepository;        
-        private readonly IProjectRepository _projectRepository;        
-        private readonly IReleaseRepository _releaseRepository;
-        private readonly IDeploymentRepository _deploymentRepository;        
+        private readonly IGenericRepository<ProjectModel> _projectRepository;        
+        private readonly IGenericRepository<ReleaseModel> _releaseRepository;
+        private readonly IGenericRepository<DeploymentModel> _deploymentRepository;        
         private readonly ISyncLogModelFactory _syncLogModelFactory;
 
         public ProjectSyncer(
             ILogger<ProjectSyncer> logger,
             ISyncLogRepository syncLogRepository,
             IOctopusRepository octopusRepository,            
-            IProjectRepository projectRepository,            
-            IReleaseRepository releaseRepository,
-            IDeploymentRepository deploymentRepository,            
+            IGenericRepository<ProjectModel> projectRepository,            
+            IGenericRepository<ReleaseModel> releaseRepository,
+            IGenericRepository<DeploymentModel> deploymentRepository,            
             ISyncLogModelFactory syncLogModelFactory)
         {
             _logger = logger;
@@ -60,7 +59,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                 }
 
                 await LogInformation($"Checking to see if project {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                var itemModel = await _projectRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
+                var itemModel = await _projectRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Project already exists, updating" : "Unable to find project, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
@@ -89,7 +88,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                 }
 
                 await LogInformation($"Checking to see if release {syncJobCompositeModel.InstanceModel.Name}:{space.Name}:{project.Name}:{item.OctopusId}:{item.Version} already exists", syncJobCompositeModel);
-                var itemModel = await _releaseRepository.GetByOctopusIdAsync(item.OctopusId, project.Id);
+                var itemModel = await _releaseRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Release already exists, updating" : "Unable to find release, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
@@ -117,7 +116,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                 }
 
                 await LogInformation($"Checking to see if deployment {item.OctopusId} already exists", syncJobCompositeModel);
-                var itemModel = await _deploymentRepository.GetByOctopusIdAsync(item.OctopusId, releaseModel.Id);
+                var itemModel = await _deploymentRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Deployment already exists, updating" : "Unable to find deployment, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 

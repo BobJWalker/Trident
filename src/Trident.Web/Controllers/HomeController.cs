@@ -12,7 +12,7 @@ using Trident.Web.Core.Configuration;
 namespace Trident.Web.Controllers
 {
     public class HomeController (ILogger<HomeController> logger,
-            IInstanceRepository instanceRepository,
+            IGenericRepository<InstanceModel> instanceRepository,
             ISyncModelFactory syncModelFactory,
             ISyncRepository syncRepository,
             IMetricConfiguration metricConfiguration)

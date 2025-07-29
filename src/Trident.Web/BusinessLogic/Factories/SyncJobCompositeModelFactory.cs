@@ -10,18 +10,11 @@ namespace Trident.Web.BusinessLogic.Factories
         Task<SyncJobCompositeModel> MakeSyncJobCompositeModelAsync(SyncModel syncModel);
     }
 
-    public class SyncJobCompositeModelFactory : ISyncJobCompositeModelFactory
+    public class SyncJobCompositeModelFactory(IGenericRepository<InstanceModel> instanceRepository) : ISyncJobCompositeModelFactory
     {
-        private readonly IInstanceRepository _instanceRepository;
-
-        public SyncJobCompositeModelFactory(IInstanceRepository instanceRepository)
-        {
-            _instanceRepository = instanceRepository;
-        }
-
         public async Task<SyncJobCompositeModel> MakeSyncJobCompositeModelAsync(SyncModel syncModel)
         {
-            var instance = await _instanceRepository.GetByIdAsync(syncModel.InstanceId);
+            var instance = await instanceRepository.GetByIdAsync(syncModel.InstanceId);
 
             return new SyncJobCompositeModel
             {

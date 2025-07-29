@@ -21,12 +21,12 @@ namespace Trident.Web.BusinessLogic.Facades
         private readonly ILogger<SyncJobFacade> _logger;
         private readonly ISyncLogRepository _syncLogRepository;
         private readonly IOctopusRepository _octopusRepository;
-        private readonly ISpaceRepository _spaceRepository;
-        private readonly IProjectRepository _projectRepository;
-        private readonly IEnvironmentRepository _environmentRepository;
-        private readonly ITenantRepository _tenantRepository;
-        private readonly IReleaseRepository _releaseRepository;
-        private readonly IDeploymentRepository _deploymentRepository;
+        private readonly IGenericRepository<SpaceModel> _spaceRepository;
+        private readonly IGenericRepository<ProjectModel> _projectRepository;
+        private readonly IGenericRepository<EnvironmentModel> _environmentRepository;
+        private readonly IGenericRepository<TenantModel> _tenantRepository;
+        private readonly IGenericRepository<ReleaseModel> _releaseRepository;
+        private readonly IGenericRepository<DeploymentModel> _deploymentRepository;
         private readonly ISyncRepository _syncRepository;
         private readonly ISyncLogModelFactory _syncLogModelFactory;
 
@@ -34,12 +34,12 @@ namespace Trident.Web.BusinessLogic.Facades
             ILogger<SyncJobFacade> logger,
             ISyncLogRepository syncLogRepository,
             IOctopusRepository octopusRepository,
-            ISpaceRepository spaceRepository,
-            IProjectRepository projectRepository,
-            IEnvironmentRepository environmentRepository,
-            ITenantRepository tenantRepository,
-            IReleaseRepository releaseRepository,
-            IDeploymentRepository deploymentRepository,
+            IGenericRepository<SpaceModel> spaceRepository,
+            IGenericRepository<ProjectModel> projectRepository,
+            IGenericRepository<EnvironmentModel> environmentRepository,
+            IGenericRepository<TenantModel> tenantRepository,
+            IGenericRepository<ReleaseModel> releaseRepository,
+            IGenericRepository<DeploymentModel> deploymentRepository,
             ISyncRepository syncRepository,
             ISyncLogModelFactory syncLogModelFactory)
         {
@@ -123,7 +123,7 @@ namespace Trident.Web.BusinessLogic.Facades
                     }
 
                     await LogInformation($"Checking to see if space {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                    var spaceModel = await _spaceRepository.GetByOctopusIdAsync(item.OctopusId, syncJobCompositeModel.InstanceModel.Id);
+                    var spaceModel = await _spaceRepository.GetByOctopusIdAsync(item.OctopusId);
                     await LogInformation($"{(spaceModel != null ? "Space already exists, updating" : "Unable to find space, creating")}", syncJobCompositeModel);
                     item.Id = spaceModel?.Id ?? 0;
                     item.InstanceId = syncJobCompositeModel.InstanceModel.Id;
@@ -172,7 +172,7 @@ namespace Trident.Web.BusinessLogic.Facades
                 }
 
                 await LogInformation($"Checking to see if project {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                var itemModel = await _projectRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
+                var itemModel = await _projectRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Project already exists, updating" : "Unable to find project, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
@@ -199,7 +199,7 @@ namespace Trident.Web.BusinessLogic.Facades
                 }
 
                 await LogInformation($"Checking to see if environment {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                var itemModel = await _environmentRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
+                var itemModel = await _environmentRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Environment already exists, updating" : "Unable to find environment, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
@@ -225,7 +225,7 @@ namespace Trident.Web.BusinessLogic.Facades
                 }
 
                 await LogInformation($"Checking to see if tenant {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                var itemModel = await _tenantRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
+                var itemModel = await _tenantRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Tenant already exists, updating" : "Unable to find tenant, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
@@ -251,7 +251,7 @@ namespace Trident.Web.BusinessLogic.Facades
                 }
 
                 await LogInformation($"Checking to see if release {syncJobCompositeModel.InstanceModel.Name}:{space.Name}:{project.Name}:{item.OctopusId}:{item.Version} already exists", syncJobCompositeModel);
-                var itemModel = await _releaseRepository.GetByOctopusIdAsync(item.OctopusId, project.Id);
+                var itemModel = await _releaseRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Release already exists, updating" : "Unable to find release, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
@@ -279,7 +279,7 @@ namespace Trident.Web.BusinessLogic.Facades
                 }
 
                 await LogInformation($"Checking to see if deployment {item.OctopusId} already exists", syncJobCompositeModel);
-                var itemModel = await _deploymentRepository.GetByOctopusIdAsync(item.OctopusId, releaseModel.Id);
+                var itemModel = await _deploymentRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Deployment already exists, updating" : "Unable to find deployment, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Extensions;
+using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.CompositeModels;
 using Trident.Web.DataAccess;
 
@@ -19,16 +20,16 @@ namespace Trident.Web.BusinessLogic.Syncers
         private readonly ILogger<EventSyncer> _logger;
         private readonly ISyncLogRepository _syncLogRepository;
         private readonly IOctopusRepository _octopusRepository;        
-        private readonly IReleaseRepository _releaseRepository;
-        private readonly IDeploymentRepository _deploymentRepository;        
+        private readonly IGenericRepository<ReleaseModel> _releaseRepository;
+        private readonly IGenericRepository<DeploymentModel> _deploymentRepository;        
         private readonly ISyncLogModelFactory _syncLogModelFactory;
 
         public EventSyncer(
             ILogger<EventSyncer> logger,
             ISyncLogRepository syncLogRepository,
             IOctopusRepository octopusRepository,            
-            IReleaseRepository releaseRepository,
-            IDeploymentRepository deploymentRepository,            
+            IGenericRepository<ReleaseModel> releaseRepository,
+            IGenericRepository<DeploymentModel> deploymentRepository,            
             ISyncLogModelFactory syncLogModelFactory)
         {
             _logger = logger;
