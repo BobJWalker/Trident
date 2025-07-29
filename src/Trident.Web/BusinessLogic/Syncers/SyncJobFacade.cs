@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Constants;
 using Trident.Web.Core.Extensions;
+using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.CompositeModels;
 using Trident.Web.DataAccess;
 
@@ -21,7 +22,7 @@ namespace Trident.Web.BusinessLogic.Syncers
         private readonly ILogger<InstanceSyncer> _logger;
         private readonly ISyncLogRepository _syncLogRepository;
         private readonly IOctopusRepository _octopusRepository;
-        private readonly ISpaceRepository _spaceRepository;
+        private readonly IGenericRepository<SpaceModel> _spaceRepository;
         private readonly ISyncRepository _syncRepository;
         private readonly ISyncLogModelFactory _syncLogModelFactory;
         private readonly IEnvironmentSyncer _environmentSyncer;
@@ -33,7 +34,7 @@ namespace Trident.Web.BusinessLogic.Syncers
             ILogger<InstanceSyncer> logger,
             ISyncLogRepository syncLogRepository,
             IOctopusRepository octopusRepository,
-            ISpaceRepository spaceRepository,
+            IGenericRepository<SpaceModel> spaceRepository,
             ISyncRepository syncRepository,
             ISyncLogModelFactory syncLogModelFactory,
             IEnvironmentSyncer environmentSyncer,
@@ -120,7 +121,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                     }
 
                     await LogInformation($"Checking to see if space {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                    var spaceModel = await _spaceRepository.GetByOctopusIdAsync(item.OctopusId, syncJobCompositeModel.InstanceModel.Id);
+                    var spaceModel = await _spaceRepository.GetByOctopusIdAsync(item.OctopusId);
                     await LogInformation($"{(spaceModel != null ? "Space already exists, updating" : "Unable to find space, creating")}", syncJobCompositeModel);
                     item.Id = spaceModel?.Id ?? 0;
                     item.InstanceId = syncJobCompositeModel.InstanceModel.Id;

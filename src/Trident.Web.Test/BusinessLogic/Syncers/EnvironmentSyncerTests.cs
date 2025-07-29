@@ -14,7 +14,7 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
         private Mock<ILogger<EnvironmentSyncer>> _loggerMock;
         private Mock<ISyncLogRepository> _syncLogRepositoryMock;
         private Mock<IOctopusRepository> _octopusRepositoryMock;
-        private Mock<IEnvironmentRepository> _environmentRepositoryMock;
+        private Mock<IGenericRepository<EnvironmentModel>> _environmentRepositoryMock;
         private Mock<ISyncLogModelFactory> _syncLogModelFactoryMock;
         private EnvironmentSyncer _environmentSyncer;
 
@@ -24,7 +24,7 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
             _loggerMock = new Mock<ILogger<EnvironmentSyncer>>();
             _syncLogRepositoryMock = new Mock<ISyncLogRepository>();
             _octopusRepositoryMock = new Mock<IOctopusRepository>();
-            _environmentRepositoryMock = new Mock<IEnvironmentRepository>();
+            _environmentRepositoryMock = new Mock<IGenericRepository<EnvironmentModel>>();
             _syncLogModelFactoryMock = new Mock<ISyncLogModelFactory>();
 
             _environmentSyncer = new EnvironmentSyncer(
@@ -56,7 +56,7 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
             _octopusRepositoryMock.Setup(repo => repo.GetAllEnvironmentsForSpaceAsync(syncJobCompositeModel.InstanceModel, space))
                 .ReturnsAsync(octopusEnvironments);
 
-            _environmentRepositoryMock.Setup(repo => repo.GetByOctopusIdAsync(It.IsAny<string>(), It.IsAny<int>()))
+            _environmentRepositoryMock.Setup(repo => repo.GetByOctopusIdAsync(It.IsAny<string>()))
                 .ReturnsAsync((EnvironmentModel)null);
 
             _environmentRepositoryMock.Setup(repo => repo.InsertAsync(It.IsAny<EnvironmentModel>()))
@@ -94,7 +94,7 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
             _octopusRepositoryMock.Setup(repo => repo.GetAllEnvironmentsForSpaceAsync(syncJobCompositeModel.InstanceModel, space))
                 .ReturnsAsync(octopusEnvironments);
 
-            _environmentRepositoryMock.Setup(repo => repo.GetByOctopusIdAsync("1", space.Id))
+            _environmentRepositoryMock.Setup(repo => repo.GetByOctopusIdAsync("1"))
                 .ReturnsAsync(existingEnvironment);
 
             _environmentRepositoryMock.Setup(repo => repo.UpdateAsync(It.IsAny<EnvironmentModel>()))

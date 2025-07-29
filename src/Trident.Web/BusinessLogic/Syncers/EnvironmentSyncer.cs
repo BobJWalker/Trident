@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -22,14 +20,14 @@ namespace Trident.Web.BusinessLogic.Syncers
         private readonly ILogger<EnvironmentSyncer> _logger;
         private readonly ISyncLogRepository _syncLogRepository;
         private readonly IOctopusRepository _octopusRepository;        
-        private readonly IEnvironmentRepository _environmentRepository;
+        private readonly IGenericRepository<EnvironmentModel> _environmentRepository;
         private readonly ISyncLogModelFactory _syncLogModelFactory;
 
         public EnvironmentSyncer(
             ILogger<EnvironmentSyncer> logger,
             ISyncLogRepository syncLogRepository,
             IOctopusRepository octopusRepository,            
-            IEnvironmentRepository environmentRepository,
+            IGenericRepository<EnvironmentModel> environmentRepository,
             ISyncLogModelFactory syncLogModelFactory)
         {
             _logger = logger;
@@ -54,7 +52,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                 }
 
                 await LogInformation($"Checking to see if environment {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                var itemModel = await _environmentRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
+                var itemModel = await _environmentRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Environment already exists, updating" : "Unable to find environment, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 

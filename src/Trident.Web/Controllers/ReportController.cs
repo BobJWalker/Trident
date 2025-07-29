@@ -1,17 +1,18 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.ViewModels;
 using Trident.Web.DataAccess;
 
 namespace Trident.Web.Controllers
 {
-    public class ReportController(IInstanceRepository instanceRepository, ISpaceRepository spaceRepository)
+    public class ReportController(IGenericRepository<InstanceModel> instanceRepository, IGenericRepository<SpaceModel> spaceRepository)
         : Controller
     {        
         public async Task<IActionResult> Index(int instanceId)
         {
             var instanceModel = await instanceRepository.GetByIdAsync(instanceId);
-            var spaceList = await spaceRepository.GetAllAsync(currentPageNumber: 1, rowsPerPage: int.MaxValue, "Name", true, instanceId);
+            var spaceList = await spaceRepository.GetAllByParentIdAsync(currentPageNumber: 1, rowsPerPage: int.MaxValue, "Name", true, "InstanceId", instanceId);
 
             var viewModel = new ReportingViewModel
             {

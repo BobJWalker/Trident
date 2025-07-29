@@ -22,14 +22,14 @@ namespace Trident.Web.BusinessLogic.Syncers
         private readonly ILogger<TenantSyncer> _logger;
         private readonly ISyncLogRepository _syncLogRepository;
         private readonly IOctopusRepository _octopusRepository;        
-        private readonly ITenantRepository _tenantRepository;
+        private readonly IGenericRepository<TenantModel> _tenantRepository;
         private readonly ISyncLogModelFactory _syncLogModelFactory;
 
         public TenantSyncer(
             ILogger<TenantSyncer> logger,
             ISyncLogRepository syncLogRepository,
             IOctopusRepository octopusRepository,            
-            ITenantRepository tenantRepository,
+            IGenericRepository<TenantModel> tenantRepository,
             ISyncLogModelFactory syncLogModelFactory)
         {
             _logger = logger;
@@ -54,7 +54,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                 }
 
                 await LogInformation($"Checking to see if tenant {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                var itemModel = await _tenantRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
+                var itemModel = await _tenantRepository.GetByOctopusIdAsync(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Tenant already exists, updating" : "Unable to find tenant, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
