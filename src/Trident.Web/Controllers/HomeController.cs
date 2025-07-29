@@ -12,7 +12,7 @@ using Trident.Web.Core.Configuration;
 namespace Trident.Web.Controllers
 {
     public class HomeController (ILogger<HomeController> logger,
-            IGenericRepository<InstanceModel> instanceRepository,
+            IGenericRepository instanceRepository,
             ISyncModelFactory syncModelFactory,
             ISyncRepository syncRepository,
             IMetricConfiguration metricConfiguration)
@@ -20,7 +20,7 @@ namespace Trident.Web.Controllers
     {        
         public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
         {            
-            var allInstances = await instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);      
+            var allInstances = await instanceRepository.GetAllAsync<InstanceModel>(currentPage, rowsPerPage, sortColumn, isAsc);      
 
             if (allInstances.Items.Count == 0 && string.IsNullOrWhiteSpace(metricConfiguration.DefaultInstanceUrl) == false && metricConfiguration.DefaultInstanceUrl != "blah")  
             {
@@ -35,7 +35,7 @@ namespace Trident.Web.Controllers
 
                 await instanceRepository.InsertAsync(defaultInstance);
 
-                allInstances = await instanceRepository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);
+                allInstances = await instanceRepository.GetAllAsync<InstanceModel>(currentPage, rowsPerPage, sortColumn, isAsc);
             }
             else
             {
@@ -47,7 +47,7 @@ namespace Trident.Web.Controllers
 
         public async Task<IActionResult> StartSync(int id)
         {
-            var instance = await instanceRepository.GetByIdAsync(id);
+            var instance = await instanceRepository.GetByIdAsync<InstanceModel>(id);
             var previousSync = await syncRepository.GetLastSuccessfulSync(id);
 
             var newSync = syncModelFactory.CreateModel(id, instance.Name, previousSync);
@@ -66,7 +66,7 @@ namespace Trident.Web.Controllers
 
         public async Task<IActionResult> EditInstance(int id)
         {
-            var instance = await instanceRepository.GetByIdAsync(id);
+            var instance = await instanceRepository.GetByIdAsync<InstanceModel>(id);
 
             return View("InstanceMaintenance", instance);
         }

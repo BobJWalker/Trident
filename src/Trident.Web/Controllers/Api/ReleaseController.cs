@@ -8,19 +8,19 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances/{instanceId}/spaces/{spaceId}/projects/{projectId}/releases")]
-    public class ReleaseController(IGenericRepository<ReleaseModel> repository) : ControllerBase
+    public class ReleaseController(IGenericRepository repository) : ControllerBase
     {        
         [HttpGet]
         public Task<PagedViewModel<ReleaseModel>> GetAll(int projectId, int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Start", bool isAsc = true)
         {
-            return repository.GetAllByParentIdAsync(currentPage, rowsPerPage, sortColumn, isAsc, "ProjectId", projectId);
+            return repository.GetAllByParentIdAsync<ReleaseModel>(currentPage, rowsPerPage, sortColumn, isAsc, "ProjectId", projectId);
         }
 
         [HttpGet]
         [Route("{id}")]
         public Task<ReleaseModel> GetById(int id)
         {
-            return repository.GetByIdAsync(id);
+            return repository.GetByIdAsync<ReleaseModel>(id);
         }
         
         [HttpPost]        
@@ -44,7 +44,7 @@ namespace Trident.Web.Controllers.Api
         [Route("{id}")]
         public Task Delete(int projectId, int id)
         {
-            return repository.DeleteAsync(id);
+            return repository.DeleteAsync<ReleaseModel>(id);
         }
     }
 }

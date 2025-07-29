@@ -17,43 +17,17 @@ namespace Trident.Web.BusinessLogic.Syncers
         Task ProcessSyncJob(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken);
     }
 
-    public class InstanceSyncer : IInstanceSyncer
+    public class InstanceSyncer(
+        ILogger<InstanceSyncer> logger,        
+        IOctopusRepository octopusRepository,
+        IGenericRepository genericRepository,
+        ISyncRepository syncRepository,
+        ISyncLogModelFactory syncLogModelFactory,
+        IEnvironmentSyncer environmentSyncer,
+        IProjectSyncer projectSyncer,
+        ITenantSyncer tenantSyncer,
+        IEventSyncer eventSyncer) : IInstanceSyncer
     {
-        private readonly ILogger<InstanceSyncer> _logger;
-        private readonly ISyncLogRepository _syncLogRepository;
-        private readonly IOctopusRepository _octopusRepository;
-        private readonly IGenericRepository<SpaceModel> _spaceRepository;
-        private readonly ISyncRepository _syncRepository;
-        private readonly ISyncLogModelFactory _syncLogModelFactory;
-        private readonly IEnvironmentSyncer _environmentSyncer;
-        private readonly IProjectSyncer _projectSyncer;
-        private readonly ITenantSyncer _tenantSyncer;
-        private readonly IEventSyncer _eventSyncer;
-
-        public InstanceSyncer(
-            ILogger<InstanceSyncer> logger,
-            ISyncLogRepository syncLogRepository,
-            IOctopusRepository octopusRepository,
-            IGenericRepository<SpaceModel> spaceRepository,
-            ISyncRepository syncRepository,
-            ISyncLogModelFactory syncLogModelFactory,
-            IEnvironmentSyncer environmentSyncer,
-            IProjectSyncer projectSyncer,
-            ITenantSyncer tenantSyncer,
-            IEventSyncer eventSyncer)
-        {
-            _logger = logger;
-            _syncLogRepository = syncLogRepository;
-            _octopusRepository = octopusRepository;
-            _spaceRepository = spaceRepository;
-            _syncRepository = syncRepository;
-            _syncLogModelFactory = syncLogModelFactory;
-            _environmentSyncer = environmentSyncer;
-            _projectSyncer = projectSyncer;
-            _tenantSyncer = tenantSyncer;
-            _eventSyncer = eventSyncer;
-        }
-
         public async Task ProcessSyncJob(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken)
         {
             try
@@ -61,7 +35,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                 await LogInformation("Setting the starting date to UTC Now", syncJobCompositeModel);
                 syncJobCompositeModel.SyncModel.Started = DateTime.UtcNow;
                 syncJobCompositeModel.SyncModel.State = SyncState.Started;
-                await _syncRepository.UpdateAsync(syncJobCompositeModel.SyncModel);
+                await syncRepository.UpdateAsync(syncJobCompositeModel.SyncModel);
 
                 var isSuccessful = await SyncAllRecords(syncJobCompositeModel, stoppingToken);
 
@@ -102,7 +76,7 @@ namespace Trident.Web.BusinessLogic.Syncers
             }
 
             await LogInformation("Updating the sync job", syncJobCompositeModel);
-            await _syncRepository.UpdateAsync(syncJobCompositeModel.SyncModel);
+            await syncRepository.UpdateAsync(syncJobCompositeModel.SyncModel);
         }
 
         private async Task<bool> SyncAllRecords(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken)
@@ -110,7 +84,7 @@ namespace Trident.Web.BusinessLogic.Syncers
             try
             {
                 await LogInformation($"Getting all the spaces for {syncJobCompositeModel.InstanceModel.Name}", syncJobCompositeModel);
-                var octopusSpaces = await _octopusRepository.GetAllSpacesAsync(syncJobCompositeModel.InstanceModel);
+                var octopusSpaces = await octopusRepository.GetAllSpacesAsync(syncJobCompositeModel.InstanceModel);
                 await LogInformation($"{octopusSpaces.Count} space(s) found", syncJobCompositeModel);
 
                 foreach (var item in octopusSpaces)
@@ -121,22 +95,22 @@ namespace Trident.Web.BusinessLogic.Syncers
                     }
 
                     await LogInformation($"Checking to see if space {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                    var spaceModel = await _spaceRepository.GetByOctopusIdAsync(item.OctopusId);
+                    var spaceModel = await genericRepository.GetByOctopusIdAsync<SpaceModel>(item.OctopusId);
                     await LogInformation($"{(spaceModel != null ? "Space already exists, updating" : "Unable to find space, creating")}", syncJobCompositeModel);
                     item.Id = spaceModel?.Id ?? 0;
                     item.InstanceId = syncJobCompositeModel.InstanceModel.Id;
 
                     await LogInformation($"Saving space {item.OctopusId}:{item.Name} to the database", syncJobCompositeModel);
-                    var spaceToTrack = item.Id > 0 ? await _spaceRepository.UpdateAsync(item) : await _spaceRepository.InsertAsync(item);
+                    var spaceToTrack = item.Id > 0 ? await genericRepository.UpdateAsync(item) : await genericRepository.InsertAsync(item);
                     syncJobCompositeModel.SpaceDictionary.Add(item.OctopusId, spaceToTrack);
 
-                    var environmentList = await _environmentSyncer.ProcessEnvironments(syncJobCompositeModel, spaceToTrack, stoppingToken);
+                    var environmentList = await environmentSyncer.ProcessEnvironments(syncJobCompositeModel, spaceToTrack, stoppingToken);
                     environmentList.ToList().ForEach(x => syncJobCompositeModel.EnvironmentDictionary.Add(x.Key, x.Value));                    
 
-                    var tenantList = await _tenantSyncer.ProcessTenants(syncJobCompositeModel, spaceToTrack, stoppingToken);
+                    var tenantList = await tenantSyncer.ProcessTenants(syncJobCompositeModel, spaceToTrack, stoppingToken);
                     tenantList.ToList().ForEach(x => syncJobCompositeModel.TenantDictionary.Add(x.Key, x.Value));
                     
-                    var projectList = await _projectSyncer.ProcessProjects(syncJobCompositeModel, spaceToTrack, stoppingToken);
+                    var projectList = await projectSyncer.ProcessProjects(syncJobCompositeModel, spaceToTrack, stoppingToken);
                     projectList.ToList().ForEach(x => syncJobCompositeModel.ProjectDictionary.Add(x.Key, x.Value));                    
                 }
 
@@ -147,7 +121,7 @@ namespace Trident.Web.BusinessLogic.Syncers
 
                 if(syncJobCompositeModel.SyncModel.SearchStartDate.HasValue == true)
                 {
-                    await _eventSyncer.ProcessDeploymentsSinceLastSync(syncJobCompositeModel, stoppingToken);                
+                    await eventSyncer.ProcessDeploymentsSinceLastSync(syncJobCompositeModel, stoppingToken);                
                 }
 
                 return true;
@@ -163,15 +137,15 @@ namespace Trident.Web.BusinessLogic.Syncers
         private async Task LogInformation(string message, SyncJobCompositeModel syncJobCompositeModel)
         {
             var formattedMessage = $"{syncJobCompositeModel.GetMessagePrefix()}{message}";
-            _logger.LogInformation(formattedMessage);
-            await _syncLogRepository.InsertAsync(_syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
+            logger.LogInformation(formattedMessage);
+            await genericRepository.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
         }
 
         private async Task LogException(string message, SyncJobCompositeModel syncJobCompositeModel)
         {
             var formattedMessage = $"{syncJobCompositeModel.GetMessagePrefix()}{message}";
-            _logger.LogError(formattedMessage);
-            await _syncLogRepository.InsertAsync(_syncLogModelFactory.MakeErrorLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
+            logger.LogError(formattedMessage);
+            await genericRepository.InsertAsync(syncLogModelFactory.MakeErrorLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
         }
     }
 }

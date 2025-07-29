@@ -8,19 +8,19 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances")]
-    public class InstanceController(IGenericRepository<InstanceModel> repository) : ControllerBase
+    public class InstanceController(IGenericRepository repository) : ControllerBase
     {
         [HttpGet]        
         public Task<PagedViewModel<InstanceModel>> GetAll(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
         {
-            return repository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc);
+            return repository.GetAllAsync<InstanceModel>(currentPage, rowsPerPage, sortColumn, isAsc);
         }
         
         [HttpGet]
         [Route("{id}")]
         public Task<InstanceModel> GetById(int id)
         {
-            return repository.GetByIdAsync(id);
+            return repository.GetByIdAsync<InstanceModel>(id);
         }
         
         [HttpPost]
@@ -40,7 +40,7 @@ namespace Trident.Web.Controllers.Api
         [Route("{id}")]
         public Task Delete(int id)
         {
-            return repository.DeleteAsync(id);
+            return repository.DeleteAsync<InstanceModel>(id);
         }
     }
 }

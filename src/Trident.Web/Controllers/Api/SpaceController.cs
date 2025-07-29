@@ -8,19 +8,19 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances/{instanceId}/spaces")]
-    public class SpaceController(IGenericRepository<SpaceModel> repository) : ControllerBase
+    public class SpaceController(IGenericRepository repository) : ControllerBase
     {
         [HttpGet]
         public Task<PagedViewModel<SpaceModel>> GetAll(int instanceId, int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Start", bool isAsc = true)
         {
-            return repository.GetAllByParentIdAsync(currentPage, rowsPerPage, sortColumn, isAsc, "InstanceId", instanceId);
+            return repository.GetAllByParentIdAsync<SpaceModel>(currentPage, rowsPerPage, sortColumn, isAsc, "InstanceId", instanceId);
         }
 
         [HttpGet]
         [Route("{id}")]
         public Task<SpaceModel> GetById(int id)
         {
-            return repository.GetByIdAsync(id);
+            return repository.GetByIdAsync<SpaceModel>(id);
         }
         
         [HttpPost]        
@@ -44,7 +44,7 @@ namespace Trident.Web.Controllers.Api
         [Route("{id}")]
         public Task Delete(int id)
         {
-            return repository.DeleteAsync(id);
+            return repository.DeleteAsync<SpaceModel>(id);
         }
     }
 }

@@ -9,20 +9,20 @@ using Trident.Web.Core.Models.ViewModels;
 
 namespace Trident.Web.DataAccess
 {
-    public interface IGenericRepository<T> where T : BaseOctopusModel
+    public interface IGenericRepository
     {
-        Task<PagedViewModel<T>> GetAllAsync(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc);
-        Task<T> GetByIdAsync(int id);
-        Task<T> GetByOctopusIdAsync(string octopusId);        
-        Task<PagedViewModel<T>> GetAllByParentIdAsync(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc, string whereColumn, int parentId);
-        Task<T> InsertAsync(T model);
-        Task<T> UpdateAsync(T model);
-        Task DeleteAsync(int id);
+        Task<PagedViewModel<T>> GetAllAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc) where T : BaseModel;
+        Task<T> GetByIdAsync<T>(int id) where T : BaseModel;
+        Task<T> GetByOctopusIdAsync<T>(string octopusId) where T : BaseOctopusModel;
+        Task<PagedViewModel<T>> GetAllByParentIdAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc, string whereColumn, int parentId) where T : BaseModel;
+        Task<T> InsertAsync<T>(T model) where T : BaseModel;
+        Task<T> UpdateAsync<T>(T model) where T : BaseModel;
+        Task DeleteAsync<T>(int id) where T : BaseModel;
     }
 
-    public class GenericRepository<T>(IMetricConfiguration metricConfiguration) : IGenericRepository<T> where T : BaseOctopusModel
+    public class GenericRepository(IMetricConfiguration metricConfiguration) : IGenericRepository
     {
-        public async Task<T> GetByIdAsync(int id)
+        public async Task<T> GetByIdAsync<T>(int id) where T : BaseModel
         {
             using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
             {
@@ -30,7 +30,7 @@ namespace Trident.Web.DataAccess
             }
         }
 
-        public async Task<PagedViewModel<T>> GetAllAsync(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc)
+        public async Task<PagedViewModel<T>> GetAllAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc) where T : BaseModel
         {
             using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
             {
@@ -48,7 +48,25 @@ namespace Trident.Web.DataAccess
             }
         }
 
-        public async Task<T> GetByOctopusIdAsync(string octopusId)
+        public async Task<PagedViewModel<T>> GetAllAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc, string whereClause) where T : BaseModel
+        {
+            using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
+            {
+                var totalRecords = await connection.RecordCountAsync<T>(null);
+                var results = await connection.GetListPagedAsync<T>(currentPageNumber, rowsPerPage, $"", $"{sortColumn} {(isAsc ? "asc" : "desc")}");
+
+                return new PagedViewModel<T>
+                {
+                    Items = results.ToList(),
+                    TotalPages = GetTotalPages(totalRecords, rowsPerPage),
+                    TotalRecords = totalRecords,
+                    CurrentPageNumber = currentPageNumber,
+                    RowsPerPage = rowsPerPage
+                };
+            }
+        }
+
+        public async Task<T> GetByOctopusIdAsync<T>(string octopusId) where T : BaseOctopusModel
         {
             using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
             {
@@ -58,7 +76,7 @@ namespace Trident.Web.DataAccess
             }
         }
 
-        public async Task<PagedViewModel<T>> GetAllByParentIdAsync(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc, string whereColumn, int parentId)
+        public async Task<PagedViewModel<T>> GetAllByParentIdAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc, string whereColumn, int parentId) where T : BaseModel
         {
             using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
             {
@@ -76,7 +94,7 @@ namespace Trident.Web.DataAccess
             }
         }
 
-        public async Task<T> InsertAsync(T model)
+        public async Task<T> InsertAsync<T>(T model) where T : BaseModel
         {
             using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
             {
@@ -88,7 +106,7 @@ namespace Trident.Web.DataAccess
             }
         }
 
-        public async Task<T> UpdateAsync(T model)
+        public async Task<T> UpdateAsync<T>(T model) where T : BaseModel
         {
             using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
             {
@@ -98,7 +116,7 @@ namespace Trident.Web.DataAccess
             }
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync<T>(int id) where T : BaseModel
         {
             using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
             {

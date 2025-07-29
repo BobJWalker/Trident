@@ -8,19 +8,19 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances/{instanceId}/spaces/{spaceId}/environments")]
-    public class EnvironmentController(IGenericRepository<EnvironmentModel> repository) : ControllerBase
+    public class EnvironmentController(IGenericRepository repository) : ControllerBase
     {
         [HttpGet]        
         public Task<PagedViewModel<EnvironmentModel>> GetAll(int spaceId, int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Start", bool isAsc = true)
         {
-            return repository.GetAllByParentIdAsync(currentPage, rowsPerPage, sortColumn, isAsc, "SpaceId", spaceId);
+            return repository.GetAllByParentIdAsync<EnvironmentModel>(currentPage, rowsPerPage, sortColumn, isAsc, "SpaceId", spaceId);
         }
 
         [HttpGet]
         [Route("{id}")]
         public Task<EnvironmentModel> GetById(int id)
         {
-            return repository.GetByIdAsync(id);
+            return repository.GetByIdAsync<EnvironmentModel>(id);
         }
         
         [HttpPost]        
@@ -28,7 +28,7 @@ namespace Trident.Web.Controllers.Api
         {
             model.SpaceId = spaceId;
 
-            return repository.InsertAsync(model);
+            return repository.InsertAsync<EnvironmentModel>(model);
         }
         
         [HttpPut]
@@ -37,14 +37,14 @@ namespace Trident.Web.Controllers.Api
         {
             model.SpaceId = spaceId;
             model.Id = id;
-            return repository.UpdateAsync(model);
+            return repository.UpdateAsync<EnvironmentModel>(model);
         }
         
         [HttpDelete]
         [Route("{id}")]
         public Task Delete(int id)
         {
-            return repository.DeleteAsync(id);
+            return repository.DeleteAsync<EnvironmentModel>(id);
         }
     }
 }
