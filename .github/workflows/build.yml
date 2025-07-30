@@ -114,7 +114,7 @@ jobs:
           output_folder: packaged
       - name: Upload Database Build Artifact
         id: uploaddb
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
             name: Trident.Database.DbUp.zip
             path: packaged/**/*.zip 
