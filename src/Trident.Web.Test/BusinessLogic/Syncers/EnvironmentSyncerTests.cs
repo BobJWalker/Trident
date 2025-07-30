@@ -54,8 +54,10 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
             _octopusRepositoryMock.Setup(repo => repo.GetAllEnvironmentsForSpaceAsync(syncJobCompositeModel.InstanceModel, space))
                 .ReturnsAsync(octopusEnvironments);
 
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
             _genericRepoMock.Setup(repo => repo.GetByOctopusIdAsync<EnvironmentModel>(It.IsAny<string>()))
                 .ReturnsAsync(Value);
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
             _genericRepoMock.Setup(repo => repo.InsertAsync(It.IsAny<EnvironmentModel>()))
                 .ReturnsAsync((EnvironmentModel env) => env);

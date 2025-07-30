@@ -122,7 +122,7 @@ namespace Trident.Web
             logConfig.AddTarget(sumoTarget);
             logConfig.LoggingRules.Add(new LoggingRule("*", NLog.LogLevel.Info, sumoTarget));
 
-            builder.Logging.AddNLog(logConfig);
+            builder.Logging.AddNLogWeb(logConfig);
         }
 
         private static async Task ConfigureOpenFeature(WebApplicationBuilder builder)
