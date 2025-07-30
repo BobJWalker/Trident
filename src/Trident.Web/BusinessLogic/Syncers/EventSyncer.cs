@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Extensions;
+using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.CompositeModels;
 using Trident.Web.DataAccess;
 
@@ -14,31 +15,12 @@ namespace Trident.Web.BusinessLogic.Syncers
          Task ProcessDeploymentsSinceLastSync(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken);
     }
 
-    public class EventSyncer : IEventSyncer
+    public class EventSyncer (
+        ILogger<EventSyncer> logger,        
+        IOctopusRepository octopusRepository,
+        ITridentDataAdapter tridentDataAdapter,
+        ISyncLogModelFactory syncLogModelFactory) : IEventSyncer
     {
-        private readonly ILogger<EventSyncer> _logger;
-        private readonly ISyncLogRepository _syncLogRepository;
-        private readonly IOctopusRepository _octopusRepository;        
-        private readonly IReleaseRepository _releaseRepository;
-        private readonly IDeploymentRepository _deploymentRepository;        
-        private readonly ISyncLogModelFactory _syncLogModelFactory;
-
-        public EventSyncer(
-            ILogger<EventSyncer> logger,
-            ISyncLogRepository syncLogRepository,
-            IOctopusRepository octopusRepository,            
-            IReleaseRepository releaseRepository,
-            IDeploymentRepository deploymentRepository,            
-            ISyncLogModelFactory syncLogModelFactory)
-        {
-            _logger = logger;
-            _syncLogRepository = syncLogRepository;
-            _octopusRepository = octopusRepository;            
-            _releaseRepository = releaseRepository;
-            _deploymentRepository = deploymentRepository;            
-            _syncLogModelFactory = syncLogModelFactory;
-        }
-
         public async Task ProcessDeploymentsSinceLastSync(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken)
         {
             var startIndex = 0;
@@ -54,7 +36,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                 }
 
                 await LogInformation($"Getting the next results at {startIndex}", syncJobCompositeModel);
-                var eventResults = await _octopusRepository.GetAllEvents(syncJobCompositeModel.InstanceModel, syncJobCompositeModel.SyncModel, startIndex);
+                var eventResults = await octopusRepository.GetAllEvents(syncJobCompositeModel.InstanceModel, syncJobCompositeModel.SyncModel, startIndex);
 
                 foreach (var octopusEvent in eventResults.Items)
                 {
@@ -70,19 +52,19 @@ namespace Trident.Web.BusinessLogic.Syncers
                     var project = syncJobCompositeModel.ProjectDictionary[projectId];
 
                     var releaseId = octopusEvent.RelatedDocumentIds.First(x => x.StartsWith("Release"));                    
-                    var releaseModelToTrack = await _releaseRepository.GetByIdAsync(int.Parse(releaseId));
+                    var releaseModelToTrack = await tridentDataAdapter.GetByIdAsync<ReleaseModel>(int.Parse(releaseId));
 
                         var deploymentId = octopusEvent.RelatedDocumentIds.First(x => x.StartsWith("DeploymentId"));
-                        var deploymentModel = await _octopusRepository.GetSpecificDeployment(syncJobCompositeModel.InstanceModel, space, releaseModelToTrack, deploymentId, syncJobCompositeModel.EnvironmentDictionary, syncJobCompositeModel.TenantDictionary);
+                        var deploymentModel = await octopusRepository.GetSpecificDeployment(syncJobCompositeModel.InstanceModel, space, releaseModelToTrack, deploymentId, syncJobCompositeModel.EnvironmentDictionary, syncJobCompositeModel.TenantDictionary);
 
                         if (deploymentModel != null)
                         {
-                            var itemModel = await _deploymentRepository.GetByIdAsync(deploymentModel.Id);
+                            var itemModel = await tridentDataAdapter.GetByIdAsync<DeploymentModel>(deploymentModel.Id);
                             await LogInformation($"{(itemModel != null ? "Deployment already exists, updating" : "Unable to find deployment, creating")}", syncJobCompositeModel);
                             deploymentModel.Id = itemModel?.Id ?? 0;
 
                             await LogInformation($"Saving deployment {deploymentModel.OctopusId} to the database", syncJobCompositeModel);
-                            var modelToTrack = deploymentModel.Id > 0 ? await _deploymentRepository.UpdateAsync(deploymentModel) : await _deploymentRepository.InsertAsync(deploymentModel);
+                            var modelToTrack = deploymentModel.Id > 0 ? await tridentDataAdapter.UpdateAsync(deploymentModel) : await tridentDataAdapter.InsertAsync(deploymentModel);
                         }
                 }
 
@@ -95,8 +77,8 @@ namespace Trident.Web.BusinessLogic.Syncers
         private async Task LogInformation(string message, SyncJobCompositeModel syncJobCompositeModel)
         {
             var formattedMessage = $"{syncJobCompositeModel.GetMessagePrefix()}{message}";
-            _logger.LogInformation(formattedMessage);
-            await _syncLogRepository.InsertAsync(_syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
+            logger.LogInformation(formattedMessage);
+            await tridentDataAdapter.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
         }
     }
 }

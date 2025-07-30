@@ -8,26 +8,19 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances/{instanceId}/spaces/{spaceId}/projects/{projectId}/releases/{releaseId}/deployments")]
-    public class DeploymentController : ControllerBase
-    {
-        private readonly IDeploymentRepository _repository;
-
-        public DeploymentController(IDeploymentRepository repository)
-        {
-            _repository = repository;
-        }
-
+    public class DeploymentController(ITridentDataAdapter repository) : ControllerBase
+    {        
         [HttpGet]        
         public Task<PagedViewModel<DeploymentModel>> GetAll(int releaseId, int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Start", bool isAsc = true)
         {
-            return _repository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc, releaseId);
+            return repository.GetAllByParentIdAsync<DeploymentModel>(currentPage, rowsPerPage, sortColumn, isAsc, "releaseId", releaseId);
         }
         
         [HttpGet]
         [Route("{id}")]
         public Task<DeploymentModel> GetById(int id)
         {
-            return _repository.GetByIdAsync(id);
+            return repository.GetByIdAsync<DeploymentModel>(id);
         }
         
         [HttpPost]        
@@ -35,7 +28,7 @@ namespace Trident.Web.Controllers.Api
         {
             model.ReleaseId = releaseId;
 
-            return _repository.InsertAsync(model);
+            return repository.InsertAsync(model);
         }
         
         [HttpPut]
@@ -44,14 +37,14 @@ namespace Trident.Web.Controllers.Api
         {
             model.ReleaseId = releaseId;
             model.Id = id;
-            return _repository.UpdateAsync(model);
+            return repository.UpdateAsync(model);
         }
         
         [HttpDelete]
         [Route("{id}")]
         public Task Delete(int id)
         {
-            return _repository.DeleteAsync(id);
+            return repository.DeleteAsync<DeploymentModel>(id);
         }
     }
 }

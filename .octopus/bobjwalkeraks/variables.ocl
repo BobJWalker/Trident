@@ -33,18 +33,6 @@ variable "stringData:openFeatureClientId" {
     value "#{Octopus.FeatureToggles.ClientIdentifier}" {}
 }
 
-variable "Project.Azure.KeyVault.Secrets" {
-    value {
-        value = <<-EOT
-                azure-sql-server | SQLServerName
-                azure-sql-password | SQLUserPassword
-                azure-sql-username | SQLUserName
-                octopus-api-key | OctopusApiKey
-                github-token | GitHubToken
-                EOT
-    }
-}
-
 variable "Project.GitHub.Token" {
     value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.GitHubToken}" {}
 }
@@ -79,12 +67,25 @@ variable "Project.Connection.String" {
     value "Server=tcp:#{Project.SQLServer.Server.Name},1433;Database=#{Standards.Database.Name};User Id=#{Project.SQLServer.User.Name};Password=#{Project.SQLServer.User.Password};trustServerCertificate=true;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;" {}
 }
 
-variable "stringData:sumologicUrl" {
-    value "#{Standards.SumoLogic.Url}" {
-        description = ""
+variable "Project.Azure.KeyVault.Name" {
+    value "bobjwalker-vault" {}
+}
+
+variable "Project.Azure.KeyVault.Secrets" {
+    value {
+        value = <<-EOT
+                azure-sql-server | SQLServerName
+                azure-sql-password | SQLUserPassword
+                azure-sql-username | SQLUserName
+                octopus-api-key | OctopusApiKey
+                github-token | GitHubToken
+                sumo-logic-url | SumoLogicUrl
+                EOT
     }
 }
 
-variable "Project.Azure.KeyVault.Name" {
-    value "bobjwalker-vault" {}
+variable "stringData:sumologicUrl" {
+    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SumoLogicUrl}" {
+        description = ""
+    }
 }

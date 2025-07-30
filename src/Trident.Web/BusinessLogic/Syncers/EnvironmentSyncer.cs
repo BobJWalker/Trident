@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -17,32 +15,16 @@ namespace Trident.Web.BusinessLogic.Syncers
         Task<Dictionary<string, EnvironmentModel>> ProcessEnvironments(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, CancellationToken stoppingToken);
     }
 
-    public class EnvironmentSyncer : IEnvironmentSyncer
-    {
-        private readonly ILogger<EnvironmentSyncer> _logger;
-        private readonly ISyncLogRepository _syncLogRepository;
-        private readonly IOctopusRepository _octopusRepository;        
-        private readonly IEnvironmentRepository _environmentRepository;
-        private readonly ISyncLogModelFactory _syncLogModelFactory;
-
-        public EnvironmentSyncer(
-            ILogger<EnvironmentSyncer> logger,
-            ISyncLogRepository syncLogRepository,
-            IOctopusRepository octopusRepository,            
-            IEnvironmentRepository environmentRepository,
-            ISyncLogModelFactory syncLogModelFactory)
-        {
-            _logger = logger;
-            _syncLogRepository = syncLogRepository;
-            _octopusRepository = octopusRepository;
-            _environmentRepository = environmentRepository;
-            _syncLogModelFactory = syncLogModelFactory;
-        }
-
+    public class EnvironmentSyncer (
+        ILogger<EnvironmentSyncer> logger,        
+        IOctopusRepository octopusRepository,
+        ITridentDataAdapter tridentDataAdapter,
+        ISyncLogModelFactory syncLogModelFactory) : IEnvironmentSyncer
+    {        
         public async Task<Dictionary<string, EnvironmentModel>> ProcessEnvironments(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, CancellationToken stoppingToken)
         {
             await LogInformation($"Getting all the environments for {syncJobCompositeModel.InstanceModel.Name}:{space.Name}", syncJobCompositeModel);
-            var octopusList = await _octopusRepository.GetAllEnvironmentsForSpaceAsync(syncJobCompositeModel.InstanceModel, space);
+            var octopusList = await octopusRepository.GetAllEnvironmentsForSpaceAsync(syncJobCompositeModel.InstanceModel, space);
             await LogInformation($"{octopusList.Count} environments(s) found in {syncJobCompositeModel.InstanceModel.Name}:{space.Name}", syncJobCompositeModel);
 
             var returnDictionary = new Dictionary<string, EnvironmentModel>();
@@ -54,12 +36,12 @@ namespace Trident.Web.BusinessLogic.Syncers
                 }
 
                 await LogInformation($"Checking to see if environment {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                var itemModel = await _environmentRepository.GetByOctopusIdAsync(item.OctopusId, space.Id);
+                var itemModel = await tridentDataAdapter.GetByOctopusIdAsync<EnvironmentModel>(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Environment already exists, updating" : "Unable to find environment, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
                 await LogInformation($"Saving environment {item.OctopusId}:{item.Name} to the database", syncJobCompositeModel);
-                var modelToTrack = item.Id > 0 ? await _environmentRepository.UpdateAsync(item) : await _environmentRepository.InsertAsync(item);
+                var modelToTrack = item.Id > 0 ? await tridentDataAdapter.UpdateAsync(item) : await tridentDataAdapter.InsertAsync(item);
 
                 await LogInformation($"Adding environment {item.OctopusId}:{item.Name} to our sync dictionary for faster lookup", syncJobCompositeModel);
                 returnDictionary.Add(item.OctopusId, modelToTrack);
@@ -71,8 +53,8 @@ namespace Trident.Web.BusinessLogic.Syncers
         private async Task LogInformation(string message, SyncJobCompositeModel syncJobCompositeModel)
         {
             var formattedMessage = $"{syncJobCompositeModel.GetMessagePrefix()}{message}";
-            _logger.LogInformation(formattedMessage);
-            await _syncLogRepository.InsertAsync(_syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
+            logger.LogInformation(formattedMessage);
+            await tridentDataAdapter.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
         }
     }
 }

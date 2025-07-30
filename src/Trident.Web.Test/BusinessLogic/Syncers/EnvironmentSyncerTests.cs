@@ -11,27 +11,25 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
     [TestFixture]
     public class EnvironmentSyncerTest
     {
-        private Mock<ILogger<EnvironmentSyncer>> _loggerMock;
-        private Mock<ISyncLogRepository> _syncLogRepositoryMock;
+        private const EnvironmentModel? Value = (EnvironmentModel)null;
+        private Mock<ILogger<EnvironmentSyncer>> _loggerMock;        
         private Mock<IOctopusRepository> _octopusRepositoryMock;
-        private Mock<IEnvironmentRepository> _environmentRepositoryMock;
+        private Mock<ITridentDataAdapter> _genericRepoMock;
         private Mock<ISyncLogModelFactory> _syncLogModelFactoryMock;
         private EnvironmentSyncer _environmentSyncer;
 
         [SetUp]
         public void SetUp()
         {
-            _loggerMock = new Mock<ILogger<EnvironmentSyncer>>();
-            _syncLogRepositoryMock = new Mock<ISyncLogRepository>();
+            _loggerMock = new Mock<ILogger<EnvironmentSyncer>>();            
             _octopusRepositoryMock = new Mock<IOctopusRepository>();
-            _environmentRepositoryMock = new Mock<IEnvironmentRepository>();
+            _genericRepoMock = new Mock<ITridentDataAdapter>();
             _syncLogModelFactoryMock = new Mock<ISyncLogModelFactory>();
 
             _environmentSyncer = new EnvironmentSyncer(
-                _loggerMock.Object,
-                _syncLogRepositoryMock.Object,
+                _loggerMock.Object,                
                 _octopusRepositoryMock.Object,
-                _environmentRepositoryMock.Object,
+                _genericRepoMock.Object,
                 _syncLogModelFactoryMock.Object);
         }
 
@@ -56,10 +54,12 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
             _octopusRepositoryMock.Setup(repo => repo.GetAllEnvironmentsForSpaceAsync(syncJobCompositeModel.InstanceModel, space))
                 .ReturnsAsync(octopusEnvironments);
 
-            _environmentRepositoryMock.Setup(repo => repo.GetByOctopusIdAsync(It.IsAny<string>(), It.IsAny<int>()))
-                .ReturnsAsync((EnvironmentModel)null);
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+            _genericRepoMock.Setup(repo => repo.GetByOctopusIdAsync<EnvironmentModel>(It.IsAny<string>()))
+                .ReturnsAsync(Value);
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
-            _environmentRepositoryMock.Setup(repo => repo.InsertAsync(It.IsAny<EnvironmentModel>()))
+            _genericRepoMock.Setup(repo => repo.InsertAsync(It.IsAny<EnvironmentModel>()))
                 .ReturnsAsync((EnvironmentModel env) => env);
 
             // Act
@@ -94,10 +94,10 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
             _octopusRepositoryMock.Setup(repo => repo.GetAllEnvironmentsForSpaceAsync(syncJobCompositeModel.InstanceModel, space))
                 .ReturnsAsync(octopusEnvironments);
 
-            _environmentRepositoryMock.Setup(repo => repo.GetByOctopusIdAsync("1", space.Id))
+            _genericRepoMock.Setup(repo => repo.GetByOctopusIdAsync<EnvironmentModel>("1"))
                 .ReturnsAsync(existingEnvironment);
 
-            _environmentRepositoryMock.Setup(repo => repo.UpdateAsync(It.IsAny<EnvironmentModel>()))
+            _genericRepoMock.Setup(repo => repo.UpdateAsync<EnvironmentModel>(It.IsAny<EnvironmentModel>()))
                 .ReturnsAsync((EnvironmentModel env) => env);
 
             // Act

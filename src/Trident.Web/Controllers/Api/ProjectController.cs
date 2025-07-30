@@ -8,26 +8,19 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances/{instanceId}/spaces/{spaceId}/projects")]
-    public class ProjectController : ControllerBase
+    public class ProjectController(ITridentDataAdapter repository) : ControllerBase
     {
-        private readonly IProjectRepository _repository;
-
-        public ProjectController(IProjectRepository repository)
-        {
-            _repository = repository;
-        }
-
         [HttpGet]        
         public Task<PagedViewModel<ProjectModel>> GetAll(int spaceId, int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
         {
-            return _repository.GetAllAsync(currentPage, rowsPerPage, sortColumn, isAsc, spaceId);
+            return repository.GetAllByParentIdAsync<ProjectModel>(currentPage, rowsPerPage, sortColumn, isAsc, "SpaceId", spaceId);
         }
 
         [HttpGet]
         [Route("{id}")]
-        public Task<ProjectModel> GetById(int spaceId, int id)
+        public Task<ProjectModel> GetById(int id)
         {
-            return _repository.GetByIdAsync(id);
+            return repository.GetByIdAsync<ProjectModel>(id);
         }
         
         [HttpPost]        
@@ -35,7 +28,7 @@ namespace Trident.Web.Controllers.Api
         {
             model.SpaceId = spaceId;
 
-            return _repository.InsertAsync(model);
+            return repository.InsertAsync(model);
         }
         
         [HttpPut]
@@ -44,14 +37,14 @@ namespace Trident.Web.Controllers.Api
         {
             model.SpaceId = spaceId;
             model.Id = id;
-            return _repository.UpdateAsync(model);
+            return repository.UpdateAsync(model);
         }
         
         [HttpDelete]
         [Route("{id}")]
         public Task Delete(int id)
         {
-            return _repository.DeleteAsync(id);
+            return repository.DeleteAsync<ProjectModel>(id);
         }
     }
 }

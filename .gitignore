@@ -350,5 +350,7 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
-/src/Trident.Web/Properties/launchSettings.json
+**/launchSettings.json
 .vscode/launch.json
+
+

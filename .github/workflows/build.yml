@@ -61,7 +61,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}       
+          dotnet-version: 9.x       
 
       - name: Install dependencies
         run: dotnet restore src/Trident.Database.DbUp/Trident.Database.DbUp.csproj
@@ -90,7 +90,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}  
+          dotnet-version: 9.x  
           
       - name: Install dependencies
         run: dotnet restore src/Trident.sln  

@@ -3,9 +3,8 @@
 namespace Trident.Web.Core.Models
 {
     [Table("Tenant")]
-    public class TenantModel : BaseOctopusModel
+    public class TenantModel : BaseOctoThingsModel
     {
-        public int SpaceId { get; set; }
-        public string Name { get; set; }
+        
     }
 }
