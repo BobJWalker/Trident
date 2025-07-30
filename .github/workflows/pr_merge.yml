@@ -15,8 +15,7 @@ jobs:
     runs-on: ubuntu-latest  
     permissions:
       # Add any additional permissions your job requires here
-      id-token: write # This is required to obtain the ID token from GitHub Actions
-      contents: read # For example: this is required to check out code, remove if not needed      
+      id-token: write # This is required to obtain the ID token from GitHub Actions     
     steps:
       - name: Login to Octopus Deploy 
         uses: OctopusDeploy/login@v1
@@ -30,4 +29,5 @@ jobs:
           project: ${{ env.OCTOPUS_PROJECT_NAME }}          
           runbook: "${{ env.OCTOPUS_RUNBOOK_NAME }}"
           environments: "${{ env.OCTOPUS_ENVIRONMENT_NAME }}"  
-          git_ref: ${{ github.head_ref }}
+          git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.ref || github.head_ref) }}
+          git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
