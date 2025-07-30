@@ -352,3 +352,5 @@ MigrationBackup/
 .ionide/
 /src/Trident.Web/Properties/launchSettings.json
 .vscode/launch.json
+
+/src/Trident.Database.DbUp/Properties/launchSettings.json
