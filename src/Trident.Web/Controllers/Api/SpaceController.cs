@@ -8,7 +8,7 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances/{instanceId}/spaces")]
-    public class SpaceController(IGenericRepository repository) : ControllerBase
+    public class SpaceController(ITridentDataAdapter repository) : ControllerBase
     {
         [HttpGet]
         public Task<PagedViewModel<SpaceModel>> GetAll(int instanceId, int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Start", bool isAsc = true)

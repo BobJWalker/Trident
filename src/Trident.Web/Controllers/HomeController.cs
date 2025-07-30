@@ -1,26 +1,26 @@
-﻿using System.Diagnostics;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Trident.Web.BusinessLogic.Factories;
+using Trident.Web.Core.Configuration;
+using Trident.Web.Core.Constants;
 using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.ViewModels;
 using Trident.Web.DataAccess;
-using Trident.Web.Core.Configuration;
 
 namespace Trident.Web.Controllers
 {
     public class HomeController (ILogger<HomeController> logger,
-            IGenericRepository instanceRepository,
-            ISyncModelFactory syncModelFactory,
-            ISyncRepository syncRepository,
+            ITridentDataAdapter tridentDataAdapter,
+            ISyncModelFactory syncModelFactory,            
             IMetricConfiguration metricConfiguration)
         : Controller
     {        
         public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
         {            
-            var allInstances = await instanceRepository.GetAllAsync<InstanceModel>(currentPage, rowsPerPage, sortColumn, isAsc);      
+            var allInstances = await tridentDataAdapter.GetAllAsync<InstanceModel>(currentPage, rowsPerPage, sortColumn, isAsc);      
 
             if (allInstances.Items.Count == 0 && string.IsNullOrWhiteSpace(metricConfiguration.DefaultInstanceUrl) == false && metricConfiguration.DefaultInstanceUrl != "blah")  
             {
@@ -33,9 +33,9 @@ namespace Trident.Web.Controllers
                     ApiKey = metricConfiguration.DefaultInstanceApiKey
                 };
 
-                await instanceRepository.InsertAsync(defaultInstance);
+                await tridentDataAdapter.InsertAsync(defaultInstance);
 
-                allInstances = await instanceRepository.GetAllAsync<InstanceModel>(currentPage, rowsPerPage, sortColumn, isAsc);
+                allInstances = await tridentDataAdapter.GetAllAsync<InstanceModel>(currentPage, rowsPerPage, sortColumn, isAsc);
             }
             else
             {
@@ -47,12 +47,14 @@ namespace Trident.Web.Controllers
 
         public async Task<IActionResult> StartSync(int id)
         {
-            var instance = await instanceRepository.GetByIdAsync<InstanceModel>(id);
-            var previousSync = await syncRepository.GetLastSuccessfulSync(id);
+            var instance = await tridentDataAdapter.GetByIdAsync<InstanceModel>(id);
+
+            var syncWhereClause = $"Where InstanceId = {id} and state = '{SyncState.Completed}'";
+            var previousSync = await tridentDataAdapter.GetFirstRecordAsync<SyncModel>(syncWhereClause, sortColumn: "Completed", isAsc: false);
 
             var newSync = syncModelFactory.CreateModel(id, instance.Name, previousSync);
 
-            await syncRepository.InsertAsync(newSync);
+            await tridentDataAdapter.InsertAsync(newSync);
 
             return RedirectToAction("Index", "Sync");
         }
@@ -66,7 +68,7 @@ namespace Trident.Web.Controllers
 
         public async Task<IActionResult> EditInstance(int id)
         {
-            var instance = await instanceRepository.GetByIdAsync<InstanceModel>(id);
+            var instance = await tridentDataAdapter.GetByIdAsync<InstanceModel>(id);
 
             return View("InstanceMaintenance", instance);
         }
@@ -81,11 +83,11 @@ namespace Trident.Web.Controllers
 
             if (model.Id > 0)
             {
-                await instanceRepository.UpdateAsync(model);
+                await tridentDataAdapter.UpdateAsync(model);
             }
             else
             {
-                await instanceRepository.InsertAsync(model);
+                await tridentDataAdapter.InsertAsync(model);
             }
 
             return RedirectToAction("Index");

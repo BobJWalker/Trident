@@ -11,7 +11,7 @@ namespace Trident.Web.Tests.BusinessLogic.Syncers
     {
         private Mock<ILogger<EventSyncer>> _loggerMock;        
         private Mock<IOctopusRepository> _octopusRepositoryMock;
-        private Mock<IGenericRepository> _genericRepoMock;        
+        private Mock<ITridentDataAdapter> _genericRepoMock;        
         private Mock<ISyncLogModelFactory> _syncLogModelFactoryMock;
         private EventSyncer _eventSyncer;
 
@@ -20,7 +20,7 @@ namespace Trident.Web.Tests.BusinessLogic.Syncers
         {
             _loggerMock = new Mock<ILogger<EventSyncer>>();            
             _octopusRepositoryMock = new Mock<IOctopusRepository>();
-            _genericRepoMock = new Mock<IGenericRepository>();            
+            _genericRepoMock = new Mock<ITridentDataAdapter>();            
             _syncLogModelFactoryMock = new Mock<ISyncLogModelFactory>();
 
             _eventSyncer = new EventSyncer(

@@ -5,11 +5,11 @@ using Trident.Web.DataAccess;
 
 namespace Trident.Web.Controllers
 {
-    public class SyncController(ISyncRepository syncRepository) : Controller
+    public class SyncController(ITridentDataAdapter tridentDataAdapter) : Controller
     {
         public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
         {
-            var pagedSyncView = await syncRepository.GetAllAsync<SyncModel>(currentPage, rowsPerPage, sortColumn, isAsc);
+            var pagedSyncView = await tridentDataAdapter.GetAllAsync<SyncModel>(currentPage, rowsPerPage, sortColumn, isAsc);
 
             return View(pagedSyncView);
         }

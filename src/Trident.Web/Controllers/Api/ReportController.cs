@@ -7,7 +7,7 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances/{instanceId}/reports")]
-    public class ReportController(IGenericRepository genericRepository) : ControllerBase
+    public class ReportController(ITridentDataAdapter tridentDataAdapter) : ControllerBase
     {
         [HttpPost]
         [Route("deploymentcounts")]
@@ -15,7 +15,7 @@ namespace Trident.Web.Controllers.Api
         {
             return new ReportResponseViewModel
             {
-                Data = await genericRepository.QueryAsync<ReportResponseDataViewModel>(
+                Data = await tridentDataAdapter.QueryAsync<ReportResponseDataViewModel>(
                         @"SELECT COUNT(*) AS [Count],
 	                               CONVERT(VARCHAR, d.QueueTime, 1) Label
                             FROM dbo.Deployment d
@@ -48,7 +48,7 @@ namespace Trident.Web.Controllers.Api
         {
             return new ReportResponseViewModel
             {
-                Data = await genericRepository.QueryAsync<ReportResponseDataViewModel>(
+                Data = await tridentDataAdapter.QueryAsync<ReportResponseDataViewModel>(
                         @"SELECT COUNT(*) AS [Count],
 	                                p.Name Label
                             FROM dbo.Deployment d
@@ -81,7 +81,7 @@ namespace Trident.Web.Controllers.Api
         {
             return new ReportResponseViewModel
             {
-                Data = await genericRepository.QueryAsync<ReportResponseDataViewModel>(
+                Data = await tridentDataAdapter.QueryAsync<ReportResponseDataViewModel>(
                         @"SELECT COUNT(*) AS [Count],
 	                                e.Name Label
                             FROM dbo.Deployment d

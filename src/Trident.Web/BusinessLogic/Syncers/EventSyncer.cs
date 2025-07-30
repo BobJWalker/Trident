@@ -18,7 +18,7 @@ namespace Trident.Web.BusinessLogic.Syncers
     public class EventSyncer (
         ILogger<EventSyncer> logger,        
         IOctopusRepository octopusRepository,
-        IGenericRepository genericRepository,
+        ITridentDataAdapter tridentDataAdapter,
         ISyncLogModelFactory syncLogModelFactory) : IEventSyncer
     {
         public async Task ProcessDeploymentsSinceLastSync(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken)
@@ -52,19 +52,19 @@ namespace Trident.Web.BusinessLogic.Syncers
                     var project = syncJobCompositeModel.ProjectDictionary[projectId];
 
                     var releaseId = octopusEvent.RelatedDocumentIds.First(x => x.StartsWith("Release"));                    
-                    var releaseModelToTrack = await genericRepository.GetByIdAsync<ReleaseModel>(int.Parse(releaseId));
+                    var releaseModelToTrack = await tridentDataAdapter.GetByIdAsync<ReleaseModel>(int.Parse(releaseId));
 
                         var deploymentId = octopusEvent.RelatedDocumentIds.First(x => x.StartsWith("DeploymentId"));
                         var deploymentModel = await octopusRepository.GetSpecificDeployment(syncJobCompositeModel.InstanceModel, space, releaseModelToTrack, deploymentId, syncJobCompositeModel.EnvironmentDictionary, syncJobCompositeModel.TenantDictionary);
 
                         if (deploymentModel != null)
                         {
-                            var itemModel = await genericRepository.GetByIdAsync<DeploymentModel>(deploymentModel.Id);
+                            var itemModel = await tridentDataAdapter.GetByIdAsync<DeploymentModel>(deploymentModel.Id);
                             await LogInformation($"{(itemModel != null ? "Deployment already exists, updating" : "Unable to find deployment, creating")}", syncJobCompositeModel);
                             deploymentModel.Id = itemModel?.Id ?? 0;
 
                             await LogInformation($"Saving deployment {deploymentModel.OctopusId} to the database", syncJobCompositeModel);
-                            var modelToTrack = deploymentModel.Id > 0 ? await genericRepository.UpdateAsync(deploymentModel) : await genericRepository.InsertAsync(deploymentModel);
+                            var modelToTrack = deploymentModel.Id > 0 ? await tridentDataAdapter.UpdateAsync(deploymentModel) : await tridentDataAdapter.InsertAsync(deploymentModel);
                         }
                 }
 
@@ -78,7 +78,7 @@ namespace Trident.Web.BusinessLogic.Syncers
         {
             var formattedMessage = $"{syncJobCompositeModel.GetMessagePrefix()}{message}";
             logger.LogInformation(formattedMessage);
-            await genericRepository.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
+            await tridentDataAdapter.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
         }
     }
 }

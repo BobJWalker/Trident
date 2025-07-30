@@ -6,13 +6,13 @@ using Trident.Web.DataAccess;
 
 namespace Trident.Web.Controllers
 {
-    public class ReportController(IGenericRepository genericRepository)
+    public class ReportController(ITridentDataAdapter tridentDataAdapter)
         : Controller
     {        
         public async Task<IActionResult> Index(int instanceId)
         {
-            var instanceModel = await genericRepository.GetByIdAsync<InstanceModel>(instanceId);
-            var spaceList = await genericRepository.GetAllByParentIdAsync<SpaceModel>(currentPageNumber: 1, rowsPerPage: int.MaxValue, "Name", true, "InstanceId", instanceId);
+            var instanceModel = await tridentDataAdapter.GetByIdAsync<InstanceModel>(instanceId);
+            var spaceList = await tridentDataAdapter.GetAllByParentIdAsync<SpaceModel>(currentPageNumber: 1, rowsPerPage: int.MaxValue, "Name", true, "InstanceId", instanceId);
 
             var viewModel = new ReportingViewModel
             {

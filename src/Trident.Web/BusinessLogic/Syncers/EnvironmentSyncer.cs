@@ -18,7 +18,7 @@ namespace Trident.Web.BusinessLogic.Syncers
     public class EnvironmentSyncer (
         ILogger<EnvironmentSyncer> logger,        
         IOctopusRepository octopusRepository,
-        IGenericRepository genericRepository,
+        ITridentDataAdapter tridentDataAdapter,
         ISyncLogModelFactory syncLogModelFactory) : IEnvironmentSyncer
     {        
         public async Task<Dictionary<string, EnvironmentModel>> ProcessEnvironments(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, CancellationToken stoppingToken)
@@ -36,12 +36,12 @@ namespace Trident.Web.BusinessLogic.Syncers
                 }
 
                 await LogInformation($"Checking to see if environment {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                var itemModel = await genericRepository.GetByOctopusIdAsync<EnvironmentModel>(item.OctopusId);
+                var itemModel = await tridentDataAdapter.GetByOctopusIdAsync<EnvironmentModel>(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Environment already exists, updating" : "Unable to find environment, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
                 await LogInformation($"Saving environment {item.OctopusId}:{item.Name} to the database", syncJobCompositeModel);
-                var modelToTrack = item.Id > 0 ? await genericRepository.UpdateAsync(item) : await genericRepository.InsertAsync(item);
+                var modelToTrack = item.Id > 0 ? await tridentDataAdapter.UpdateAsync(item) : await tridentDataAdapter.InsertAsync(item);
 
                 await LogInformation($"Adding environment {item.OctopusId}:{item.Name} to our sync dictionary for faster lookup", syncJobCompositeModel);
                 returnDictionary.Add(item.OctopusId, modelToTrack);
@@ -54,7 +54,7 @@ namespace Trident.Web.BusinessLogic.Syncers
         {
             var formattedMessage = $"{syncJobCompositeModel.GetMessagePrefix()}{message}";
             logger.LogInformation(formattedMessage);
-            await genericRepository.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
+            await tridentDataAdapter.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
         }
     }
 }

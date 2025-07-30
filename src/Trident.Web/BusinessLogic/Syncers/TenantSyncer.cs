@@ -20,7 +20,7 @@ namespace Trident.Web.BusinessLogic.Syncers
     public class TenantSyncer(
         ILogger<TenantSyncer> logger,        
         IOctopusRepository octopusRepository,
-        IGenericRepository genericRepository,
+        ITridentDataAdapter tridentDataAdapter,
         ISyncLogModelFactory syncLogModelFactory) : ITenantSyncer
     {
         public async Task<Dictionary<string, TenantModel>> ProcessTenants(SyncJobCompositeModel syncJobCompositeModel, SpaceModel space, CancellationToken stoppingToken)
@@ -38,12 +38,12 @@ namespace Trident.Web.BusinessLogic.Syncers
                 }
 
                 await LogInformation($"Checking to see if tenant {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                var itemModel = await genericRepository.GetByOctopusIdAsync<TenantModel>(item.OctopusId);
+                var itemModel = await tridentDataAdapter.GetByOctopusIdAsync<TenantModel>(item.OctopusId);
                 await LogInformation($"{(itemModel != null ? "Tenant already exists, updating" : "Unable to find tenant, creating")}", syncJobCompositeModel);
                 item.Id = itemModel?.Id ?? 0;
 
                 await LogInformation($"Saving tenant {item.OctopusId}:{item.Name} to the database", syncJobCompositeModel);
-                var modelToTrack = item.Id > 0 ? await genericRepository.UpdateAsync(item) : await genericRepository.InsertAsync(item);
+                var modelToTrack = item.Id > 0 ? await tridentDataAdapter.UpdateAsync(item) : await tridentDataAdapter.InsertAsync(item);
 
                 await LogInformation($"Adding tenant {item.OctopusId}:{item.Name} to our sync dictionary for faster lookup", syncJobCompositeModel);
                 returnObject.Add(item.OctopusId, modelToTrack);
@@ -56,7 +56,7 @@ namespace Trident.Web.BusinessLogic.Syncers
         {
             var formattedMessage = $"{syncJobCompositeModel.GetMessagePrefix()}{message}";
             logger.LogInformation(formattedMessage);
-            await genericRepository.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
+            await tridentDataAdapter.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
         }
     }
 }

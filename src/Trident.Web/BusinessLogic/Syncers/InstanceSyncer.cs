@@ -20,8 +20,7 @@ namespace Trident.Web.BusinessLogic.Syncers
     public class InstanceSyncer(
         ILogger<InstanceSyncer> logger,        
         IOctopusRepository octopusRepository,
-        IGenericRepository genericRepository,
-        ISyncRepository syncRepository,
+        ITridentDataAdapter tridentDataAdapter,        
         ISyncLogModelFactory syncLogModelFactory,
         IEnvironmentSyncer environmentSyncer,
         IProjectSyncer projectSyncer,
@@ -35,7 +34,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                 await LogInformation("Setting the starting date to UTC Now", syncJobCompositeModel);
                 syncJobCompositeModel.SyncModel.Started = DateTime.UtcNow;
                 syncJobCompositeModel.SyncModel.State = SyncState.Started;
-                await syncRepository.UpdateAsync(syncJobCompositeModel.SyncModel);
+                await tridentDataAdapter.UpdateAsync(syncJobCompositeModel.SyncModel);
 
                 var isSuccessful = await SyncAllRecords(syncJobCompositeModel, stoppingToken);
 
@@ -76,7 +75,7 @@ namespace Trident.Web.BusinessLogic.Syncers
             }
 
             await LogInformation("Updating the sync job", syncJobCompositeModel);
-            await syncRepository.UpdateAsync(syncJobCompositeModel.SyncModel);
+            await tridentDataAdapter.UpdateAsync(syncJobCompositeModel.SyncModel);
         }
 
         private async Task<bool> SyncAllRecords(SyncJobCompositeModel syncJobCompositeModel, CancellationToken stoppingToken)
@@ -95,13 +94,13 @@ namespace Trident.Web.BusinessLogic.Syncers
                     }
 
                     await LogInformation($"Checking to see if space {item.OctopusId}:{item.Name} already exists", syncJobCompositeModel);
-                    var spaceModel = await genericRepository.GetByOctopusIdAsync<SpaceModel>(item.OctopusId);
+                    var spaceModel = await tridentDataAdapter.GetByOctopusIdAsync<SpaceModel>(item.OctopusId);
                     await LogInformation($"{(spaceModel != null ? "Space already exists, updating" : "Unable to find space, creating")}", syncJobCompositeModel);
                     item.Id = spaceModel?.Id ?? 0;
                     item.InstanceId = syncJobCompositeModel.InstanceModel.Id;
 
                     await LogInformation($"Saving space {item.OctopusId}:{item.Name} to the database", syncJobCompositeModel);
-                    var spaceToTrack = item.Id > 0 ? await genericRepository.UpdateAsync(item) : await genericRepository.InsertAsync(item);
+                    var spaceToTrack = item.Id > 0 ? await tridentDataAdapter.UpdateAsync(item) : await tridentDataAdapter.InsertAsync(item);
                     syncJobCompositeModel.SpaceDictionary.Add(item.OctopusId, spaceToTrack);
 
                     var environmentList = await environmentSyncer.ProcessEnvironments(syncJobCompositeModel, spaceToTrack, stoppingToken);
@@ -138,14 +137,14 @@ namespace Trident.Web.BusinessLogic.Syncers
         {
             var formattedMessage = $"{syncJobCompositeModel.GetMessagePrefix()}{message}";
             logger.LogInformation(formattedMessage);
-            await genericRepository.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
+            await tridentDataAdapter.InsertAsync(syncLogModelFactory.MakeInformationLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
         }
 
         private async Task LogException(string message, SyncJobCompositeModel syncJobCompositeModel)
         {
             var formattedMessage = $"{syncJobCompositeModel.GetMessagePrefix()}{message}";
             logger.LogError(formattedMessage);
-            await genericRepository.InsertAsync(syncLogModelFactory.MakeErrorLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
+            await tridentDataAdapter.InsertAsync(syncLogModelFactory.MakeErrorLog(formattedMessage, syncJobCompositeModel.SyncModel.Id));
         }
     }
 }

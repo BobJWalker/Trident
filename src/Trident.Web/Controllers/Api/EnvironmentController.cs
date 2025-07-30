@@ -8,7 +8,7 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances/{instanceId}/spaces/{spaceId}/environments")]
-    public class EnvironmentController(IGenericRepository repository) : ControllerBase
+    public class EnvironmentController(ITridentDataAdapter repository) : ControllerBase
     {
         [HttpGet]        
         public Task<PagedViewModel<EnvironmentModel>> GetAll(int spaceId, int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Start", bool isAsc = true)

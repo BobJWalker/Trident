@@ -8,7 +8,7 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances/{instanceId}/spaces/{spaceId}/projects/{projectId}/releases/{releaseId}/deployments")]
-    public class DeploymentController(IGenericRepository repository) : ControllerBase
+    public class DeploymentController(ITridentDataAdapter repository) : ControllerBase
     {        
         [HttpGet]        
         public Task<PagedViewModel<DeploymentModel>> GetAll(int releaseId, int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Start", bool isAsc = true)

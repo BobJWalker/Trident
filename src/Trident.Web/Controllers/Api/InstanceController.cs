@@ -8,7 +8,7 @@ namespace Trident.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/instances")]
-    public class InstanceController(IGenericRepository repository) : ControllerBase
+    public class InstanceController(ITridentDataAdapter repository) : ControllerBase
     {
         [HttpGet]        
         public Task<PagedViewModel<InstanceModel>> GetAll(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)

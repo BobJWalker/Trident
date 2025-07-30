@@ -14,7 +14,7 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
         private const EnvironmentModel? Value = (EnvironmentModel)null;
         private Mock<ILogger<EnvironmentSyncer>> _loggerMock;        
         private Mock<IOctopusRepository> _octopusRepositoryMock;
-        private Mock<IGenericRepository> _genericRepoMock;
+        private Mock<ITridentDataAdapter> _genericRepoMock;
         private Mock<ISyncLogModelFactory> _syncLogModelFactoryMock;
         private EnvironmentSyncer _environmentSyncer;
 
@@ -23,7 +23,7 @@ namespace Trident.Web.Test.BusinessLogic.Syncers
         {
             _loggerMock = new Mock<ILogger<EnvironmentSyncer>>();            
             _octopusRepositoryMock = new Mock<IOctopusRepository>();
-            _genericRepoMock = new Mock<IGenericRepository>();
+            _genericRepoMock = new Mock<ITridentDataAdapter>();
             _syncLogModelFactoryMock = new Mock<ISyncLogModelFactory>();
 
             _environmentSyncer = new EnvironmentSyncer(
