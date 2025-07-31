@@ -229,10 +229,7 @@ jobs:
     steps:      
       - uses: actions/checkout@v1
         with:
-          fetch-depth: '0'
-      - name: Generate SBOM
-        id: gensbom
-        uses: advanced-security/generate-sbom-action@v1      
+          fetch-depth: '0'  
             
       - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
         uses: aquasecurity/trivy-action@0.32.0
@@ -248,7 +245,6 @@ jobs:
         with:
           name: artifact-sbom
           path: |
-            ${{ steps.gensbom.outputs.fileName }}
             dependency-results.sbom.json
 
       - name: Create Release for GitHub
