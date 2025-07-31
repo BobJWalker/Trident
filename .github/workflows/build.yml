@@ -75,9 +75,31 @@ jobs:
           path: |
             /tmp/testresults/*.trx
 
+  scan:
+    name: Scan Repo for Vulnerabilities
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner on repo
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
   build_and_publish: 
     name: Create, Scan, Publish, and Attest
-    needs: [prep, test]  
+    needs: [prep, test, scan]  
     runs-on: ubuntu-latest 
     permissions:
       # Add any additional permissions your job requires here
@@ -125,8 +147,8 @@ jobs:
         run: | 
             docker build -f "./Trident.Web/Dockerfile"  --build-arg APP_VERSION=${{ needs.prep.outputs.sem_Ver }} --tag ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }} --tag ${{ vars.DOCKER_HUB_REPO }}:latest .                                               
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.28.0
+      - name: Run Trivy vulnerability scanner on docker container
+        uses: aquasecurity/trivy-action@0.32.0
         with:
           image-ref: '${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}'
           format: 'table'
@@ -156,8 +178,8 @@ jobs:
           
           $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "buildartifacthashes.json" -Encoding utf8 
 
-          $cleanedPackageSha = $hashToSave -replace "sha256:" ""
-          $cleanedImageSha = "${{ env.TRIDENT_DOCKER_SHA }}" -replace "sha256:" ""
+          $cleanedPackageSha = $hashToSave -replace "sha256:", ""
+          $cleanedImageSha = "${{ env.TRIDENT_DOCKER_SHA }}" -replace "sha256:", ""
 
           $subjectText = @"
           $cleanedImageSha ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}
@@ -202,7 +224,7 @@ jobs:
 
   sbom_and_gh_release:  
     name: Generate SBOM and GitHub Release
-    needs: [prep, test, build_and_publish]  
+    needs: [prep, test, scan, build_and_publish]  
     runs-on: ubuntu-latest
     steps:      
       - uses: actions/checkout@v1
@@ -210,13 +232,24 @@ jobs:
           fetch-depth: '0'
       - name: Generate SBOM
         id: gensbom
-        uses: advanced-security/generate-sbom-action@v1
+        uses: advanced-security/generate-sbom-action@v1      
+            
+      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          scan-type: 'fs'
+          format: 'github'
+          output: 'dependency-results.sbom.json'
+          scan-ref: '.'
+          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
+
       - name: Attach SBOM and package hash as build artifact
         uses: actions/upload-artifact@v4
         with:
           name: artifact-sbom
           path: |
-            ${{ steps.gensbom.outputs.fileName }}                       
+            ${{ steps.gensbom.outputs.fileName }}
+            dependency-results.sbom.json
 
       - name: Create Release for GitHub
         id: create_release
@@ -234,7 +267,7 @@ jobs:
 
   octopus_deploy:  
     name: Handover to Octopus Deploy
-    needs: [prep, test, build_and_publish, sbom_and_gh_release]  
+    needs: [prep, test, scan, build_and_publish, sbom_and_gh_release]  
     runs-on: ubuntu-latest
     permissions:
       # Add any additional permissions your job requires here
