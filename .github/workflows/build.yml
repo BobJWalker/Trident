@@ -76,7 +76,7 @@ jobs:
             /tmp/testresults/*.trx
 
   build_and_publish: 
-    name: Create, Scan, and Publish 
+    name: Create, Scan, Publish, and Attest
     needs: [prep, test]  
     runs-on: ubuntu-latest 
     permissions:
@@ -116,7 +116,7 @@ jobs:
         id: uploaddb
         uses: actions/upload-artifact@v4
         with:
-            name: Trident.Database.DbUp.zip
+            name: Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip
             path: packaged/**/*.zip 
 
       - name: Login to Docker Hub
@@ -172,13 +172,13 @@ jobs:
         uses: actions/attest-build-provenance@v2
         id: websiteattest
         with:
-            subject-name: ${{ vars.DOCKER_HUB_REPO }}
+            subject-name: ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}
             subject-digest: ${{ env.TRIDENT_DOCKER_SHA }}
       - name: Build Attestations for Database Package
         uses: actions/attest-build-provenance@v2
         id: dbattest
         with:
-            subject-name: Trident.Database.DbUp.zip
+            subject-name: Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip
             subject-digest: sha256:${{ steps.uploaddb.outputs.artifact-digest }}
   
       - name: Login to Octopus Deploy 🐙
