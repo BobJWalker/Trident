@@ -45,7 +45,7 @@ process_template "verify-build-artifacts" {
     }
 
     parameter "Template.Verify.Environments" {
-        value = "Environments-42,Environments-81,Environments-43"
+        value = "Environments-42,Environments-81,Environments-43,Environments-41"
     }
 }
 
