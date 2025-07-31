@@ -156,9 +156,12 @@ jobs:
           
           $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "buildartifacthashes.json" -Encoding utf8 
 
+          $cleanedPackageSha = $hashToSave -replace "sha256:" ""
+          $cleanedImageSha = "${{ env.TRIDENT_DOCKER_SHA }}" -replace "sha256:" ""
+
           $subjectText = @"
-          ${{ env.TRIDENT_DOCKER_SHA }} ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}
-          $hashToSave Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip
+          $cleanedImageSha ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}
+          $cleanedPackageSha Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip
           "@
 
           New-Item -Path . -Name "subject.checksums.txt" -ItemType "File" -Value $subjectText
