@@ -112,12 +112,6 @@ jobs:
           base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
           output_folder: packaged
-      - name: Upload Database Build Artifact
-        id: uploaddb
-        uses: actions/upload-artifact@v4
-        with:
-            name: Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip
-            path: packaged/**/*.zip 
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -161,6 +155,13 @@ jobs:
           }
           
           $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "buildartifacthashes.json" -Encoding utf8 
+
+          $subjectText = @"
+          ${{ env.TRIDENT_DOCKER_SHA }} ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}
+          $hashToSave Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip
+          "@
+
+          New-Item -Path . -Name "subject.checksums.txt" -ItemType "File" -Value $subjectText
       
       - name: Attach package hash as build artifact
         uses: actions/upload-artifact@v4
@@ -168,18 +169,11 @@ jobs:
           name: artifact-hashes
           path: |
             buildartifacthashes.json
-      - name: Build Attestations for Website Image
+      - name: Build Attestations for Build Artifacts
         uses: actions/attest-build-provenance@v2
         id: websiteattest
         with:
-            subject-name: ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}
-            subject-digest: ${{ env.TRIDENT_DOCKER_SHA }}
-      - name: Build Attestations for Database Package
-        uses: actions/attest-build-provenance@v2
-        id: dbattest
-        with:
-            subject-name: Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip
-            subject-digest: sha256:${{ steps.uploaddb.outputs.artifact-digest }}
+            subject-checksums: subject.checksums.txt
   
       - name: Login to Octopus Deploy 🐙
         uses: OctopusDeploy/login@v1
