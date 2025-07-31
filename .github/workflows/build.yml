@@ -185,8 +185,8 @@ jobs:
           $packageSubject = "Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip".Trim()
 
           $subjectText = @"
-          $cleanedImageSha $imageSubject
-          $cleanedPackageSha $packageSubject
+          $cleanedImageSha  $imageSubject
+          $cleanedPackageSha  $packageSubject
           "@
 
           New-Item -Path . -Name "subject.checksums.txt" -ItemType "File" -Value $subjectText
