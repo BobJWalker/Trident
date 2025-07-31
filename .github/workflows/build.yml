@@ -100,7 +100,7 @@ jobs:
   build_and_publish_database: 
     name: Create and Publish Database
     outputs:       
-      database_hash: ${{ steps.push_docker_image.outputs.Database_Hash }}
+      database_hash: ${{ steps.determine_database_hash.outputs.Database_Hash }}
     needs: [prep, test, scan]  
     runs-on: ubuntu-latest 
     permissions:
@@ -169,7 +169,7 @@ jobs:
   build_and_publish_website:
     name: Build, Scan, and Publish Website
     outputs:       
-      website_hash: ${{ steps.determine_database_hash.outputs.TRIDENT_DOCKER_SHA }}
+      website_hash: ${{ steps.push_docker_image.outputs.TRIDENT_DOCKER_SHA }}
     needs: [prep, test, scan]
     runs-on: ubuntu-latest
     steps:
@@ -221,7 +221,8 @@ jobs:
     name: Generate SBOM, Attestations, and GitHub Release
     needs: [prep, test, scan, build_and_publish_website, build_and_publish_database]  
     runs-on: ubuntu-latest
-    permissions:            
+    permissions:
+      id-token: write
       attestations: write # Required to publish attestations
     steps:      
       - uses: actions/checkout@v1
