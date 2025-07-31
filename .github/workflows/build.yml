@@ -54,9 +54,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: '0' 
+      - name: Checkout code for unit tests
+        uses: actions/checkout@v1        
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -104,7 +103,8 @@ jobs:
       id-token: write
       attestations: write # Required to publish attestations
     steps:      
-      - uses: actions/checkout@v1
+      - name: Checkout the code for SBOM
+        uses: actions/checkout@v1
         with:
           fetch-depth: '0'  
             
@@ -141,7 +141,8 @@ jobs:
       # Add any additional permissions your job requires here
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy      
     steps:      
-      - uses: actions/checkout@v1
+      - name: Checkout code for database schema 
+        uses: actions/checkout@v1
         with:
           fetch-depth: '0'
 
@@ -207,9 +208,8 @@ jobs:
     needs: [prep, test, scan, sbom]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: '0'
+      - name: Checkout Code to build website
+        uses: actions/checkout@v1
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -258,9 +258,7 @@ jobs:
     permissions:
       id-token: write
       attestations: write # Required to publish attestations
-    steps:      
-      - uses: actions/checkout@v1                    
-
+    steps:                         
       - name: Create the Subject Checksum file for Provenance        
         shell: pwsh        
         run: |          
