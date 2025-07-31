@@ -133,13 +133,7 @@ jobs:
           version: "${{ needs.prep.outputs.sem_Ver }}"  
           base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
-          output_folder: packaged
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:             
-            username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_PAT }}      
+          output_folder: packaged      
              
       - name: build website container
         id: build_container
@@ -157,6 +151,11 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:             
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_PAT }}
       - name: push docker image
         working-directory: src
         run: |
@@ -166,17 +165,12 @@ jobs:
             dockerSha=$(docker manifest inspect ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }} -v | jq -r '.Descriptor.digest')
             echo "Docker sha is $dockerSha"            
             echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV      
-      - name: save the package and docker sha to a file        
+      
+      - name: Create the Subject Checksum file for Attestation Build Provenance        
         shell: pwsh        
         run: |
           $packageHash = Get-FileHash -path "packaged/Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip" -Algorithm SHA256
-          $hashToSave = $packageHash.Hash
-          $hashedFile = @{
-            "tridentDbUpPackageHash" = "$hashToSave"
-            "tridentWebSiteSha" = "${{ env.TRIDENT_DOCKER_SHA }}"
-          }
-          
-          $hashedFile | ConvertTo-Json -Depth 10 | Out-File -FilePath "buildartifacthashes.json" -Encoding utf8 
+          $hashToSave = $packageHash.Hash          
 
           $cleanedPackageSha = $($hashToSave -replace "sha256:", "").Trim()
           $cleanedImageSha = $("${{ env.TRIDENT_DOCKER_SHA }}" -replace "sha256:", "").Trim()
@@ -189,15 +183,8 @@ jobs:
           $cleanedPackageSha  $packageSubject
           "@
 
-          New-Item -Path . -Name "subject.checksums.txt" -ItemType "File" -Value $subjectText
-      
-      - name: Attach package hash as build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifact-hashes
-          path: |
-            buildartifacthashes.json
-      - name: Build Attestations for Build Artifacts
+          New-Item -Path . -Name "subject.checksums.txt" -ItemType "File" -Value $subjectText      
+      - name: Attestation Build Provenance for the Build Artifacts
         uses: actions/attest-build-provenance@v2
         id: websiteattest
         with:
