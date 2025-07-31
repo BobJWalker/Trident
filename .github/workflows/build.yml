@@ -105,8 +105,7 @@ jobs:
     runs-on: ubuntu-latest 
     permissions:
       # Add any additional permissions your job requires here
-      id-token: write # This is required to obtain the OIDC Token for Octopus Deploy
-      attestations: write
+      id-token: write # This is required to obtain the OIDC Token for Octopus Deploy      
     steps:      
       - uses: actions/checkout@v1
         with:
@@ -222,6 +221,8 @@ jobs:
     name: Generate SBOM, Attestations, and GitHub Release
     needs: [prep, test, scan, build_and_publish_website, build_and_publish_database]  
     runs-on: ubuntu-latest
+    permissions:            
+      attestations: write # Required to publish attestations
     steps:      
       - uses: actions/checkout@v1
         with:
@@ -252,11 +253,15 @@ jobs:
           $imageSubject = "${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}".Trim()
           $packageSubject = "Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip".Trim()
 
+          Write-Host "The website information is $cleanedImageSha  $imageSubject"
+          Write-Host "The database information is $cleanedPackageSha  $packageSubject"
+
           $subjectText = @"
           $cleanedImageSha  $imageSubject
           $cleanedPackageSha  $packageSubject
           "@
 
+          Write-Host "Creating the checksums file"
           New-Item -Path . -Name "subject.checksums.txt" -ItemType "File" -Value $subjectText      
       - name: Generate Attestation from Provenance
         uses: actions/attest-build-provenance@v2
