@@ -54,9 +54,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: '0' 
+      - name: Checkout code for unit tests
+        uses: actions/checkout@v1        
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -97,16 +96,53 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-  build_and_publish: 
-    name: Create, Scan, Publish, and Attest
-    needs: [prep, test, scan]  
+  sbom:    
+    name: Generate SBOM      
+    runs-on: ubuntu-latest  
+    permissions:
+      id-token: write
+      attestations: write # Required to publish attestations
+    steps:      
+      - name: Checkout the code for SBOM
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: '0'  
+            
+      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          scan-type: 'fs'
+          format: 'github'
+          output: 'dependency-results.sbom.json'
+          scan-ref: '.'
+          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
+
+      - name: Attach SBOM and package hash as build artifact
+        id: upload_sbom
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-sbom
+          path: |
+            dependency-results.sbom.json
+
+      - name: Generate Attestation for SBOM
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: artifact-sbom.zip
+          subject-digest: sha256:${{ steps.upload_sbom.outputs.artifact-digest }}
+
+  build_and_publish_database: 
+    name: Create and Publish Database
+    outputs:       
+      database_hash: ${{ steps.determine_database_hash.outputs.Database_Hash }}
+    needs: [prep, test, scan, sbom]  
     runs-on: ubuntu-latest 
     permissions:
       # Add any additional permissions your job requires here
-      id-token: write # This is required to obtain the OIDC Token for Octopus Deploy
-      attestations: write
+      id-token: write # This is required to obtain the OIDC Token for Octopus Deploy      
     steps:      
-      - uses: actions/checkout@v1
+      - name: Checkout code for database schema 
+        uses: actions/checkout@v1
         with:
           fetch-depth: '0'
 
@@ -133,8 +169,56 @@ jobs:
           version: "${{ needs.prep.outputs.sem_Ver }}"  
           base_path: "artifacts/Trident.Database.DbUp"          
           files: "**/*"
-          output_folder: packaged      
-             
+          output_folder: packaged                               
+      
+      - name: Create the Subject Checksum file for Attestation Build Provenance 
+        id: determine_database_hash  
+        shell: pwsh        
+        run: |
+          $packageHash = Get-FileHash -path "packaged/Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip" -Algorithm SHA256
+          $hashToSave = $packageHash.Hash 
+          Write-Host "The database package hash is $hashToSave"
+          
+          "Database_Hash=$hashToSave" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+  
+      - name: Login to Octopus Deploy 🐙
+        uses: OctopusDeploy/login@v1
+        with: 
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
+      - name: Push packages to Octopus 🐙
+        uses: OctopusDeploy/push-package-action@v3
+        with:
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}
+          packages: |
+            packaged/**/*.zip       
+      - name: Push build information to Octopus 🐙
+        uses: OctopusDeploy/push-build-information-action@v3
+        with:
+          packages: |          
+            Trident.Database.DbUp                                
+          version: "${{ needs.prep.outputs.sem_Ver }}"
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}  
+  build_and_publish_website:
+    name: Build, Scan, and Publish Website
+    outputs:       
+      website_hash: ${{ steps.push_docker_image.outputs.TRIDENT_DOCKER_SHA }}
+    needs: [prep, test, scan, sbom]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code to build website
+        uses: actions/checkout@v1
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 9.x  
+          
+      - name: Install dependencies
+        run: dotnet restore src/Trident.sln  
+    
       - name: build website container
         id: build_container
         working-directory: src
@@ -158,84 +242,47 @@ jobs:
             password: ${{ secrets.DOCKERHUB_PAT }}
       - name: push docker image
         working-directory: src
+        id: push_docker_image
         run: |
             docker push ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}
             docker push ${{ vars.DOCKER_HUB_REPO }}:latest
 
             dockerSha=$(docker manifest inspect ${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }} -v | jq -r '.Descriptor.digest')
             echo "Docker sha is $dockerSha"            
-            echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_ENV      
-      
-      - name: Create the Subject Checksum file for Attestation Build Provenance        
-        shell: pwsh        
-        run: |
-          $packageHash = Get-FileHash -path "packaged/Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip" -Algorithm SHA256
-          $hashToSave = $packageHash.Hash          
+            echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_OUTPUT
 
-          $cleanedPackageSha = $($hashToSave -replace "sha256:", "").Trim()
-          $cleanedImageSha = $("${{ env.TRIDENT_DOCKER_SHA }}" -replace "sha256:", "").Trim()
+  attestations_and_gh_release:  
+    name: Generate Attestations and GitHub Release
+    needs: [prep, test, scan, sbom, build_and_publish_website, build_and_publish_database]  
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write # Required to publish attestations
+    steps:                         
+      - name: Create the Subject Checksum file for Provenance        
+        shell: pwsh        
+        run: |          
+          $cleanedPackageSha = $("${{ needs.build_and_publish_database.outputs.database_hash }}" -replace "sha256:", "").Trim()
+          $cleanedImageSha = $("${{ needs.build_and_publish_website.outputs.website_hash }}" -replace "sha256:", "").Trim()
 
           $imageSubject = "${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}".Trim()
           $packageSubject = "Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip".Trim()
+
+          Write-Host "The website information is $cleanedImageSha  $imageSubject"
+          Write-Host "The database information is $cleanedPackageSha  $packageSubject"
 
           $subjectText = @"
           $cleanedImageSha  $imageSubject
           $cleanedPackageSha  $packageSubject
           "@
 
+          Write-Host "Creating the checksums file"
           New-Item -Path . -Name "subject.checksums.txt" -ItemType "File" -Value $subjectText      
-      - name: Attestation Build Provenance for the Build Artifacts
+      - name: Generate Attestation from Provenance
         uses: actions/attest-build-provenance@v2
         id: websiteattest
         with:
             subject-checksums: subject.checksums.txt
-  
-      - name: Login to Octopus Deploy 🐙
-        uses: OctopusDeploy/login@v1
-        with: 
-          server: ${{ vars.OCTOPUS_SERVER_URL }}
-          service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
-      - name: Push packages to Octopus 🐙
-        uses: OctopusDeploy/push-package-action@v3
-        with:
-          server: ${{ vars.OCTOPUS_SERVER_URL }}
-          space: ${{ vars.OCTOPUS_SPACE }}
-          packages: |
-            packaged/**/*.zip       
-      - name: Push build information to Octopus 🐙
-        uses: OctopusDeploy/push-build-information-action@v3
-        with:
-          packages: |   
-            ${{ vars.DOCKER_HUB_REPO }}         
-            Trident.Database.DbUp                                
-          version: "${{ needs.prep.outputs.sem_Ver }}"
-          server: ${{ vars.OCTOPUS_SERVER_URL }}
-          space: ${{ vars.OCTOPUS_SPACE }}    
-
-  sbom_and_gh_release:  
-    name: Generate SBOM and GitHub Release
-    needs: [prep, test, scan, build_and_publish]  
-    runs-on: ubuntu-latest
-    steps:      
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: '0'  
-            
-      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
-        uses: aquasecurity/trivy-action@0.32.0
-        with:
-          scan-type: 'fs'
-          format: 'github'
-          output: 'dependency-results.sbom.json'
-          scan-ref: '.'
-          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
-
-      - name: Attach SBOM and package hash as build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifact-sbom
-          path: |
-            dependency-results.sbom.json
 
       - name: Create Release for GitHub
         id: create_release
@@ -253,7 +300,7 @@ jobs:
 
   octopus_deploy:  
     name: Handover to Octopus Deploy
-    needs: [prep, test, scan, build_and_publish, sbom_and_gh_release]  
+    needs: [prep, test, scan, sbom, build_and_publish_website, build_and_publish_database, attestations_and_gh_release]  
     runs-on: ubuntu-latest
     permissions:
       # Add any additional permissions your job requires here
