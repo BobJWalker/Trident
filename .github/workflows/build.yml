@@ -115,11 +115,18 @@ jobs:
           github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
 
       - name: Attach SBOM and package hash as build artifact
+        id: upload_sbom
         uses: actions/upload-artifact@v4
         with:
           name: artifact-sbom
           path: |
             dependency-results.sbom.json
+
+      - name: Generate Attestation for SBOM
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: artifact-sbom.zip
+          subject-digest: sha256:${{ steps.upload_sbom.outputs.artifact-digest }}
 
   build_and_publish_database: 
     name: Create and Publish Database
