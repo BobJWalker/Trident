@@ -97,11 +97,35 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
+  sbom:    
+    name: Generate SBOM      
+    runs-on: ubuntu-latest    
+    steps:      
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: '0'  
+            
+      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          scan-type: 'fs'
+          format: 'github'
+          output: 'dependency-results.sbom.json'
+          scan-ref: '.'
+          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
+
+      - name: Attach SBOM and package hash as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-sbom
+          path: |
+            dependency-results.sbom.json
+
   build_and_publish_database: 
     name: Create and Publish Database
     outputs:       
       database_hash: ${{ steps.determine_database_hash.outputs.Database_Hash }}
-    needs: [prep, test, scan]  
+    needs: [prep, test, scan, sbom]  
     runs-on: ubuntu-latest 
     permissions:
       # Add any additional permissions your job requires here
@@ -170,7 +194,7 @@ jobs:
     name: Build, Scan, and Publish Website
     outputs:       
       website_hash: ${{ steps.push_docker_image.outputs.TRIDENT_DOCKER_SHA }}
-    needs: [prep, test, scan]
+    needs: [prep, test, scan, sbom]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -217,33 +241,15 @@ jobs:
             echo "Docker sha is $dockerSha"            
             echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_OUTPUT
 
-  sbom_and_gh_release:  
-    name: Generate SBOM, Attestations, and GitHub Release
-    needs: [prep, test, scan, build_and_publish_website, build_and_publish_database]  
+  attestations_and_gh_release:  
+    name: Generate Attestations and GitHub Release
+    needs: [prep, test, scan, sbom, build_and_publish_website, build_and_publish_database]  
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       attestations: write # Required to publish attestations
     steps:      
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: '0'  
-            
-      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
-        uses: aquasecurity/trivy-action@0.32.0
-        with:
-          scan-type: 'fs'
-          format: 'github'
-          output: 'dependency-results.sbom.json'
-          scan-ref: '.'
-          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
-
-      - name: Attach SBOM and package hash as build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifact-sbom
-          path: |
-            dependency-results.sbom.json
+      - uses: actions/checkout@v1                    
 
       - name: Create the Subject Checksum file for Provenance        
         shell: pwsh        
@@ -286,7 +292,7 @@ jobs:
 
   octopus_deploy:  
     name: Handover to Octopus Deploy
-    needs: [prep, test, scan, build_and_publish_website, build_and_publish_database, sbom_and_gh_release]  
+    needs: [prep, test, scan, sbom, build_and_publish_website, build_and_publish_database, attestations_and_gh_release]  
     runs-on: ubuntu-latest
     permissions:
       # Add any additional permissions your job requires here
