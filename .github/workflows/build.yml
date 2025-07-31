@@ -99,7 +99,10 @@ jobs:
 
   sbom:    
     name: Generate SBOM      
-    runs-on: ubuntu-latest    
+    runs-on: ubuntu-latest  
+    permissions:
+      id-token: write
+      attestations: write # Required to publish attestations
     steps:      
       - uses: actions/checkout@v1
         with:
