@@ -96,44 +96,9 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-  sbom:    
-    name: Generate SBOM      
-    runs-on: ubuntu-latest  
-    permissions:
-      id-token: write
-      attestations: write # Required to publish attestations
-    steps:      
-      - name: Checkout the code for SBOM
-        uses: actions/checkout@v1
-        with:
-          fetch-depth: '0'  
-            
-      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
-        uses: aquasecurity/trivy-action@0.32.0
-        with:
-          scan-type: 'fs'
-          format: 'github'
-          output: 'dependency-results.sbom.json'
-          scan-ref: '.'
-          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
-
-      - name: Attach SBOM and package hash as build artifact
-        id: upload_sbom
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifact-sbom
-          path: |
-            dependency-results.sbom.json
-
-      - name: Generate Attestation for SBOM
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-name: artifact-sbom.zip
-          subject-digest: sha256:${{ steps.upload_sbom.outputs.artifact-digest }}
-
   gh_release:  
     name: Create GitHub Release
-    needs: [prep, test, scan, sbom]  
+    needs: [prep, test, scan]  
     runs-on: ubuntu-latest
     permissions:
       id-token: write      
@@ -160,7 +125,7 @@ jobs:
     name: Create and Publish Database
     outputs:       
       database_hash: ${{ steps.determine_database_hash.outputs.Database_Hash }}
-    needs: [prep, test, scan, sbom, gh_release]  
+    needs: [prep, test, scan, gh_release]  
     runs-on: ubuntu-latest 
     permissions:
       # Add any additional permissions your job requires here
@@ -217,20 +182,12 @@ jobs:
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           space: ${{ vars.OCTOPUS_SPACE }}
           packages: |
-            packaged/**/*.zip       
-      - name: Push build information to Octopus 🐙
-        uses: OctopusDeploy/push-build-information-action@v3
-        with:
-          packages: |          
-            Trident.Database.DbUp                                
-          version: "${{ needs.prep.outputs.sem_Ver }}"
-          server: ${{ vars.OCTOPUS_SERVER_URL }}
-          space: ${{ vars.OCTOPUS_SPACE }}  
+            packaged/Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip  
   build_and_publish_website:
     name: Build, Scan, and Publish Website
     outputs:       
       website_hash: ${{ steps.push_docker_image.outputs.TRIDENT_DOCKER_SHA }}
-    needs: [prep, test, scan, sbom, gh_release]
+    needs: [prep, test, scan, gh_release]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code to build website
@@ -276,6 +233,79 @@ jobs:
             echo "Docker sha is $dockerSha"            
             echo "TRIDENT_DOCKER_SHA=$dockerSha" >> $GITHUB_OUTPUT
 
+  sbom:    
+    name: Generate and Publish SBOM           
+    outputs:       
+      sbom_hash: ${{ steps.determine_sbom_hash.outputs.SBOM_HASH }}
+    needs: [prep, test, scan, gh_release]  
+    runs-on: ubuntu-latest 
+    permissions:
+      # Add any additional permissions your job requires here
+      id-token: write # This is required to obtain the OIDC Token for Octopus Deploy
+    steps:      
+      - name: Checkout the code for SBOM
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: '0'  
+            
+      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          scan-type: 'fs'
+          format: 'github'
+          output: 'dependency-results.sbom.json'
+          scan-ref: '.'
+          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
+
+      - name: Attach SBOM and package hash as build artifact
+        id: upload_sbom
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-sbom
+          path: |
+            dependency-results.sbom.json
+
+      - name: Package SBOM
+        id: "sbom_package"
+        uses: OctopusDeploy/create-zip-package-action@v3
+        with:
+          package_id: Trident.SBOM
+          version: "${{ needs.prep.outputs.sem_Ver }}"  
+          base_path: "./"          
+          files: "dependency-results.sbom.json"
+          output_folder: packaged                               
+      
+      - name: Create the Subject Checksum file for Attestation Build Provenance 
+        id: determine_sbom_hash  
+        shell: pwsh        
+        run: |
+          $packageHash = Get-FileHash -path "packaged/Trident.SBOM.${{ needs.prep.outputs.sem_Ver }}.zip" -Algorithm SHA256
+          $hashToSave = $packageHash.Hash 
+          Write-Host "The SBOM package hash is $hashToSave"
+          
+          "SBOM_HASH=$hashToSave" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+  
+      - name: Login to Octopus Deploy 🐙
+        uses: OctopusDeploy/login@v1
+        with: 
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
+      - name: Push packages to Octopus 🐙
+        uses: OctopusDeploy/push-package-action@v3
+        with:
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}
+          packages: |
+            packaged/Trident.SBOM.${{ needs.prep.outputs.sem_Ver }}.zip       
+      - name: Push build information to Octopus 🐙
+        uses: OctopusDeploy/push-build-information-action@v3
+        with:
+          packages: |          
+            Trident.SBOM                               
+          version: "${{ needs.prep.outputs.sem_Ver }}"
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}  
+
   create_attestations:  
     name: Generate Attestations
     needs: [prep, test, scan, sbom, gh_release, build_and_publish_website, build_and_publish_database]  
@@ -288,17 +318,21 @@ jobs:
         shell: pwsh        
         run: |          
           $cleanedPackageSha = $("${{ needs.build_and_publish_database.outputs.database_hash }}" -replace "sha256:", "").Trim()
+          $cleanedSbomSha = $("${{ needs.sbom.outputs.sbom_hash }}" -replace "sha256:", "").Trim()
           $cleanedImageSha = $("${{ needs.build_and_publish_website.outputs.website_hash }}" -replace "sha256:", "").Trim()
 
           $imageSubject = "${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}".Trim()
           $packageSubject = "Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip".Trim()
+          $sbomSubject = "Trident.SBOM.${{ needs.prep.outputs.sem_Ver }}.zip".Trim()
 
           Write-Host "The website information is $cleanedImageSha  $imageSubject"
           Write-Host "The database information is $cleanedPackageSha  $packageSubject"
+          Write-Host "The SBOM information is $cleanedSbomSha  $sbomSubject"
 
           $subjectText = @"
           $cleanedImageSha  $imageSubject
           $cleanedPackageSha  $packageSubject
+          $cleanedSbomSha  $sbomSubject
           "@
 
           Write-Host "Creating the checksums file"
