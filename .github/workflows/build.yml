@@ -258,7 +258,11 @@ jobs:
     permissions:
       id-token: write
       attestations: write # Required to publish attestations
-    steps:                         
+      contents: write
+    steps:   
+      - name: Checkout Code to build website
+        uses: actions/checkout@v1
+
       - name: Create the Subject Checksum file for Provenance        
         shell: pwsh        
         run: |          
