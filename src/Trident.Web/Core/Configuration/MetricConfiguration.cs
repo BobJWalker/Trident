@@ -18,7 +18,7 @@ namespace Trident.Web.Core.Configuration
         public string DefaultInstanceApiKey {get; set;}
         public string DefaultInstanceId {get; set;}
 
-        public MetricConfiguration(IConfiguration configuration)
+        public MetricConfiguration()
         {
             ConnectionString = Environment.GetEnvironmentVariable("TRIDENT_CONNECTION_STRING");  
             DefaultInstanceUrl = Environment.GetEnvironmentVariable("TRIDENT_INSTANCE_URL");  

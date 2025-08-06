@@ -17,6 +17,8 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using Trident.Web.HostedServices;
+using Trident.Web.Core.Configuration;
+using Trident.Web.DataAccess;
 
 namespace Trident.Web
 {
@@ -71,6 +73,18 @@ namespace Trident.Web
             builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory())
                 .ConfigureContainer<ContainerBuilder>(autofacBuilder =>
                 {
+                    autofacBuilder.RegisterInstance(GetFeatureClient())
+                        .As<IFeatureClient>()
+                        .SingleInstance();
+
+                    autofacBuilder.RegisterInstance(GetMetricConfiguration())
+                        .As<IMetricConfiguration>()
+                        .SingleInstance();
+
+                    autofacBuilder.RegisterInstance(GetDataAdapter())
+                        .As<ITridentDataAdapter>()
+                        .SingleInstance();
+
                     var assembly = Assembly.GetExecutingAssembly();
 
                     autofacBuilder.RegisterAssemblyTypes(assembly)
@@ -83,11 +97,7 @@ namespace Trident.Web
 
                     autofacBuilder.RegisterGeneric(typeof(Logger<>))
                         .As(typeof(ILogger<>))
-                        .InstancePerLifetimeScope();
-
-                    autofacBuilder.RegisterInstance(GetFeatureClient())
-                        .As<IFeatureClient>()
-                        .SingleInstance();
+                        .InstancePerLifetimeScope();                    
                 });
         }
 
@@ -146,6 +156,16 @@ namespace Trident.Web
             client.SetContext(EvaluationContext.Builder().Build());
 
             return client;
+        }
+
+        private static IMetricConfiguration GetMetricConfiguration()
+        {
+            return new MetricConfiguration();
+        }
+
+        public static ITridentDataAdapter GetDataAdapter()
+        {
+            return new TridentDataAdapter(GetMetricConfiguration());
         }
     }
 }
