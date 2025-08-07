@@ -108,7 +108,7 @@ process_template "deploy-databases" {
     }
 
     parameter "Template.Approval.Environments" {
-        value = "Environments-81"
+        value = "Environments-42"
     }
 }
 
