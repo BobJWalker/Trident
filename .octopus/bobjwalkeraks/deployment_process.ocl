@@ -27,7 +27,7 @@ step "azure-key-vault-retrieve-secrets" {
 process_template "verify-build-artifacts" {
     name = "Verify Build Artifacts"
     process_template_slug = "deploy-process-verify-build-artifacts"
-    version_mask = "2.0.X"
+    version_mask = "2.1.X"
 
     package_parameter "Template.SBOM.Artifact" {
         feed = "octopus-server-built-in"
