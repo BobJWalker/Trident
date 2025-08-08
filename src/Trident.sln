@@ -8,11 +8,28 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{BFF58FE3-57AE-40A2-9944-4ADCD2785474}"
 	ProjectSection(SolutionItems) = preProject
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
+		..\.github\workflows\pr_merge.yml = ..\.github\workflows\pr_merge.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trident.Web.Test", "Trident.Web.Test\Trident.Web.Test.csproj", "{FDB3D451-CB8E-4724-A721-FF8494E39BD0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trident.Database.DbUp", "Trident.Database.DbUp\Trident.Database.DbUp.csproj", "{BD8915AF-0FDC-42DA-8D03-B084C147E799}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "octopus", "octopus", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		..\.octopus\bobjwalkeraks\deployment_process.ocl = ..\.octopus\bobjwalkeraks\deployment_process.ocl
+		..\.octopus\bobjwalkeraks\deployment_settings.ocl = ..\.octopus\bobjwalkeraks\deployment_settings.ocl
+		..\.octopus\bobjwalkeraks\schema_version.ocl = ..\.octopus\bobjwalkeraks\schema_version.ocl
+		..\.octopus\bobjwalkeraks\variables.ocl = ..\.octopus\bobjwalkeraks\variables.ocl
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "runbooks", "runbooks", "{6752028F-4EED-458E-A57E-0F49B05A1516}"
+	ProjectSection(SolutionItems) = preProject
+		..\.octopus\bobjwalkeraks\runbooks\auto-approve-long-waiting-manual-interventions.ocl = ..\.octopus\bobjwalkeraks\runbooks\auto-approve-long-waiting-manual-interventions.ocl
+		..\.octopus\bobjwalkeraks\runbooks\configure-database.ocl = ..\.octopus\bobjwalkeraks\runbooks\configure-database.ocl
+		..\.octopus\bobjwalkeraks\runbooks\destroy-application-infrastructure.ocl = ..\.octopus\bobjwalkeraks\runbooks\destroy-application-infrastructure.ocl
+		..\.octopus\bobjwalkeraks\runbooks\run-adhoc-data-script.ocl = ..\.octopus\bobjwalkeraks\runbooks\run-adhoc-data-script.ocl
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +52,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6752028F-4EED-458E-A57E-0F49B05A1516} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3E8E166F-E6FF-4B59-B329-3737E2655791}
