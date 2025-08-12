@@ -87,6 +87,7 @@ jobs:
         with:
           scan-type: 'fs'
           ignore-unfixed: true
+          exit-code: '1'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'MEDIUM,HIGH,CRITICAL'
@@ -214,6 +215,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'HIGH,CRITICAL'
           ignore-unfixed: true
+          exit-code: '1'
           format: 'sarif'
           output: 'trivy-image-results.sarif'          
 
