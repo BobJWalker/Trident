@@ -12,13 +12,13 @@
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Dapper.SimpleCRUD" Version="2.3.0" />
-    <PackageReference Include="LigerShark.WebOptimizer.Core" Version="3.0.436" />
+    <PackageReference Include="LigerShark.WebOptimizer.Core" Version="3.0.471" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NLog.Targets.Syslog" Version="7.0.0" />
-    <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.2" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.3" />
     <PackageReference Include="Octopus.OpenFeature" Version="1.2.0" />
     <PackageReference Include="OpenFeature.Contrib.Providers.EnvVar" Version="0.0.7" />
     <PackageReference Include="SumoLogic.Logging.NLog" Version="1.0.1.8" />
