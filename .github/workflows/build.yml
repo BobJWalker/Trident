@@ -86,10 +86,10 @@ jobs:
         uses: aquasecurity/trivy-action@0.32.0
         with:
           scan-type: 'fs'
-          ignore-unfixed: false
+          ignore-unfixed: true
           format: 'sarif'
           output: 'trivy-results.sarif'
-          severity: 'HIGH,CRITICAL'
+          severity: 'MEDIUM,HIGH,CRITICAL'
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
@@ -213,7 +213,7 @@ jobs:
           image-ref: '${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}'
           vuln-type: 'os,library'
           severity: 'HIGH,CRITICAL'
-          ignore-unfixed: false
+          ignore-unfixed: true
           format: 'sarif'
           output: 'trivy-image-results.sarif'          
 
@@ -366,4 +366,5 @@ jobs:
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
       
       
+
 
