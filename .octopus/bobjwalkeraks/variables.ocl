@@ -13,14 +13,6 @@ variable "Project.ScriptToRun.Text" {
     }
 }
 
-variable "spec:template:spec:containers:0:image" {
-    value "bobjwalker99/trident:#{Octopus.Action.Package[Trident].PackageVersion}" {}
-}
-
-variable "Project.K8s.Image.VersionTag" {
-    value "#{Octopus.Action.Package[trident].PackageVersion}" {}
-}
-
 variable "stringData:connectionString" {
     value "#{Project.Connection.String}" {}
 }
@@ -88,4 +80,12 @@ variable "stringData:sumologicUrl" {
     value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SumoLogicUrl}" {
         description = ""
     }
+}
+
+variable "Project.K8s.Image.VersionTag" {
+    value "#{Octopus.Action[Deploy K8s Manifest-Deploy Container].Package[K8sTemplate.Container].PackageVersion}" {}
+}
+
+variable "spec:template:spec:containers:0:image" {
+    value "bobjwalker99/trident:#{Octopus.Action[Deploy K8s Manifest-Deploy Container].Package[K8sTemplate.Container].PackageVersion}" {}
 }
