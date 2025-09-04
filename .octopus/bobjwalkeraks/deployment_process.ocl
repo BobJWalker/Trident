@@ -112,50 +112,30 @@ process_template "deploy-databases" {
     }
 }
 
-step "deploy-trident-website" {
-    name = "Deploy Trident Website"
-    properties = {
-        Octopus.Action.TargetRoles = "trident-web"
+process_template "deploy-k8s-manifest" {
+    name = "Deploy K8s Manifest"
+    process_template_slug = "deploy-process-deploy-to-kubernetes-via-manifest"
+    version_mask = "1.0.X"
+
+    package_parameter "K8sTemplate.Container" {
+        feed = "dockerhub"
+        package_id = "bobjwalker99/trident"
     }
 
-    action {
-        action_type = "Octopus.KubernetesDeployRawYaml"
-        notes = <<-EOT
-                **Always Runs**
-                
-                Deploys the website container to the Kubernetes Cluster using a manifest file.
-                EOT
-        properties = {
-            Octopus.Action.GitRepository.FilePathFilters = <<-EOT
-                k8s/base/trident-app-secrets.yaml
-                k8s/base/trident-deployment.yaml
-                EOT
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
-            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
-            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
-            Octopus.Action.KubernetesContainers.CustomResourceYamlFileName = <<-EOT
-                k8s/base/trident-app-secrets.yaml
-                k8s/base/trident-deployment.yaml
-                EOT
-            Octopus.Action.KubernetesContainers.Namespace = "#{Standards.K8s.Namespace}"
-            Octopus.Action.Package.JsonConfigurationVariablesTargets = "**/*.{yml,yaml}"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-            OctopusUseBundledTooling = "False"
-        }
-        worker_pool_variable = "Standards.Worker.Pool"
+    parameter "K8sTemplate.Target.Tag" {
+        value = "trident-web"
+    }
 
-        packages "Trident" {
-            acquisition_location = "NotAcquired"
-            feed = "dockerhub"
-            package_id = "bobjwalker99/trident"
-            properties = {
-                Extract = "False"
-                Purpose = "DockerImageReference"
-                SelectionMode = "immediate"
-            }
-        }
+    parameter "K8sTemplate.Git.Repo" {
+        value = "https://github.com/BobJWalker/Trident.git"
+    }
+
+    parameter "K8sTemplate.Namespace" {
+        value = "#{Standards.K8s.Namespace}"
+    }
+
+    parameter "K8sTemplate.Worker.Pool" {
+        value = "WorkerPools-423"
     }
 }
 
