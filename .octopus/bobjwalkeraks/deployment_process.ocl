@@ -115,7 +115,7 @@ process_template "deploy-databases" {
 process_template "deploy-k8s-manifest" {
     name = "Deploy K8s Manifest"
     process_template_slug = "deploy-process-deploy-to-kubernetes-via-manifest"
-    version_mask = "1.0.X"
+    version_mask = "1.1.X"
 
     package_parameter "K8sTemplate.Container" {
         feed = "dockerhub"
@@ -137,25 +137,9 @@ process_template "deploy-k8s-manifest" {
     parameter "K8sTemplate.Worker.Pool" {
         value = "WorkerPools-423"
     }
-}
 
-step "verify-deployment" {
-    name = "Verify Deployment"
-
-    action {
-        action_type = "Octopus.Script"
-        notes = <<-EOT
-                **Always runs**
-                
-                Runs a series of tests to ensure the deployment was successful.
-                EOT
-        properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/VerifySuccessfulDeployment.ps1"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-            OctopusUseBundledTooling = "False"
-        }
-        worker_pool_variable = "Standards.Worker.Pool"
+    parameter "K8sTemplate.Verification.Script.Path" {
+        value = "scripts/VerifySuccessfulDeployment.ps1"
     }
 }
 
