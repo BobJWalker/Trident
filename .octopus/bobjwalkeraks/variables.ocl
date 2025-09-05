@@ -25,16 +25,16 @@ variable "spec:rules:0:host" {
     value "#{Standards.K8s.HostName}" {}
 }
 
-variable "stringData:sumologicUrl" {
-    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SumoLogicUrl}" {
-        description = ""
-    }
-}
-
 variable "spec:template:spec:containers:0:image" {
     value "bobjwalker99/trident:#{Octopus.Action[Deploy K8s Manifest-Deploy Container].Package[K8sTemplate.Container].PackageVersion}" {}
 }
 
 variable "stringData:connectionString" {
-    value "#{Standards.Connection.String}" {}
+    value "#{KeyVault.SQLServer.Connection.String}" {}
+}
+
+variable "stringData:sumologicUrl" {
+    value "#{KeyVault.Sumologic.Url}" {
+        description = ""
+    }
 }
