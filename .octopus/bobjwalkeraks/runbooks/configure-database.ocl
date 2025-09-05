@@ -58,12 +58,12 @@ process {
             value = "#{KeyVault.SQLServer.Server.Name}"
         }
 
-        parameter "Template.SQLServer.User.Name" {
-            value = "#{KeyVault.SQLServer.Server.Name}"
-        }
-
         parameter "Template.SQLServer.User.Password" {
             value = "#{KeyVault.SQLServer.User.Password}"
+        }
+
+        parameter "Template.SQLServer.User.Name" {
+            value = "#{KeyVault.SQLServer.User.Name}"
         }
     }
 
