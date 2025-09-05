@@ -8,10 +8,10 @@ step "azure-key-vault-retrieve-secrets" {
                 Pulls the database credentials from Azure Key Vault for database and code deployment steps to use.
                 EOT
         properties = {
-            Azure.KeyVault.RetrieveSecrets.Account = "Project.Azure.Account"
+            Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
             Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
-            Azure.KeyVault.RetrieveSecrets.VaultName = "#{Project.Azure.KeyVault.Name}"
-            Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{Project.Azure.KeyVault.Secrets}"
+            Azure.KeyVault.RetrieveSecrets.VaultName = "#{KeyVault.Azure.Name}"
+            Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{KeyVault.Azure.Secrets.List}"
             Octopus.Action.Template.Id = "ActionTemplates-561"
             Octopus.Action.Template.Version = "2"
         }
@@ -34,16 +34,16 @@ process_template "verify-build-artifacts" {
         package_id = "Trident.SBOM"
     }
 
-    parameter "Template.Git.AuthToken" {
-        value = "#{Project.GitHub.Token}"
-    }
-
     parameter "Template.Verify.WorkerPool" {
         value = "#{Standards.Worker.Pool}"
     }
 
     parameter "Template.Verify.ExecutionContainerFeed" {
         value = "Feeds-1283"
+    }
+
+    parameter "Template.Git.AuthToken" {
+        value = "#{KeyVault.GitHub.Token}"
     }
 }
 
@@ -54,7 +54,7 @@ step "verify-infrastructure" {
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-521"
             Octopus.Action.Template.Version = "10"
-            Run.Runbook.Api.Key = "#{Project.Runbook.API.Key}"
+            Run.Runbook.Api.Key = "#{KeyVault.Octopus.Api.Key}"
             Run.Runbook.AutoApproveManualInterventions = "No"
             Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
             Run.Runbook.CaCBranchName = "#{Octopus.Release.Git.BranchName}"
@@ -88,10 +88,6 @@ process_template "deploy-databases" {
         value = "Trident.Database.DbUp"
     }
 
-    parameter "Template.Database.ConnectionString" {
-        value = "#{Project.Connection.String}"
-    }
-
     parameter "Template.Database.ChangeReportDirectory" {
         value = "#{Standards.Database.ChangeReport.Path}"
     }
@@ -102,6 +98,10 @@ process_template "deploy-databases" {
 
     parameter "Template.Approval.Environments" {
         value = "Environments-42"
+    }
+
+    parameter "Template.Database.ConnectionString" {
+        value = "#{KeyVault.SQLServer.Connection.String}"
     }
 }
 
@@ -127,12 +127,12 @@ process_template "deploy-k8s-manifest" {
         value = "#{Standards.K8s.Namespace}"
     }
 
-    parameter "K8sTemplate.Worker.Pool" {
-        value = "WorkerPools-423"
-    }
-
     parameter "K8sTemplate.Verification.Script.Path" {
         value = "scripts/VerifySuccessfulDeployment.ps1"
+    }
+
+    parameter "K8sTemplate.Worker.Pool" {
+        value = "#{Standards.Worker.Pool}"
     }
 }
 
