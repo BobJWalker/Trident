@@ -29,8 +29,8 @@ process {
             properties = {
                 Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
                 Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
-                Azure.KeyVault.RetrieveSecrets.VaultName = "#{Project.Azure.KeyVault.Name}"
-                Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{Project.Azure.KeyVault.Secrets}"
+                Azure.KeyVault.RetrieveSecrets.VaultName = "#{KeyVault.Azure.Name}"
+                Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{KeyVault.Azure.Secrets.List}"
                 Octopus.Action.Template.Id = "ActionTemplates-561"
                 Octopus.Action.Template.Version = "2"
             }
@@ -56,20 +56,20 @@ process {
             value = "#{Standards.Database.Name}"
         }
 
+        parameter "Template.WorkerPool" {
+            value = "#{Standards.Worker.Pool}"
+        }
+
         parameter "Template.SQLServer.Name" {
-            value = "#{Project.SQLServer.Server.Name}"
+            value = "#{KeyVault.SQLServer.Server.Name}"
         }
 
         parameter "Template.SQLServer.User.Name" {
-            value = "#{Project.SQLServer.User.Name}"
+            value = "#{KeyVault.SQLServer.User.Name}"
         }
 
         parameter "Template.SQLServer.User.Password" {
-            value = "#{Project.SQLServer.User.Password}"
-        }
-
-        parameter "Template.WorkerPool" {
-            value = "#{Standards.Worker.Pool}"
+            value = "#{KeyVault.SQLServer.User.Password}"
         }
     }
 }
