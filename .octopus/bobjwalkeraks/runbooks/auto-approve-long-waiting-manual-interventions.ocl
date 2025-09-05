@@ -22,10 +22,10 @@ process {
 
         action {
             properties = {
-                Azure.KeyVault.RetrieveSecrets.Account = "Project.Azure.Account"
+                Azure.KeyVault.RetrieveSecrets.Account = "Azure.Account"
                 Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
-                Azure.KeyVault.RetrieveSecrets.VaultName = "#{Project.Azure.KeyVault.Name}"
-                Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{Project.Azure.KeyVault.Secrets}"
+                Azure.KeyVault.RetrieveSecrets.VaultName = "#{KeyVault.Azure.Name}"
+                Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{KeyVault.Azure.Secrets.List}"
                 Octopus.Action.Template.Id = "ActionTemplates-561"
                 Octopus.Action.Template.Version = "2"
             }
@@ -46,7 +46,7 @@ process {
             properties = {
                 Octopus.Action.Script.ScriptBody = <<-EOT
                     $instanceURL = $OctopusParameters["Octopus.Web.ServerUri"]
-                    $apiKey =  $OctopusParameters["Project.Runbook.API.Key"]
+                    $apiKey =  $OctopusParameters["KeyVault.Octopus.Api.Key"]
                     $spaceName = $OctopusParameters["Octopus.Space.Name"]
                     
                     $header = @{ "X-Octopus-ApiKey" = $apiKey }
