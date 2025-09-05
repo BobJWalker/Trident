@@ -13,10 +13,6 @@ variable "Project.ScriptToRun.Text" {
     }
 }
 
-variable "stringData:connectionString" {
-    value "#{Project.Connection.String}" {}
-}
-
 variable "stringData:environment" {
     value "#{Octopus.Environment.Name}" {}
 }
@@ -25,55 +21,8 @@ variable "stringData:openFeatureClientId" {
     value "#{Octopus.FeatureToggles.ClientIdentifier}" {}
 }
 
-variable "Project.GitHub.Token" {
-    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.GitHubToken}" {}
-}
-
-variable "Project.Runbook.API.Key" {
-    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.OctopusApiKey}" {}
-}
-
 variable "spec:rules:0:host" {
     value "#{Standards.K8s.HostName}" {}
-}
-
-variable "Project.SQLServer.Server.Name" {
-    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLServerName}" {}
-}
-
-variable "Project.SQLServer.User.Name" {
-    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserName}" {}
-}
-
-variable "Project.SQLServer.User.Password" {
-    value "#{Octopus.Action[Azure Key Vault - Retrieve Secrets].Output.SQLUserPassword}" {}
-}
-
-variable "Project.Azure.Account" {
-    type = "AzureAccount"
-
-    value "azure-oidc" {}
-}
-
-variable "Project.Connection.String" {
-    value "Server=tcp:#{Project.SQLServer.Server.Name},1433;Database=#{Standards.Database.Name};User Id=#{Project.SQLServer.User.Name};Password=#{Project.SQLServer.User.Password};trustServerCertificate=true;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;" {}
-}
-
-variable "Project.Azure.KeyVault.Name" {
-    value "bobjwalker-vault" {}
-}
-
-variable "Project.Azure.KeyVault.Secrets" {
-    value {
-        value = <<-EOT
-                azure-sql-server | SQLServerName
-                azure-sql-password | SQLUserPassword
-                azure-sql-username | SQLUserName
-                octopus-api-key | OctopusApiKey
-                github-token | GitHubToken
-                sumo-logic-url | SumoLogicUrl
-                EOT
-    }
 }
 
 variable "stringData:sumologicUrl" {
@@ -82,10 +31,10 @@ variable "stringData:sumologicUrl" {
     }
 }
 
-variable "Project.K8s.Image.VersionTag" {
-    value "#{Octopus.Action[Deploy K8s Manifest-Deploy Container].Package[K8sTemplate.Container].PackageVersion}" {}
-}
-
 variable "spec:template:spec:containers:0:image" {
     value "bobjwalker99/trident:#{Octopus.Action[Deploy K8s Manifest-Deploy Container].Package[K8sTemplate.Container].PackageVersion}" {}
+}
+
+variable "stringData:connectionString" {
+    value "#{Standards.Connection.String}" {}
 }
