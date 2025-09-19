@@ -24,6 +24,32 @@ step "azure-key-vault-retrieve-secrets" {
     }
 }
 
+step "scan-sbom" {
+    name = "Scan SBOM"
+
+    action {
+        action_type = "Octopus.Script"
+        properties = {
+            Octopus.Action.Script.ScriptBody = "Write-Host \"Hello World\""
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool = "homelab-k8s"
+
+        packages "Trident.SBOM" {
+            acquisition_location = "Server"
+            feed = "octopus-server-built-in"
+            package_id = "Trident.SBOM"
+            properties = {
+                Extract = "True"
+                Purpose = ""
+                SelectionMode = "immediate"
+            }
+        }
+    }
+}
+
 process_template "verify-build-artifacts" {
     name = "Verify Build Artifacts"
     process_template_slug = "deploy-process-verify-build-artifacts"
