@@ -35,7 +35,7 @@ step "scan-sbom" {
             Octopus.Action.Script.Syntax = "PowerShell"
             OctopusUseBundledTooling = "False"
         }
-        worker_pool = "homelab-k8s"
+        worker_pool = "homelab-windows"
 
         packages "Trident.SBOM" {
             acquisition_location = "Server"
