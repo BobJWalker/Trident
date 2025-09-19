@@ -77,6 +77,7 @@ step "verify-infrastructure" {
     name = "Verify Infrastructure"
 
     action {
+        channels = ["release"]
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-521"
             Octopus.Action.Template.Version = "10"
