@@ -51,6 +51,12 @@ step "verify-infrastructure" {
     name = "Verify Infrastructure"
 
     action {
+        channels = ["default", "release"]
+        notes = <<-EOT
+                **Always Runs**
+                
+                Verifies the infrastructure is configured correctly for the static environments
+                EOT
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-521"
             Octopus.Action.Template.Version = "10"
