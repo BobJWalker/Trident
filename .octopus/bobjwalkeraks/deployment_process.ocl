@@ -51,7 +51,7 @@ step "verify-infrastructure" {
     name = "Verify Infrastructure"
 
     action {
-        channels = ["default", "release"]
+        channels = ["release"]
         notes = <<-EOT
                 **Always Runs**
                 
