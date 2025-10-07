@@ -152,8 +152,15 @@ namespace Trident.Web
         private static IFeatureClient GetFeatureClient()
         {
             var client = OpenFeature.Api.Instance.GetClient();
+            var config = new MetricConfiguration();
 
-            client.SetContext(EvaluationContext.Builder().Build());
+            var context = EvaluationContext.Builder()
+                .Set("application", "Trident")
+                .Set("instanceId", config.DefaultInstanceId ?? "unknown")
+                .Set("environment", config.EnvironmentName ?? "Development")
+                .Build();
+
+            client.SetContext(context);
 
             return client;
         }
