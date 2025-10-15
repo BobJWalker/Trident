@@ -122,9 +122,9 @@
       },
       "Octopus.OpenFeature": {
         "type": "Direct",
-        "requested": "[1.2.1, )",
-        "resolved": "1.2.1",
-        "contentHash": "qeYgarzLNTD4CTLGzNBinXN04RoFkVAl5JlCRQWtZ86HKfsN3gT736KLFamdQF8Jd9hip/QKiNZmX1gQvOzUtw==",
+        "requested": "[1.2.2, )",
+        "resolved": "1.2.2",
+        "contentHash": "F2hmPxt0pe9PXrO+oqyQjf3E7kRr4IeLbWRNpQBGWd09roLa3hpfs6t8RDXAmIV63xReJkZqkv6Di/G6aYGWyg==",
         "dependencies": {
           "OpenFeature": "2.0.0",
           "System.Text.Json": "9.0.5"
