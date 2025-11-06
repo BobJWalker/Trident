@@ -161,12 +161,12 @@
       },
       "SumoLogic.Logging.NLog": {
         "type": "Direct",
-        "requested": "[1.0.1.8, )",
-        "resolved": "1.0.1.8",
-        "contentHash": "WwQ+hfpGfWluiiVF/23Nv51ZoeF6V/V9vvg7Tj/0UXXoUEhUHlydAJFHDH7JAYcZFkqqf8Rf2RJCqrcNYGWqwg==",
+        "requested": "[1.1.0, )",
+        "resolved": "1.1.0",
+        "contentHash": "65gH03moyGQWhJ4Hj6x2vPA01bi4DE3mBB+aONMCbjq0FrGSozg+QzftRobZBEsO9CvKUCpiRtAT0i5xIfZoGg==",
         "dependencies": {
           "NLog": "4.5.11",
-          "SumoLogic.Logging.Common": "1.0.1.8"
+          "SumoLogic.Logging.Common": "1.1.0"
         }
       },
       "Autofac": {
@@ -1227,8 +1227,8 @@
       },
       "SumoLogic.Logging.Common": {
         "type": "Transitive",
-        "resolved": "1.0.1.8",
-        "contentHash": "hZqh3VpQ1cyArKh0HDtM+cVi05+D5VaHZ7uc769zihpZ9o1auKhmhmyThDUsJsDZN2l8H36FjQ1MhSdXpN90Eg=="
+        "resolved": "1.1.0",
+        "contentHash": "kF0zfLLpNvJmqcJhCAcqnm1xM2RKMHSZpF+FAw49o9hI/R45JuwlPBFn8YQLURM6vvZx1hiYRfHhY39M9koN5A=="
       },
       "System.ClientModel": {
         "type": "Transitive",
