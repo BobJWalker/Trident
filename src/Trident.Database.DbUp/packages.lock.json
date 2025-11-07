@@ -4,12 +4,12 @@
     "net9.0": {
       "dbup-sqlserver": {
         "type": "Direct",
-        "requested": "[6.0.0, )",
-        "resolved": "6.0.0",
-        "contentHash": "62CDuGfFqNHBIluFxSIJaW8MDukjWI3WhMCyuDHNMvZxtsVlX6zPq30z7fC0VP6Id2ve3tHLsVhMM3t25QsEhQ==",
+        "requested": "[6.0.16, )",
+        "resolved": "6.0.16",
+        "contentHash": "r9DrDemZOU1u2FOkQaPDnQuySds0pxfc7ajb04WCJ3PRciGGwbQ36ozhL4v+uauCv+GoSFc4FdDJW/rbLjTvGg==",
         "dependencies": {
           "Microsoft.Data.SqlClient": "5.2.2",
-          "dbup-core": "6.0.3"
+          "dbup-core": "6.0.15"
         }
       },
       "Azure.Core": {
@@ -43,8 +43,8 @@
       },
       "dbup-core": {
         "type": "Transitive",
-        "resolved": "6.0.3",
-        "contentHash": "iGDG7mv93ePpZq4lttfr4duj1A/WsNI9HQG8241ROoWdwyGT6fUQtK0U2YOyi8aIebhRcgqba87Bcomjh4lFRw==",
+        "resolved": "6.0.15",
+        "contentHash": "w0eaoyVitzgBiHTILEnj23smrbrxZ1nLF7K8uOyG6rvrctRtC0NTuSYHoB/3aq+B9hi9E/DiW9pOtNto5V9P3g==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0"
         }
