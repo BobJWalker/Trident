@@ -111,7 +111,7 @@ process {
                 ssn_HookUrl = "#{Notification.Slack.Webhook.Url}"
                 ssn_IconUrl = "https://octopus.com/content/resources/favicon.png"
                 ssn_Message = "#{Notification.Body.Text}"
-                ssn_Title = "#{Notification.Subject.Text}"
+                ssn_Title = "#{Notification.RunbookStatus.Subject.Text}"
                 ssn_Username = "Octopus Deploy"
             }
             worker_pool_variable = "Standards.Worker.Pool"
