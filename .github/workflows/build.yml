@@ -320,7 +320,9 @@ jobs:
         uses: OctopusDeploy/push-build-information-action@v3
         with:
           packages: |          
-            Trident.SBOM                               
+            Trident.SBOM  
+            Trident.Database.DbUp 
+            ${{ vars.DOCKER_HUB_REPO }}                            
           version: "${{ needs.prep.outputs.sem_Ver }}"
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           space: ${{ vars.OCTOPUS_SPACE }}  
