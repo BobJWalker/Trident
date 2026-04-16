@@ -63,20 +63,18 @@ spec:
     - port: 6800
       targetPort: 8080  
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  name: trident-ingress-nginx  
+  name: trident-ingress-http-route
+  namespace: trident
 spec:
-  ingressClassName: nginx
+  parentRefs:
+  - name: public-gateway
+    namespace: traefik
+  hostnames:
+    - trident.bobjwalker.local
   rules:
-    - host: trident.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: trident-app-cluster-ip-service
-                port:
-                  number: 6800
+    - backendRefs:
+        - name: trident-app-cluster-ip-service  
+          port: 6800 
