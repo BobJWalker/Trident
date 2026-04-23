@@ -43,19 +43,13 @@ process_template "verify-build-artifacts" {
     }
 }
 
-step "verify-infrastructure" {
-    name = "Verify Infrastructure"
+step "verify-hosting-infrastructure" {
+    name = "Verify Hosting Infrastructure"
 
     action {
-        channels = ["release"]
-        notes = <<-EOT
-                **Always Runs**
-                
-                Verifies the infrastructure is configured correctly for the static environments
-                EOT
         properties = {
-            Octopus.Action.Template.Id = "ActionTemplates-521"
-            Octopus.Action.Template.Version = "10"
+            Octopus.Action.Template.Id = "ActionTemplates-141"
+            Octopus.Action.Template.Version = "18"
             Run.Runbook.Api.Key = "#{KeyVault.Octopus.Api.Key}"
             Run.Runbook.AutoApproveManualInterventions = "No"
             Run.Runbook.Base.Url = "#{Octopus.Web.ServerUri}"
@@ -63,7 +57,7 @@ step "verify-infrastructure" {
             Run.Runbook.CancelInSeconds = "1800"
             Run.Runbook.CustomNotes.Toggle = "False"
             Run.Runbook.DateTime = "N/A"
-            Run.Runbook.Environment.Name = "#{Octopus.Environment.Id}"
+            Run.Runbook.Environment.Name = "#{Octopus.Environment.Name}"
             Run.Runbook.Machines = "N/A"
             Run.Runbook.ManualIntervention.EnvironmentToUse = "#{Octopus.Environment.Name}"
             Run.Runbook.Name = "Configure Application Infrastructure"
