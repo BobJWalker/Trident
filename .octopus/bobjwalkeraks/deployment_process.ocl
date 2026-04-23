@@ -47,6 +47,7 @@ step "verify-hosting-infrastructure" {
     name = "Verify Hosting Infrastructure"
 
     action {
+        is_disabled = true
         properties = {
             Octopus.Action.Template.Id = "ActionTemplates-141"
             Octopus.Action.Template.Version = "18"
