@@ -6,19 +6,30 @@ on:
       - main
       - 'feature/**'
       - 'features/**'
-      - 'hotfix/**'
+      - 'bugfix/**'
+      - 'cd/**'
     paths:
       - 'src/**'
       - 'db/**'
       - 'k8s/**'
       - '.github/workflows/build.yml'      
-  workflow_dispatch:      
+  workflow_dispatch:   
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'db/**'
+      - 'k8s/**'
+      - '.github/workflows/build.yml'
+
 jobs:
   prep:
     runs-on: ubuntu-latest
     name: Determine version
     outputs:       
       sem_ver: ${{ steps.determine_version.outputs.AssemblySemFileVer }}
+      escaped_branch_name: ${{ steps.determine_version.outputs.EscapedBranchName }}
     steps:      
       - name: Set environment variable based on branch
         id: set_env_var
@@ -154,7 +165,7 @@ jobs:
         run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"                    
       - name: Package Database
         id: "database_package"
-        uses: OctopusDeploy/create-zip-package-action@v3
+        uses: OctopusDeploy/create-zip-package-action@v4
         with:
           package_id: Trident.Database.DbUp
           version: "${{ needs.prep.outputs.sem_Ver }}"  
@@ -173,12 +184,12 @@ jobs:
           "Database_Hash=$hashToSave" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
   
       - name: Login to Octopus Deploy 🐙
-        uses: OctopusDeploy/login@v1
+        uses: OctopusDeploy/login@v2
         with: 
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
       - name: Push packages to Octopus 🐙
-        uses: OctopusDeploy/push-package-action@v3
+        uses: OctopusDeploy/push-package-action@v4
         with:
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           space: ${{ vars.OCTOPUS_SPACE }}
@@ -208,7 +219,7 @@ jobs:
         uses: docker/setup-buildx-action@v3 
         
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v4
         with:             
             username: ${{ secrets.DOCKERHUB_USERNAME }}
             password: ${{ secrets.DOCKERHUB_PAT }}
@@ -220,8 +231,7 @@ jobs:
           context: src/Trident.Web
           platforms: |
             linux/amd64
-            linux/arm64
-            linux/arm/v7
+            linux/arm64            
           provenance: false          
           build-args: |
             APP_VERSION=${{ needs.prep.outputs.sem_Ver }}          
@@ -286,7 +296,7 @@ jobs:
 
       - name: Package SBOM
         id: "sbom_package"
-        uses: OctopusDeploy/create-zip-package-action@v3
+        uses: OctopusDeploy/create-zip-package-action@v4
         with:
           package_id: Trident.SBOM
           version: "${{ needs.prep.outputs.sem_Ver }}"  
@@ -305,19 +315,19 @@ jobs:
           "SBOM_HASH=$hashToSave" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
   
       - name: Login to Octopus Deploy 🐙
-        uses: OctopusDeploy/login@v1
+        uses: OctopusDeploy/login@v2
         with: 
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
       - name: Push packages to Octopus 🐙
-        uses: OctopusDeploy/push-package-action@v3
+        uses: OctopusDeploy/push-package-action@v4
         with:
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           space: ${{ vars.OCTOPUS_SPACE }}
           packages: |
             packaged/Trident.SBOM.${{ needs.prep.outputs.sem_Ver }}.zip       
       - name: Push build information to Octopus 🐙
-        uses: OctopusDeploy/push-build-information-action@v3
+        uses: OctopusDeploy/push-build-information-action@v4
         with:
           packages: |          
             Trident.SBOM  
@@ -373,12 +383,12 @@ jobs:
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy 
     steps:
       - name: Login to Octopus Deploy 🐙
-        uses: OctopusDeploy/login@v1
+        uses: OctopusDeploy/login@v2
         with: 
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}         
       - name: Create and deploy release in Octopus 🐙
-        uses: OctopusDeploy/create-release-action@v3
+        uses: OctopusDeploy/create-release-action@v4
         with:
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           space: ${{ vars.OCTOPUS_SPACE }}
@@ -388,6 +398,8 @@ jobs:
           release_number: "${{ needs.prep.outputs.sem_Ver }}"          
           git_ref: ${{ (github.ref_type == 'tag' && github.event.repository.default_branch ) || (github.head_ref || github.ref) }}
           git_commit: ${{ github.event.after || github.event.pull_request.head.sha }} 
+          custom_fields: |
+            BranchName: ${{ needs.prep.outputs.escaped_branch_name }} 
       
       
 
