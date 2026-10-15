@@ -13,8 +13,7 @@ namespace Trident.Web.DataAccess
     public interface ITridentDataAdapter
     {
         Task<PagedViewModel<T>> GetAllAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc) where T : BaseModel;
-        Task<T> GetByIdAsync<T>(int id) where T : BaseModel;
-        Task<T> GetByOctopusIdAsync<T>(string octopusId) where T : BaseOctopusModel;
+        Task<T> GetByIdAsync<T>(int id) where T : BaseModel;        
         Task<PagedViewModel<T>> GetAllByParentIdAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc, string whereColumn, int parentId) where T : BaseModel;
         Task<PagedViewModel<T>> GetAllAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc, string whereClause) where T : BaseModel;
         Task<T> GetFirstRecordAsync<T>(string whereClause, string sortColumn, bool isAsc) where T : BaseModel;
@@ -81,16 +80,6 @@ namespace Trident.Web.DataAccess
                     CurrentPageNumber = currentPageNumber,
                     RowsPerPage = rowsPerPage
                 };
-            }
-        }
-
-        public async Task<T> GetByOctopusIdAsync<T>(string octopusId) where T : BaseOctopusModel
-        {
-            using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
-            {
-                var results = await connection.GetListAsync<T>(new { OctopusId = octopusId });
-
-                return results.FirstOrDefault();
             }
         }
 

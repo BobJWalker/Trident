@@ -144,8 +144,7 @@ namespace Trident.Web
             var config = new MetricConfiguration();
 
             var context = EvaluationContext.Builder()
-                .Set("application", "Trident")
-                .Set("instanceId", config.DefaultInstanceId ?? "unknown")
+                .Set("application", "Trident")                
                 .Set("environment", config.EnvironmentName ?? "Development")
                 .Build();
 

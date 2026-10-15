@@ -4,8 +4,6 @@ using OpenFeature;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Trident.Web.BusinessLogic.Factories;
-using Trident.Web.BusinessLogic.Syncers;
 using Trident.Web.Core.Constants;
 using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.ViewModels;
@@ -13,10 +11,9 @@ using Trident.Web.DataAccess;
 
 namespace Trident.Web.HostedServices
 {
-    public class SyncJobHostedService(ILogger<SyncJobHostedService> logger,
-            ITridentDataAdapter tridentDataAdapter,
-            ISyncJobCompositeModelFactory syncJobCompositeModelFactory,
-            IInstanceSyncer instanceSyncer,
+    public class SyncJobHostedService(
+            ILogger<SyncJobHostedService> logger,
+            ITridentDataAdapter tridentDataAdapter,            
             IFeatureClient featureClient) 
         : BackgroundService, IDisposable
     {
@@ -50,14 +47,7 @@ namespace Trident.Web.HostedServices
 
             foreach (var syncJob in recordsToProcess.Items)
             {
-                var syncJobCompositeModel = await syncJobCompositeModelFactory.MakeSyncJobCompositeModelAsync(syncJob);
-
-                if (stoppingToken.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                await instanceSyncer.ProcessSyncJob(syncJobCompositeModel, stoppingToken);
+                
             }
         }
 

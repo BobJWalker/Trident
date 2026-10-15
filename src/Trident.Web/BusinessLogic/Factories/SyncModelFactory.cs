@@ -6,20 +6,17 @@ namespace Trident.Web.BusinessLogic.Factories
 {
     public interface ISyncModelFactory
     {
-        SyncModel CreateModel(int instanceId, string instanceName, SyncModel previousSync);
+        SyncModel CreateModel(string feedUrl);
     }
 
     public class SyncModelFactory : ISyncModelFactory
     {
-        public SyncModel CreateModel(int instanceId, string instanceName, SyncModel previousSync)
+        public SyncModel CreateModel(string feedUrl)
         {
             return new SyncModel
-            {
-                InstanceId = instanceId,
-                Created = DateTime.Now,
-                Name = $"Sync for {instanceName}",
-                State = SyncState.Queued,
-                SearchStartDate = previousSync?.Started
+            {                
+                Created = DateTime.Now,                
+                State = SyncState.Queued,                
             };
         }
     }
