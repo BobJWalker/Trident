@@ -1,4 +1,3 @@
-using Azure.Core;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using System;
