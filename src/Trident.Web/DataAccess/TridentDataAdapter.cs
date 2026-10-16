@@ -23,7 +23,7 @@ namespace Trident.Web.DataAccess
         Task DeleteAsync<T>(int id) where T : BaseModel;        
     }
 
-    public class TridentDataAdapter(IMetricConfiguration metricConfiguration) : ITridentDataAdapter
+    public class TridentDataAdapter(ITridentConfiguration metricConfiguration) : ITridentDataAdapter
     {
         public async Task<T> GetByIdAsync<T>(int id) where T : BaseModel
         {

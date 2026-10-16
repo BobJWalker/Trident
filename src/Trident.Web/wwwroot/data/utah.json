@@ -1,0 +1,16 @@
+[
+  {
+      "name": "KSL Sports",
+      "url": "https://sports.ksl.com/utah-mammoth",
+      "articleBaseUrls": [
+        "https://sports.ksl.com/nhl/utah-mammoth/"
+      ]
+    },
+  {
+    "name": "Deseret News",
+    "url": "https://www.deseret.com/sports/utah-hockey/",
+    "articleBaseUrls": [
+      "https://www.deseret.com/sports/"
+    ]
+  }
+]

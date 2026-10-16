@@ -67,7 +67,7 @@ namespace Trident.Web
                         .SingleInstance();
 
                     autofacBuilder.RegisterInstance(GetMetricConfiguration())
-                        .As<IMetricConfiguration>()
+                        .As<ITridentConfiguration>()
                         .SingleInstance();
 
                     autofacBuilder.RegisterInstance(GetDataAdapter())
@@ -141,7 +141,7 @@ namespace Trident.Web
         private static IFeatureClient GetFeatureClient()
         {
             var client = OpenFeature.Api.Instance.GetClient();
-            var config = new MetricConfiguration();
+            var config = new TridentConfiguration();
 
             var context = EvaluationContext.Builder()
                 .Set("application", "Trident")                
@@ -153,9 +153,9 @@ namespace Trident.Web
             return client;
         }
 
-        private static IMetricConfiguration GetMetricConfiguration()
+        private static ITridentConfiguration GetMetricConfiguration()
         {
-            return new MetricConfiguration();
+            return new TridentConfiguration();
         }
 
         public static ITridentDataAdapter GetDataAdapter()
