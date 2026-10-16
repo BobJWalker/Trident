@@ -17,6 +17,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Include="DeploymentScripts\000_CreateFeedTable.sql">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
       <Content Include="DeploymentScripts\001_CreateArticleTable.sql">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
@@ -38,6 +41,7 @@
       <PackageReference Include="dbup-core" Version="6.1.1" />
       <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
       <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+      <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     </ItemGroup>
 
 </Project>

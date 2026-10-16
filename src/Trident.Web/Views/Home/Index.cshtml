@@ -19,10 +19,10 @@
             </tr>
             </thead>
             <tbody>
-            @foreach (var instance in Model.Items)
+            @foreach (var article in Model.Items)
             {
                 <tr>                    
-                    <td><a href="@instance.Url" target="_blank">@instance.Url</a></td>                                        
+                    <td><a href="@article.Url" target="_blank">@article.Title</a></td>
                 </tr>
             }
             </tbody>
