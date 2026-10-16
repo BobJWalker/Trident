@@ -17,9 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="DeploymentScripts\000_CreateFeedTable.sql">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
       <Content Include="DeploymentScripts\001_CreateArticleTable.sql">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
