@@ -1,11 +1,11 @@
-﻿@model Trident.Web.Core.Models.ViewModels.PagedViewModel<Trident.Web.Core.Models.InstanceModel>
+﻿@model Trident.Web.Core.Models.ViewModels.PagedViewModel<Trident.Web.Core.Models.ArticleModel>
 @{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
-    <div class="text-right">
-        <a asp-action="AddInstance" class="btn btn-primary">Add Instance</a>
+    <div class="text-right">        
+        <a asp-action="StartSync">Sync</a>
     </div>
     <br />
     
@@ -13,24 +13,16 @@
     {
         <table class='table table-striped'>
             <thead>
-            <tr>
-                <th>Instance</th>
-                <th>URL</th>
-                <th>Octopus Installation Id</th>
+            <tr>                
+                <th>URL</th>                
                 <th>&nbsp;</th>
             </tr>
             </thead>
             <tbody>
-            @foreach (var instance in Model.Items)
+            @foreach (var article in Model.Items)
             {
-                <tr>
-                    <td><a asp-action="Index" asp-controller="Report" asp-route-instanceId="@instance.Id">@instance.Name</a></td>
-                    <td><a href="@instance.Url" target="_blank">@instance.Url</a></td>
-                    <td>@instance.OctopusId</td>
-                    <td>
-                        <a asp-action="EditInstance" asp-route-id="@instance.Id">Edit</a>&nbsp;
-                        <a asp-action="StartSync" asp-route-id="@instance.Id">Sync</a>
-                    </td>
+                <tr>                    
+                    <td><a href="@article.Url" target="_blank">@article.Title</a></td>
                 </tr>
             }
             </tbody>

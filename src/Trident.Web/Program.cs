@@ -37,8 +37,7 @@ namespace Trident.Web
             builder.Host.UseNLog();
 
             var app = builder.Build();
-            app.UseDeveloperExceptionPage();
-            app.UseWebOptimizer();
+            app.UseDeveloperExceptionPage();            
             app.UseStaticFiles();
             app.UseRouting();
             app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
@@ -49,16 +48,6 @@ namespace Trident.Web
         private static void ConfigureServices(WebApplicationBuilder builder)
         {
             builder.Services.AddControllersWithViews();
-
-            if (builder.Environment.IsDevelopment())
-            {
-                builder.Services.AddWebOptimizer(minifyJavaScript: false, minifyCss: false);
-            }
-            else
-            {
-                builder.Services.AddWebOptimizer();
-            }
-
             builder.Services.AddHostedService<SyncJobHostedService>();
         }
 
@@ -145,7 +134,7 @@ namespace Trident.Web
             }
             else
             {
-                await OpenFeature.Api.Instance.SetProviderAsync(new OctopusFeatureProvider(new OctopusFeatureConfiguration(clientIdentifier)));
+                await OpenFeature.Api.Instance.SetProviderAsync(new OctopusFeatureProvider(new OctopusFeatureConfiguration(clientIdentifier, new ProductMetadata("Trident"))));
             }
         }
 
@@ -155,8 +144,7 @@ namespace Trident.Web
             var config = new MetricConfiguration();
 
             var context = EvaluationContext.Builder()
-                .Set("application", "Trident")
-                .Set("instanceId", config.DefaultInstanceId ?? "unknown")
+                .Set("application", "Trident")                
                 .Set("environment", config.EnvironmentName ?? "Development")
                 .Build();
 

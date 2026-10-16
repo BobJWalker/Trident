@@ -151,7 +151,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 9.x  
+          dotnet-version: 10.x  
           
       - name: Install dependencies
         run: dotnet restore src/Trident.sln  
@@ -208,7 +208,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 9.x  
+          dotnet-version: 10.x  
           
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3

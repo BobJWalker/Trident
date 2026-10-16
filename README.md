@@ -1,9 +1,10 @@
 # Trident
-Sample SaaS Application written in .NET
+
+An application to skewer news you care about from across the web by loading it in the dumbest way possible.
 
 ## Introduction
 
-Welcome to the Trident AI Sample SaaS Application! This application is written in .NET and serves as a demonstration of a Software-as-a-Service (SaaS) solution.  It's primary focus is to demonstrate how to build and deploy to AKS and AzureSQL using GitHub Actions and Octopus Deploy.  
+Welcome to the Trident Application! This application is written in .NET and serves as fun application demonstrate how to build using GitHub Actions and deploy to AKS and AzureSQL using Octopus Deploy.  
 
 ## Demo application information
 
@@ -15,7 +16,7 @@ Welcome to the Trident AI Sample SaaS Application! This application is written i
 
 To install and run the Trident AI Sample SaaS Application, follow these steps:
 
-1. Clone the repository: `git clone https://github.com/OctopusSolutionsEngineering/Trident.git`
+1. Clone the repository: `git clone https://github.com/bobjwalker/Trident.git`
 1. Open the project in your preferred .NET IDE.
 1. You can run the application locally, or as a container.  
 1. You will need to create the database.  
@@ -28,24 +29,26 @@ To install and run the Trident AI Sample SaaS Application, follow these steps:
 If you want to fork this repository, please feel free to do so!  
 
 Once you fork this application you'll need to set the following repository secrets for the build.yml to work correctly.
+
 1. `DOCKERHUB_PAT`
 2. `DOCKERHUB_USERNAME`
 3. `OCTOPUSSERVERAPIKEY`
 4. `OCTOPUS_SERVER_URL`
 
 You'll need to set the following repo variables for the build.yml to work correctly.
+
 1. `DOCKER_HUB_REPO`
 2. `OCTOPUS_PROJECT_NAME`
 3. `OCTOPUS_SPACE`
 
 The `build.yml` file expects you to have two channels in your project in Octopus Deploy.
 
-- **Default**: Deploys to the `Development` environment only for feature branch work
+- **Default**: Deploys to the `Ephemeral Environments` or `Development` environment only for feature branch work
 - **Release**: Deploys to `Test` -> `Staging` -> `Production`.  This is what the main branch uses.
 
 ## Contributing
 
-We welcome contributions to the Trident AI Sample SaaS Application! If you would like to contribute, please follow these guidelines:
+Please contribute to the Trident Application! If you would like to contribute, please follow these guidelines:
 
 1. Fork the repository.
 2. Create a new branch for your feature or bug fix.
@@ -55,7 +58,7 @@ We welcome contributions to the Trident AI Sample SaaS Application! If you would
 
 ## License
 
-The Trident Sample SaaS Application is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+The Trident SaaS Application is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
 
 ## Contact
 
