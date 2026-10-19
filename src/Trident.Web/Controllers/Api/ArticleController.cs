@@ -11,7 +11,7 @@ namespace Trident.Web.Controllers.Api
     public class ArticleController(ITridentDataAdapter repository) : ControllerBase
     {
         [HttpGet]        
-        public Task<PagedViewModel<ArticleModel>> GetAll(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
+        public Task<PagedViewModel<ArticleModel>> GetAll(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Id", bool isAsc = false)
         {
             return repository.GetAllAsync<ArticleModel>(currentPage, rowsPerPage, sortColumn, isAsc);
         }
