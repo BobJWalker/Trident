@@ -1,5 +1,9 @@
 default_guided_failure_mode = "On"
 release_notes_template = <<-EOT
+        #{each workItem in Octopus.Release.WorkItems}
+        - [#{workItem.Id}](#{workItem.LinkUrl}) - #{workItem.Description}
+        #{/each}
+        
         #{each package in Octopus.Release.Package}
         - #{package.PackageId} #{package.Version}
         #{each commit in package.Commits}
