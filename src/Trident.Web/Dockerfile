@@ -19,12 +19,11 @@ RUN dotnet publish "Trident.Web.csproj" -c Release -o /app/publish /p:UseAppHost
 
 FROM base AS final
 WORKDIR /app
-ENV TRIDENT_INSTANCE_URL=blah
-ENV TRIDENT_INSTANCE_API_KEY=blah
 ENV TRIDENT_SUMOLOGIC_URL=blah
 ENV TRIDENT_ENVIRONMENT="Production"
 ENV TRIDENT_OPEN_FEATURE_CLIENT_ID="blah"
 ENV TRIDENT_CONNECTION_STRING=blah
+ENV TRIDENT_FILE_NAME="blah"
 ENV ASPNETCORE_URLS="http://+:8080"
 ENV ASPNETCORE_ENVIRONMENT="Production"
 COPY --from=publish /app/publish .

@@ -11,7 +11,7 @@ namespace Trident.Web.Controllers
     public class HomeController (ITridentDataAdapter tridentDataAdapter, ISyncModelFactory syncModelFactory)
         : Controller
     {        
-        public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Name", bool isAsc = true)
+        public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Id", bool isAsc = false)
         {            
             var allInstances = await tridentDataAdapter.GetAllAsync<ArticleModel>(currentPage, rowsPerPage, sortColumn, isAsc);                  
 
