@@ -97,7 +97,7 @@ step "deploy-website-helm-chart" {
                       "trident.environmentName": "#{Octopus.Environment.Name}",
                       "trident.secrets.connectionString": "#{KeyVault.SQLServer.Connection.String}",
                       "trident.secrets.sumoLogicUrl": "#{KeyVault.Sumologic.Url}",
-                      "trident.secrets.openFeatureClientId": "#{stringData:openFeatureClientId}",
+                      "trident.secrets.openFeatureClientId": "#{Octopus.FeatureToggles.ClientIdentifier}",
                       "trident.networking.hostName": "#{Standards.K8s.HostName}",
                       "trident.image.tag": "#{Octopus.Action.Package[trident].PackageVersion}"
                     }
