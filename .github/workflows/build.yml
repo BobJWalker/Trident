@@ -10,8 +10,7 @@ on:
       - 'cd/**'
     paths:
       - 'src/**'
-      - 'db/**'
-      - 'k8s/**'
+      - 'db/**'      
       - '.github/workflows/build.yml'      
   workflow_dispatch:   
   pull_request:
