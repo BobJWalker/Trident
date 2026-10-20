@@ -12,33 +12,3 @@ variable "Project.ScriptToRun.Text" {
         }
     }
 }
-
-variable "stringData:environment" {
-    value "#{Octopus.Environment.Name}" {}
-}
-
-variable "stringData:openFeatureClientId" {
-    value "#{Octopus.FeatureToggles.ClientIdentifier}" {}
-}
-
-variable "spec:template:spec:containers:0:image" {
-    value "bobjwalker99/trident:#{Octopus.Action[Deploy K8s Manifest-Deploy Container].Package[K8sTemplate.Container].PackageVersion}" {}
-}
-
-variable "stringData:connectionString" {
-    value "#{KeyVault.SQLServer.Connection.String}" {}
-}
-
-variable "stringData:sumologicUrl" {
-    value "#{KeyVault.Sumologic.Url}" {
-        description = ""
-    }
-}
-
-variable "metadata:namespace" {
-    value "#{Standards.K8s.Namespace}" {}
-}
-
-variable "spec:hostnames:0" {
-    value "#{Standards.K8s.HostName}" {}
-}

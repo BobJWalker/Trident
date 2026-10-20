@@ -1,4 +1,14 @@
 trident:
-  connectionString: "blah"
+  configurationFileName: "utah"
+  environmentName: "Development"
+
+  secrets:
+    connectionString: "blah"
+    sumologicUrl: "blah"
+    openFeatureClientId: "blah"
+  
+  networking: 
+    hostName: "trident.bobjwalker.local"
+
   image:
-    tag: "0.1.88"
+    tag: "7.0.1"

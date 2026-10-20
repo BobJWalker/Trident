@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: trident-web
-          image: bobjwalker99/trident:{{ .Values.trident.image.tag }}
+          image: bobjwalker99/trident:{{ .Values.trident.image.tag }}          
           resources:
             requests:
               memory: "64Mi"
@@ -31,7 +31,21 @@ spec:
              valueFrom:
                secretKeyRef:
                  name: trident-credentials
-                 key: connectionString          
+                 key: connectionString  
+           - name: TRIDENT_SUMOLOGIC_URL
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: sumoLogicUrl
+           - name: TRIDENT_OPEN_FEATURE_CLIENT_ID
+             valueFrom:
+               secretKeyRef:
+                 name: trident-credentials
+                 key: openFeatureClientId       
+           - name: TRIDENT_FILE_NAME
+             value: {{ .Values.trident.configurationFileName }}
+           - name: TRIDENT_ENVIRONMENT
+             value: {{ .Values.trident.environmentName }}           
 ---
 apiVersion: v1
 kind: Service
@@ -45,20 +59,18 @@ spec:
     - port: 6800
       targetPort: 8080  
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  name: trident-ingress-nginx  
+  name: trident-ingress-http-route
+  namespace: {{ .Release.Namespace }}
 spec:
-  ingressClassName: nginx
+  parentRefs:
+  - name: public-gateway
+    namespace: traefik
+  hostnames:
+    - {{ .Values.trident.networking.hostName }}
   rules:
-    - host: trident.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: trident-app-cluster-ip-service
-                port:
-                  number: 6800
+    - backendRefs:
+        - name: trident-app-cluster-ip-service  
+          port: 6800 

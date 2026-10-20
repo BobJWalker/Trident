@@ -10,8 +10,7 @@ on:
       - 'cd/**'
     paths:
       - 'src/**'
-      - 'db/**'
-      - 'k8s/**'
+      - 'db/**'      
       - '.github/workflows/build.yml'      
   workflow_dispatch:   
   pull_request:
@@ -30,6 +29,7 @@ jobs:
     outputs:       
       sem_ver: ${{ steps.determine_version.outputs.AssemblySemFileVer }}
       escaped_branch_name: ${{ steps.determine_version.outputs.EscapedBranchName }}
+      assembly_sem_ver: ${{ steps.determine_version.outputs.AssemblySemVer }}
     steps:      
       - name: Set environment variable based on branch
         id: set_env_var
@@ -162,7 +162,7 @@ jobs:
             mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" 
 
       - name: Publish Database
-        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64"                    
+        run: dotnet publish src/Trident.Database.DbUp/Trident.Database.DbUp.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Database.DbUp" -a "x64" -p:Version=${{ needs.prep.outputs.assembly_sem_ver }}                   
       - name: Package Database
         id: "database_package"
         uses: OctopusDeploy/create-zip-package-action@v4
@@ -194,9 +194,73 @@ jobs:
           server: ${{ vars.OCTOPUS_SERVER_URL }}
           space: ${{ vars.OCTOPUS_SPACE }}
           packages: |
-            packaged/Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip  
-  build_and_publish_website:
-    name: Build, Scan, and Publish Website
+            packaged/Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip 
+  build_and_publish_website_package: 
+    name: Create and Publish Website Package
+    outputs:       
+      website_package_hash: ${{ steps.determine_website_hash.outputs.Website_Package_Hash }}
+    needs: [prep, test, scan, gh_release]  
+    runs-on: ubuntu-latest 
+    permissions:
+      # Add any additional permissions your job requires here
+      id-token: write # This is required to obtain the OIDC Token for Octopus Deploy      
+    steps:      
+      - name: Checkout code for website schema 
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: '0'
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 10.x  
+          
+      - name: Install dependencies
+        run: dotnet restore src/Trident.sln  
+
+      - name: Create artifacts folder
+        run: |
+            mkdir "$GITHUB_WORKSPACE/artifacts"
+            mkdir "$GITHUB_WORKSPACE/artifacts/Trident.Web" 
+
+      - name: Publish Website
+        run: dotnet publish src/Trident.Web/Trident.Web.csproj --configuration Release --self-contained --output "$GITHUB_WORKSPACE/artifacts/Trident.Web" -a "x64" -p:Version=${{ needs.prep.outputs.assembly_sem_ver }}                   
+      - name: Package Website
+        id: "website_package"
+        uses: OctopusDeploy/create-zip-package-action@v4
+        with:
+          package_id: Trident.Web
+          version: "${{ needs.prep.outputs.sem_Ver }}"  
+          base_path: "artifacts/Trident.Web"          
+          files: "**/*"
+          output_folder: packaged                               
+      
+      - name: Create the Subject Checksum file for Attestation Build Provenance 
+        id: determine_website_hash  
+        shell: pwsh        
+        run: |
+          $packageHash = Get-FileHash -path "packaged/Trident.Web.${{ needs.prep.outputs.sem_Ver }}.zip" -Algorithm SHA256
+          $hashToSave = $packageHash.Hash 
+          Write-Host "The website package hash is $hashToSave"
+          
+          "Website_Package_Hash=$hashToSave" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+  
+      - name: Login to Octopus Deploy 🐙
+        uses: OctopusDeploy/login@v2
+        with: 
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          service_account_id: ${{ secrets.OCTOPUS_OIDC_SERVICE_ACCOUNT_ID }}
+
+      - name: Push packages to Octopus 🐙
+        uses: OctopusDeploy/push-package-action@v4
+        with:
+          server: ${{ vars.OCTOPUS_SERVER_URL }}
+          space: ${{ vars.OCTOPUS_SPACE }}
+          packages: |
+            packaged/Trident.Web.${{ needs.prep.outputs.sem_Ver }}.zip  
+
+  build_and_publish_website_container:
+    name: Build, Scan, and Publish Website Container
     outputs:       
       website_hash: ${{ steps.get_digest.outputs.TRIDENT_DOCKER_SHA }}
     needs: [prep, test, scan, gh_release]
@@ -337,7 +401,7 @@ jobs:
 
   create_attestations:  
     name: Generate Attestations
-    needs: [prep, test, scan, sbom, gh_release, build_and_publish_website, build_and_publish_database]  
+    needs: [prep, test, scan, sbom, gh_release, build_and_publish_website_container, build_and_publish_database, build_and_publish_website_package]  
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -348,19 +412,23 @@ jobs:
         run: |          
           $cleanedPackageSha = $("${{ needs.build_and_publish_database.outputs.database_hash }}" -replace "sha256:", "").Trim()
           $cleanedSbomSha = $("${{ needs.sbom.outputs.sbom_hash }}" -replace "sha256:", "").Trim()
-          $cleanedImageSha = $("${{ needs.build_and_publish_website.outputs.website_hash }}" -replace "sha256:", "").Trim()
+          $cleanedImageSha = $("${{ needs.build_and_publish_website_container.outputs.website_hash }}" -replace "sha256:", "").Trim()
+          $cleanedWebsitePackageSha = $("${{ needs.build_and_publish_website_package.outputs.website_package_hash }}" -replace "sha256:", "").Trim()          
 
           $imageSubject = "${{ vars.DOCKER_HUB_REPO }}:${{ needs.prep.outputs.sem_Ver }}".Trim()
           $packageSubject = "Trident.Database.DbUp.${{ needs.prep.outputs.sem_Ver }}.zip".Trim()
+          $packageWebSubject = "Trident.Web.${{ needs.prep.outputs.sem_Ver }}.zip".Trim()
           $sbomSubject = "Trident.SBOM.${{ needs.prep.outputs.sem_Ver }}.zip".Trim()
 
           Write-Host "The website information is $cleanedImageSha  $imageSubject"
+          Write-Host "The website package information is $cleanedWebsitePackageSha  $packageWebSubject"
           Write-Host "The database information is $cleanedPackageSha  $packageSubject"
           Write-Host "The SBOM information is $cleanedSbomSha  $sbomSubject"
 
           $subjectText = @"
           $cleanedImageSha  $imageSubject
           $cleanedPackageSha  $packageSubject
+          $cleanedWebsitePackageSha $packageWebSubject
           $cleanedSbomSha  $sbomSubject
           "@
 
@@ -374,7 +442,7 @@ jobs:
 
   octopus_deploy:  
     name: Handover to Octopus Deploy
-    needs: [prep, test, scan, sbom, build_and_publish_website, build_and_publish_database, gh_release, create_attestations]  
+    needs: [prep, test, scan, sbom, build_and_publish_website_container, build_and_publish_database, build_and_publish_website_package, gh_release, create_attestations]  
     runs-on: ubuntu-latest
     permissions:
       # Add any additional permissions your job requires here
