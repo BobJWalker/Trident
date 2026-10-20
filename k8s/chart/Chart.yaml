@@ -1,13 +1,13 @@
 apiVersion: v2
-name: bobjwalker-trident # The chart name is also used as the repository name when publishing
-description: A simple .NET application used to learn Kubernetes deployments
+name: trident-app # The chart name is also used as the repository name when publishing
+description: An application to skewer news you care about from across the web by loading it in the dumbest way possible.
 
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 4.0.55
+version: 2.0.0
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
