@@ -36,7 +36,7 @@ spec:
              valueFrom:
                secretKeyRef:
                  name: trident-credentials
-                 key: sumologicUrl
+                 key: sumoLogicUrl
            - name: TRIDENT_OPEN_FEATURE_CLIENT_ID
              valueFrom:
                secretKeyRef:
