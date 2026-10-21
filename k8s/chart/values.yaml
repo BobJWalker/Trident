@@ -1,5 +1,4 @@
-trident:
-  configurationFileName: "utah"
+standard:
   environmentName: "Development"
 
   secrets:
@@ -12,3 +11,6 @@ trident:
 
   image:
     tag: "7.0.1"
+
+trident:
+  configurationFileName: "utah"
