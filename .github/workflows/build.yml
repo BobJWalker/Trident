@@ -20,6 +20,7 @@ on:
       - 'src/**'
       - 'db/**'
       - 'k8s/**'
+      - '.octopus/**'
       - '.github/workflows/build.yml'
 
 jobs:
