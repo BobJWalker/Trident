@@ -18,7 +18,12 @@ namespace Trident.Web.BusinessLogic.Factories
             var feedFile = tridentConfiguration.GetConfigurationFile();
             using (var fileStream = File.OpenRead(feedFile))
             {
-                return JsonSerializer.Deserialize<List<FeedModel>>(fileStream);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                return JsonSerializer.Deserialize<List<FeedModel>>(fileStream, options);
             }            
         }
     }

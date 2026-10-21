@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using OpenFeature;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Trident.Web.BusinessLogic.Factories;
@@ -8,14 +10,34 @@ using Trident.Web.DataAccess;
 
 namespace Trident.Web.Controllers
 {
-    public class HomeController (ITridentDataAdapter tridentDataAdapter, ISyncModelFactory syncModelFactory)
+    public class HomeController (
+        ITridentDataAdapter tridentDataAdapter, 
+        ISyncModelFactory syncModelFactory,
+        IFeedListFactory feedListFactory,
+        IFeatureClient featureClient)
         : Controller
     {        
         public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Id", bool isAsc = false)
-        {            
-            var allInstances = await tridentDataAdapter.GetAllAsync<ArticleModel>(currentPage, rowsPerPage, sortColumn, isAsc);                  
+        {
+            var showFeedList = await featureClient.GetBooleanValueAsync("View Feed List", false);
 
-            return View(allInstances);
+            var pagedArticles = await tridentDataAdapter.GetAllAsync<ArticleModel>(currentPage, rowsPerPage, sortColumn, isAsc);
+
+            var homeViewModel = new HomeViewModel
+            {
+                ShowFeedList = showFeedList,
+                ArticleList = pagedArticles,
+            };
+
+            return View(homeViewModel);
+        }
+
+        public async Task<IActionResult> Feed()
+        {
+            var showFeedList = await featureClient.GetBooleanValueAsync("View Feed List", false);
+            var allFeeds = showFeedList ? feedListFactory.GetFeedList() : new List<FeedModel>();
+
+            return View(allFeeds);
         }
 
         public async Task<IActionResult> StartSync()

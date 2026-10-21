@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using Trident.Web.HostedServices;
 using Trident.Web.Core.Configuration;
 using Trident.Web.DataAccess;
+using Trident.Web.BusinessLogic.Factories;
 
 namespace Trident.Web
 {
@@ -74,6 +75,10 @@ namespace Trident.Web
                         .As<ITridentDataAdapter>()
                         .SingleInstance();
 
+                    autofacBuilder.RegisterInstance(GetFeedListFactory())
+                        .As<IFeedListFactory>()
+                        .SingleInstance();
+
                     var assembly = Assembly.GetExecutingAssembly();
 
                     autofacBuilder.RegisterAssemblyTypes(assembly)
@@ -125,16 +130,18 @@ namespace Trident.Web
         }
 
         private static async Task ConfigureOpenFeature(WebApplicationBuilder builder)
-        {
-            var clientIdentifier = Environment.GetEnvironmentVariable("TRIDENT_OPEN_FEATURE_CLIENT_ID");
-
+        {            
             if (builder.Environment.IsDevelopment())
             {
-                await OpenFeature.Api.Instance.SetProviderAsync(new EnvVarProvider("FeatureToggle_"));
+                await OpenFeature.Api.Instance.SetProviderAsync(new EnvVarProvider("Feature Toggle_"));
             }
             else
             {
-                await OpenFeature.Api.Instance.SetProviderAsync(new OctopusFeatureProvider(new OctopusFeatureConfiguration(clientIdentifier, new ProductMetadata("Trident"))));
+                var clientIdentifier = Environment.GetEnvironmentVariable("TRIDENT_OPEN_FEATURE_CLIENT_ID");
+                var version = Assembly.GetExecutingAssembly().GetName().Version;
+                var productMetaData = new ProductMetadata("Trident", version?.ToString());
+
+                await Api.Instance.SetProviderAsync(new OctopusFeatureProvider(new OctopusFeatureConfiguration(clientIdentifier, productMetaData)));
             }
         }
 
@@ -156,6 +163,11 @@ namespace Trident.Web
         private static ITridentConfiguration GetMetricConfiguration()
         {
             return new TridentConfiguration();
+        }
+
+        private static IFeedListFactory GetFeedListFactory()
+        {
+            return new FeedListFactory(GetMetricConfiguration());
         }
 
         public static ITridentDataAdapter GetDataAdapter()

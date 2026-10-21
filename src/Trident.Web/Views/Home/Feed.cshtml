@@ -1,0 +1,33 @@
+﻿@model List<Trident.Web.Core.Models.FeedModel>
+@{
+    ViewData["Title"] = "Feed List";
+}
+
+<div class="text-center">
+    @if (Model.Count > 0)
+    {
+        <table class='table table-striped'>
+            <thead>
+                <tr>
+                    <th align="left">Feed</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var feed in Model)
+                {
+                    <tr>
+                        <td align="left"><a href="@feed.Url" target="_blank">@feed.Name</a></td>
+                        <td align="left">@feed.Url</td>
+                    </tr>
+                }
+            </tbody>
+        </table>       
+    }
+    else
+    {
+        <div class="alert-info form-control">
+            No Feeds Found.  Please check the feed.json file in the data folder.
+        </div>
+    }
+</div>
