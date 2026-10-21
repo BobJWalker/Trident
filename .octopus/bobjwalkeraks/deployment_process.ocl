@@ -99,7 +99,8 @@ step "deploy-website-helm-chart" {
                       "standard.secrets.sumoLogicUrl": "#{KeyVault.Sumologic.Url}",
                       "standard.secrets.openFeatureClientId": "#{Octopus.FeatureToggles.ClientIdentifier}",
                       "standard.networking.hostName": "#{Standards.K8s.HostName}",
-                      "standard.image.tag": "#{Octopus.Action.Package[trident].PackageVersion}"
+                      "standard.image.tag": "#{Octopus.Action.Package[trident].PackageVersion}",
+                      "standard.kevault.name": "bobjwalker-vault"
                     }
                   }
                 ]
