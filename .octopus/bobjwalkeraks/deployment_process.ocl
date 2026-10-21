@@ -46,7 +46,7 @@ process_template "verify-build-artifacts" {
 process_template "deploy-databases" {
     name = "Deploy Databases"
     process_template_slug = "deploy-database"
-    version_mask = "2.3.X"
+    version_mask = "2.4.X"
 
     package_parameter "Template.Database.Package" {
         feed = "octopus-server-built-in"
