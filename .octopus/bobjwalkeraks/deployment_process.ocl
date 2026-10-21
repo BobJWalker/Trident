@@ -74,6 +74,33 @@ process_template "deploy-databases" {
     }
 }
 
+process_template "deploy-application" {
+    name = "Deploy Application"
+    process_template_slug = "deploy-process-k8s-via-helm"
+    version_mask = "1.X"
+
+    package_parameter "K8sTemplate.Container" {
+        feed = "dockerhub"
+        package_id = "bobjwalker99/trident"
+    }
+
+    parameter "K8sTemplate.Target.tag" {
+        value = "trident-web"
+    }
+
+    parameter "K8sTemplate.Git.Repo" {
+        value = "https://github.com/bobjwalker/trident.git"
+    }
+
+    parameter "K8sTemplate.Namespace" {
+        value = "#{Standards.K8s.Namespace}"
+    }
+
+    parameter "K8sTemplate.Helm.AdditionalArguments" {
+        value = "--set trident.configurationFileName=utah --set standard.secrets.connectionString=#{KeyVault.SQLServer.Connection.String} --set standard.secrets.sumoLogicUrl=#{KeyVault.Sumologic.Url}"
+    }
+}
+
 step "deploy-website-helm-chart" {
     name = "Deploy Website Helm Chart"
     properties = {
@@ -82,6 +109,7 @@ step "deploy-website-helm-chart" {
 
     action {
         action_type = "Octopus.HelmChartUpgrade"
+        is_disabled = true
         properties = {
             Octopus.Action.GitRepository.Source = "Project"
             Octopus.Action.Helm.AdditionalArgs = "--set trident.configurationFileName=utah"
