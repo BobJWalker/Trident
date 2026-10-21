@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: trident-web
-          image: bobjwalker99/trident:{{ .Values.trident.image.tag }}          
+          image: bobjwalker99/trident:{{ .Values.standard.image.tag }}          
           resources:
             requests:
               memory: "64Mi"
@@ -45,7 +45,7 @@ spec:
            - name: TRIDENT_FILE_NAME
              value: {{ .Values.trident.configurationFileName }}
            - name: TRIDENT_ENVIRONMENT
-             value: {{ .Values.trident.environmentName }}           
+             value: {{ .Values.standard.environmentName }}           
 ---
 apiVersion: v1
 kind: Service
@@ -69,7 +69,7 @@ spec:
   - name: public-gateway
     namespace: traefik
   hostnames:
-    - {{ .Values.trident.networking.hostName }}
+    - {{ .Values.standard.networking.hostName }}
   rules:
     - backendRefs:
         - name: trident-app-cluster-ip-service  
