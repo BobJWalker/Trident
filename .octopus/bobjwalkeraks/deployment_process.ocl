@@ -101,57 +101,6 @@ process_template "deploy-application" {
     }
 }
 
-step "deploy-website-helm-chart" {
-    name = "Deploy Website Helm Chart"
-    properties = {
-        Octopus.Action.TargetRoles = "trident-web"
-    }
-
-    action {
-        action_type = "Octopus.HelmChartUpgrade"
-        is_disabled = true
-        properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Helm.AdditionalArgs = "--set trident.configurationFileName=utah"
-            Octopus.Action.Helm.ChartDirectory = "k8s/chart"
-            Octopus.Action.Helm.Namespace = "#{Standards.K8s.Namespace}"
-            Octopus.Action.Helm.ReleaseName = "#{Standards.K8s.Namespace}"
-            Octopus.Action.Helm.ResetValues = "True"
-            Octopus.Action.Helm.TemplateValuesSources = <<-EOT
-                [
-                  {
-                    "Type": "KeyValues",
-                    "Value": {
-                      "standard.environmentName": "#{Octopus.Environment.Name}",
-                      "standard.secrets.connectionString": "#{KeyVault.SQLServer.Connection.String}",
-                      "standard.secrets.sumoLogicUrl": "#{KeyVault.Sumologic.Url}",
-                      "standard.secrets.openFeatureClientId": "#{Octopus.FeatureToggles.ClientIdentifier}",
-                      "standard.networking.hostName": "#{Standards.K8s.HostName}",
-                      "standard.image.tag": "#{Octopus.Action.Package[trident].PackageVersion}"
-                    }
-                  }
-                ]
-                EOT
-            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-        }
-        worker_pool = "homelab-k8s"
-        worker_pool_variable = ""
-
-        packages "trident" {
-            acquisition_location = "NotAcquired"
-            feed = "dockerhub"
-            package_id = "bobjwalker99/trident"
-            properties = {
-                Extract = "False"
-                Purpose = "DockerImageReference"
-                SelectionMode = "immediate"
-                ValuesFilePath = ""
-            }
-        }
-    }
-}
-
 process_template "notify-development-team" {
     name = "Notify Development Team"
     process_template_slug = "notification-emails"
