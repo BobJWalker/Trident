@@ -84,6 +84,7 @@ step "deploy-website-helm-chart" {
         action_type = "Octopus.HelmChartUpgrade"
         properties = {
             Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Helm.AdditionalArgs = "--set trident.configurationFileName=utah"
             Octopus.Action.Helm.ChartDirectory = "k8s/chart"
             Octopus.Action.Helm.Namespace = "#{Standards.K8s.Namespace}"
             Octopus.Action.Helm.ReleaseName = "#{Standards.K8s.Namespace}"
@@ -93,14 +94,12 @@ step "deploy-website-helm-chart" {
                   {
                     "Type": "KeyValues",
                     "Value": {
-                      "trident.configurationFileName": "utah",
                       "standard.environmentName": "#{Octopus.Environment.Name}",
                       "standard.secrets.connectionString": "#{KeyVault.SQLServer.Connection.String}",
                       "standard.secrets.sumoLogicUrl": "#{KeyVault.Sumologic.Url}",
                       "standard.secrets.openFeatureClientId": "#{Octopus.FeatureToggles.ClientIdentifier}",
                       "standard.networking.hostName": "#{Standards.K8s.HostName}",
-                      "standard.image.tag": "#{Octopus.Action.Package[trident].PackageVersion}",
-                      "standard.kevault.name": "bobjwalker-vault"
+                      "standard.image.tag": "#{Octopus.Action.Package[trident].PackageVersion}"
                     }
                   }
                 ]
