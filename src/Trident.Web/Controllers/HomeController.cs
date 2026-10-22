@@ -19,7 +19,7 @@ namespace Trident.Web.Controllers
     {        
         public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Id", bool isAsc = false)
         {
-            var showFeedList = await featureClient.GetBooleanValueAsync("View Feed List", false);
+            var showFeedList = await featureClient.GetBooleanValueAsync("view-feed-list", false);
 
             var pagedArticles = await tridentDataAdapter.GetAllAsync<ArticleModel>(currentPage, rowsPerPage, sortColumn, isAsc);
 
@@ -34,7 +34,7 @@ namespace Trident.Web.Controllers
 
         public async Task<IActionResult> Feed()
         {
-            var showFeedList = await featureClient.GetBooleanValueAsync("View Feed List", false);
+            var showFeedList = await featureClient.GetBooleanValueAsync("view-feed-list", false);
             var allFeeds = showFeedList ? feedListFactory.GetFeedList() : new List<FeedModel>();
 
             return View(allFeeds);
