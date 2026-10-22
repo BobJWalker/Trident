@@ -6,6 +6,7 @@ release_notes_template = <<-EOT
         - [#{commit.CommitId}](#{commit.LinkUrl}) #{commit.Comment}
         #{/each}
         #{/each}
+        Related Tickets:
         EOT
 
 connectivity_policy {
