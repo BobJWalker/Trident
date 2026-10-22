@@ -99,6 +99,18 @@ process_template "deploy-application" {
     parameter "K8sTemplate.Helm.AdditionalArguments" {
         value = "--set trident.configurationFileName=utah --set standard.secrets.connectionString=\"#{KeyVault.SQLServer.Connection.String}\" --set standard.secrets.sumoLogicUrl=\"#{KeyVault.Sumologic.Url}\""
     }
+
+    parameter "K8sTemplate.SumoLogicUrl" {
+        value = "#{KeyVault.Sumologic.Url}"
+    }
+
+    parameter "K8sTemplate.ConnectionString" {
+        value = "#{KeyVault.SQLServer.Connection.String}"
+    }
+
+    parameter "K8sTemplate.Workerpool" {
+        value = "#{Standards.Worker.Pool}"
+    }
 }
 
 process_template "notify-development-team" {

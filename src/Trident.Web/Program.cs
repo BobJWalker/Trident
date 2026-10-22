@@ -133,7 +133,7 @@ namespace Trident.Web
         {            
             if (builder.Environment.IsDevelopment())
             {
-                await OpenFeature.Api.Instance.SetProviderAsync(new EnvVarProvider("Feature Toggle_"));
+                await OpenFeature.Api.Instance.SetProviderAsync(new EnvVarProvider("FeatureToggle_"));
             }
             else
             {
@@ -141,7 +141,10 @@ namespace Trident.Web
                 var version = Assembly.GetExecutingAssembly().GetName().Version;
                 var productMetaData = new ProductMetadata("Trident", version?.ToString());
 
-                await Api.Instance.SetProviderAsync(new OctopusFeatureProvider(new OctopusFeatureConfiguration(clientIdentifier, productMetaData)));
+                var config = new OctopusFeatureConfiguration(clientIdentifier, productMetaData);
+                var provider = new OctopusFeatureProvider(config);
+
+                await OpenFeature.Api.Instance.SetProviderAsync(provider);
             }
         }
 

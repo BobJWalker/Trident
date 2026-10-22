@@ -392,8 +392,8 @@
       },
       "RestSharp": {
         "type": "Transitive",
-        "resolved": "114.0.0",
-        "contentHash": "8pDO4q+K8nIqXbvGCb9ciKcngj36pCXGRDzOYPEPoS2IvBIL+mejmUMAtSNALt/NkDc9LQmHvM95kdniLSbGtg=="
+        "resolved": "114.1.0",
+        "contentHash": "QXpO6o0lKmbzBPhLZ1nBiZj9Vdb/3qRTyo0s0Vllm9HRLzpD2X+I9tkhGE4WWno6WyUkRsVP1jnyvDyQ5SakGg=="
       },
       "SumoLogic.Logging.Common": {
         "type": "Transitive",
@@ -453,7 +453,7 @@
           "Newtonsoft.Json": "[13.0.4, )",
           "Octopus.OpenFeature": "[4.0.0, )",
           "OpenFeature.Contrib.Providers.EnvVar": "[0.0.7, )",
-          "RestSharp": "[114.0.0, )",
+          "RestSharp": "[114.1.0, )",
           "SumoLogic.Logging.NLog": "[1.1.0, )",
           "System.Security.Cryptography.Pkcs": "[10.0.13, )"
         }
