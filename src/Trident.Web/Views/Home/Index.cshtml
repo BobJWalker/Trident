@@ -1,25 +1,28 @@
-﻿@model Trident.Web.Core.Models.ViewModels.PagedViewModel<Trident.Web.Core.Models.ArticleModel>
+﻿@model Trident.Web.Core.Models.ViewModels.HomeViewModel
 @{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
-    <div class="text-right">        
-        <a asp-action="StartSync">Sync</a>
+    <div class="text-right"> 
+        <a class="text-dark" asp-action="StartSync">Sync</a>&nbsp;&nbsp;
+        @if (Model.ShowFeedList == true)
+        {            
+            <a class="text-dark" asp-action="Feed">Show Feeds</a>            
+        }        
     </div>
     <br />
     
-    @if (Model.Items.Count > 0)
+    @if (Model.ArticleList.Items.Count > 0)
     {
         <table class='table table-striped'>
             <thead>
             <tr>                
-                <th>URL</th>                
-                <th>&nbsp;</th>
+                <th>URL</th>                                
             </tr>
             </thead>
             <tbody>
-            @foreach (var article in Model.Items)
+                @foreach (var article in Model.ArticleList.Items)
             {
                 <tr>                    
                     <td><a href="@article.Url" target="_blank">@article.Title</a></td>
@@ -29,10 +32,10 @@
         </table>
         <nav aria-label="paging">
             <ul class="pagination">
-                @if (Model.HasPreviousPage)
+                @if (Model.ArticleList.HasPreviousPage)
                 {
                     <li class="page-item">
-                        <a class="page-link" asp-action="Index" asp-route-currentPage="@Model.PreviousPage">Previous</a>
+                        <a class="page-link" asp-action="Index" asp-route-currentPage="@Model.ArticleList.PreviousPage">Previous</a>
                     </li>
                 }
                 else
@@ -41,10 +44,10 @@
                         <a class="page-link">Previous</a>
                     </li>
                 }
-                @if (Model.HasNextPage)
+                @if (Model.ArticleList.HasNextPage)
                 {
                     <li class="page-item">
-                        <a class="page-link" asp-action="Index" asp-route-currentPage="@Model.NextPage">Next</a>
+                        <a class="page-link" asp-action="Index" asp-route-currentPage="@Model.ArticleList.NextPage">Next</a>
                     </li>
                 }
                 else
