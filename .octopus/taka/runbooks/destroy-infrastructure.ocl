@@ -52,4 +52,30 @@ process {
             value = "trident-web"
         }
     }
+
+    process_template "destroy-database-infra" {
+        name = "Destroy Database Infra"
+        process_template_slug = "runbook-destroy-database-infrastructure"
+        version_mask = "1.X"
+
+        parameter "Template.SQLServer.Name" {
+            value = "#{KeyVault.SQLServer.Server.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Name" {
+            value = "#{KeyVault.SQLServer.User.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Password" {
+            value = "#{KeyVault.SQLServer.User.Password}"
+        }
+
+        parameter "Template.SQLServer.Database.Name" {
+            value = "#{Standards.Database.Name}"
+        }
+
+        parameter "Template.WorkerPool" {
+            value = "#{Core.Worker.Pool}"
+        }
+    }
 }
