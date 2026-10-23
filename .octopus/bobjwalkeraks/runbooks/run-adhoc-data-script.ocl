@@ -32,7 +32,7 @@ process {
         }
 
         parameter "KeyVault.Template.Worker.Pool" {
-            value = "#{Standards.Worker.Pool}"
+            value = "#{Core.Worker.Pool}"
         }
 
         parameter "KeyVault.Template.ExecutionContainer.Feed" {
@@ -54,7 +54,7 @@ process {
         }
 
         parameter "Template.WorkerPool" {
-            value = "#{Standards.Worker.Pool}"
+            value = "#{Core.Worker.Pool}"
         }
 
         parameter "Template.SQLServer.Name" {
