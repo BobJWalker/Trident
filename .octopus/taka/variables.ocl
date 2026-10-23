@@ -1,0 +1,26 @@
+variable "Project.ScriptToRun.Text" {
+    value {
+        process = ["runbook/run-adhoc-database-script"]
+
+        prompt {
+            description = "Please enter the SQL Script you wish to run."
+            display_settings = {
+                Octopus.ControlType = "MultiLineText"
+            }
+            label = "SQL Script To Run"
+            required = true
+        }
+    }
+}
+
+variable "stringData:connectionString" {
+    value "#{KeyVault.SQLServer.Connection.String}" {}
+}
+
+variable "stringData:openFeatureClientId" {
+    value "#{Octopus.FeatureToggles.ClientIdentifier}" {}
+}
+
+variable "stringData:sumologicUrl" {
+    value "#{KeyVault.Sumologic.Url}" {}
+}

@@ -1,0 +1,111 @@
+process_template "key-vault" {
+    name = "Key Vault"
+    process_template_slug = "key-vault-retrieve-secrets"
+    version_mask = "2.X"
+
+    parameter "KeyVault.Template.Vault.Name" {
+        value = "#{KeyVault.Azure.Name}"
+    }
+
+    parameter "KeyVault.Template.Secrets.List" {
+        value = "#{KeyVault.Azure.Secrets.List}"
+    }
+
+    parameter "KeyVault.Template.Worker.Pool" {
+        value = "#{Core.Worker.Pool}"
+    }
+
+    parameter "KeyVault.Template.ExecutionContainer.Feed" {
+        value = "Feeds-1283"
+    }
+}
+
+process_template "verify-sbom-and-attestations" {
+    name = "Verify SBOM and Attestations"
+    process_template_slug = "deploy-process-verify-build-artifacts"
+    version_mask = "2.X"
+
+    package_parameter "Template.SBOM.Artifact" {
+        feed = "octopus-server-built-in"
+        package_id = "Trident.SBOM"
+    }
+
+    parameter "Template.Git.AuthToken" {
+        value = "#{KeyVault.GitHub.Token}"
+    }
+
+    parameter "Template.Verify.WorkerPool" {
+        value = "#{Core.Worker.Pool}"
+    }
+
+    parameter "Template.Verify.ExecutionContainerFeed" {
+        value = "Feeds-1283"
+    }
+}
+
+process_template "deploy-database-changes" {
+    name = "Deploy Database Changes"
+    process_template_slug = "deploy-database"
+    version_mask = "2.X"
+
+    package_parameter "Template.Database.Package" {
+        feed = "octopus-server-built-in"
+        package_id = "Trident.Database.DbUp"
+    }
+
+    parameter "Template.DbUp.Executable" {
+        value = "Trident.Database.DbUp"
+    }
+
+    parameter "Template.Database.ConnectionString" {
+        value = "#{KeyVault.SQLServer.Connection.String}"
+    }
+
+    parameter "Template.WorkerPool" {
+        value = "#{Core.Worker.Pool}"
+    }
+
+    parameter "Template.Approval.Environments" {
+        value = "Environments-42"
+    }
+}
+
+step "deploy-application-via-argo-cd" {
+    name = "Deploy Application via Argo CD"
+
+    action {
+        action_type = "Octopus.ArgoCDUpdateImageTags"
+        properties = {
+            Octopus.Action.ArgoCD.CommitMessageSummary = "Updating taka-#{ Octopus.Environment.Name | ToLower } to #{Octopus.Release.Number}"
+            Octopus.Action.ArgoCD.CommitMethod = "DirectCommit"
+            Octopus.Action.ArgoCD.CommitWhenStale = "False"
+            Octopus.Action.ArgoCD.PushRetryAttempts = "2"
+            Octopus.Action.ArgoCD.StepVerification.Method = "ArgoCDApplicationHealthy"
+            Octopus.Action.ArgoCD.StepVerification.Timeout = "180"
+            Octopus.Action.ArgoCD.Sync.Mode = "AllEnvironments"
+        }
+        worker_pool = "homelab-k8s"
+        worker_pool_variable = ""
+
+        packages "trident" {
+            acquisition_location = "NotAcquired"
+            feed = "dockerhub"
+            package_id = "bobjwalker99/trident"
+            properties = {
+                Extract = "False"
+                Purpose = "DockerImageReference"
+                SelectionMode = "immediate"
+            }
+        }
+    }
+}
+
+process_template "notify-team-of-deployment-status" {
+    name = "Notify Team of Deployment Status"
+    process_template_slug = "notification-emails"
+    version_mask = "1.X"
+
+    parameter "Template.EmailTeam" {
+        value = "Teams-81"
+    }
+}

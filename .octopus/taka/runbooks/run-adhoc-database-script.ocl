@@ -1,0 +1,733 @@
+name = "Run AdHoc Database Script"
+cancel_queued_tasks = true
+cancel_running_tasks = true
+default_guided_failure_mode = "EnvironmentDefault"
+description = <<-EOT
+        **Action**: Allows users to run an ad-hoc script to fix any data funk within the application.  All scripts are verified before running by checking the number of rows effected and the SQL Statements.
+          
+          **Affects**: The SQL Server this application is running on.
+        EOT
+
+connectivity_policy {
+    allow_deployments_to_no_targets = true
+}
+
+run_retention_policy {
+    type = "Default"
+}
+
+process {
+    step "key-vault-azure-key-vault-retrieve-secrets" {
+        condition = "Variable"
+        name = "Key Vault-Azure Key Vault - Retrieve Secrets"
+        properties = {
+            Octopus.Step.ConditionVariableExpression = "#{KeyVault.Template.Instance.AirGapped | ToLower | Match false}"
+        }
+
+        action {
+            action_type = "Octopus.AzurePowerShell"
+            notes = <<-EOT
+                    **Runs when in an online environment**
+                    
+                    Pulls the specified secrets from Azure Key Vault
+                    EOT
+            properties = {
+                Azure.KeyVault.RetrieveSecrets.Account = "KeyVault.Template.Azure.Account"
+                Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
+                Azure.KeyVault.RetrieveSecrets.VaultName = "#{KeyVault.Template.Vault.Name}"
+                Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{KeyVault.Template.Secrets.List}"
+                KeyVault.Template.ExecutionContainer.Feed = "Feeds-1283"
+                KeyVault.Template.Secrets.List = "#{KeyVault.Azure.Secrets.List}"
+                KeyVault.Template.Vault.Name = "#{KeyVault.Azure.Name}"
+                KeyVault.Template.Worker.Pool = "#{Core.Worker.Pool}"
+                Octopus.Action.Azure.AccountId = "#{Azure.KeyVault.RetrieveSecrets.Account}"
+                Octopus.Action.Blueprint.ConsumingAction.Name = "Key Vault"
+                Octopus.Action.Script.ScriptBody = <<-EOT
+                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                    $ErrorActionPreference = 'Stop'
+                    
+                    # Variables
+                    $AzVaultModuleName = "Az.KeyVault"
+                    $AzureKeyVaultName = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.VaultName"]
+                    $VaultSecretNames = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.VaultSecrets"]
+                    $AzVaultModuleSpecificVersion = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.AzModule.SpecificVersion"]
+                    $AzVaultModuleCustomInstallLocation = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.AzModule.CustomInstallLocation"]
+                    $PrintVariableNames = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.PrintVariableNames"]
+                    
+                    # Validation
+                    if ([string]::IsNullOrWhiteSpace($AzureKeyVaultName)) {
+                        throw "Required parameter Azure.KeyVault.RetrieveSecrets.VaultName not specified"
+                    }
+                    if ([string]::IsNullOrWhiteSpace($VaultSecretNames)) {
+                        throw "Required parameter Azure.KeyVault.RetrieveSecrets.VaultSecrets not specified"
+                    }
+                    
+                    if ([string]::IsNullOrWhiteSpace($AzVaultModuleSpecificVersion) -eq $False) {
+                        $requiredVersion = [Version]$AzVaultModuleSpecificVersion
+                    }
+                    
+                    # Cross-platform bits
+                    $WindowsPowerShell = $True
+                    if ($PSEdition -eq "Core") {
+                        $WindowsPowerShell = $False
+                    }
+                    
+                    ### Helper functions
+                    function Get-Module-CrossPlatform {
+                        [CmdletBinding()]
+                        Param(
+                            [Parameter(Mandatory = $true, Position = 0)]
+                            [string] $Name
+                        )
+                    
+                        $module = Get-Module -Name $Name -ListAvailable
+                        if($WindowsPowerShell -eq $True -and $null -eq $module) {
+                            $module = Get-InstalledModule -Name $Name
+                        }
+                    
+                        return $module
+                    }
+                    
+                    $PowerShellModuleName = $AzVaultModuleName
+                    
+                    # Check for Custom install location specified for AzVaultModule
+                    if ([string]::IsNullOrWhiteSpace($AzVaultModuleCustomInstallLocation) -eq $false) {
+                        if ((Test-Path $AzVaultModuleCustomInstallLocation -IsValid) -eq $false) {
+                            throw "The path $AzVaultModuleCustomInstallLocation is not valid, please use a relative or absolute path."
+                        }
+                        
+                        $AzVaultModulesFolder = [System.IO.Path]::GetFullPath($AzVaultModuleCustomInstallLocation)            
+                        $LocalModules = (New-Item "$AzVaultModulesFolder" -ItemType Directory -Force).FullName
+                        $env:PSModulePath = $LocalModules + [System.IO.Path]::PathSeparator + $env:PSModulePath
+                    
+                        # Check to see if there
+                        if ((Test-Path -Path "$LocalModules/$AzVaultModuleName") -eq $true)
+                        {
+                            # Use specific location
+                            $PowerShellModuleName = "$LocalModules/$PowerShellModuleName"
+                        }
+                    }
+                    
+                    # Import module
+                    if([string]::IsNullOrWhiteSpace($AzVaultModuleSpecificVersion)) {
+                        Write-Host "Importing module $PowerShellModuleName ..."
+                        Import-Module -Name $PowerShellModuleName
+                    }
+                    else {
+                        Write-Host "Importing module $PowerShellModuleName ($AzVaultModuleSpecificVersion)..."
+                        Import-Module -Name $PowerShellModuleName -RequiredVersion $requiredVersion
+                    }
+                    
+                    # Check if Az.Vault Module is installed.
+                    $azVaultModule = Get-Module-CrossPlatform -Name $AzVaultModuleName	
+                    if ($null -eq $azVaultModule) {
+                        throw "Cannot find the '$AzVaultModuleName' module on the machine. If you think it is installed, try restarting the Tentacle service for it to be detected."	
+                    }
+                    
+                    $Secrets = @()
+                    $VariablesCreated = 0
+                    $StepName = $OctopusParameters["Octopus.Step.Name"]
+                    
+                    # Extract secret names+versions 
+                    @(($VaultSecretNames -Split "`n").Trim()) | ForEach-Object {
+                        if (![string]::IsNullOrWhiteSpace($_)) {
+                            Write-Verbose "Working on: '$_'"
+                            $secretDefinition = ($_ -Split "\|")
+                            $secretName = $secretDefinition[0].Trim()
+                            $secretNameAndVersion = ($secretName -Split " ")
+                            $secretVersion = $null
+                            if($secretNameAndVersion.Count -gt 1) {
+                            	$secretName = $secretNameAndVersion[0].Trim()
+                                $secretVersion = $secretNameAndVersion[1].Trim()
+                            }
+                            if([string]::IsNullOrWhiteSpace($secretName)) {
+                                throw "Unable to establish secret name from: '$($_)'"
+                            }
+                            $secret = [PsCustomObject]@{
+                                Name         = $secretName
+                                SecretVersion= $secretVersion
+                                VariableName = if (![string]::IsNullOrWhiteSpace($secretDefinition[1])) { $secretDefinition[1].Trim() } else { "" }
+                            }
+                            $Secrets += $secret
+                        }
+                    }
+                    
+                    Write-Verbose "Vault Name: $AzureKeyVaultName"
+                    Write-Verbose "Print variables: $PrintVariableNames"
+                    Write-Verbose "Secrets to retrieve: $($Secrets.Count)"
+                    Write-Verbose "Az Version specified: $AzVaultModuleSpecificVersion"
+                    Write-Verbose "Az Custom Install Dir: $AzVaultModuleCustomInstallLocation"
+                    
+                    # Retrieve Secrets
+                    foreach($secret in $secrets) {
+                        $name = $secret.Name
+                        $secretVersion = $secret.SecretVersion
+                        $variableName = $secret.VariableName
+                        if ([string]::IsNullOrWhiteSpace($variableName)) {
+                            $variableName = "$($AzureKeyVaultName.Trim()).$($name.Trim())"
+                        }
+                        
+                        if ([string]::IsNullOrWhiteSpace($secretVersion)) {
+                        	$azSecretValue = Get-AzKeyVaultSecret -VaultName $AzureKeyVaultName -Name $name -AsPlainText    
+                        }
+                        else {
+                        	$azSecretValue = Get-AzKeyVaultSecret -VaultName $AzureKeyVaultName -Name $name -Version $secretVersion -AsPlainText
+                        }
+                        
+                        Set-OctopusVariable -Name $variableName -Value $azSecretValue -Sensitive
+                    
+                        if($PrintVariableNames -eq $True) {
+                            Write-Host "Created output variable: ##{Octopus.Action[$StepName].Output.$variableName}"
+                        }
+                        $VariablesCreated += 1
+                    }
+                    
+                    Write-Host "Created $variablesCreated output variables"
+                    EOT
+                Octopus.Action.Script.ScriptSource = "Inline"
+                Octopus.Action.Script.Syntax = "PowerShell"
+                Octopus.ProcessTemplate.Slug = "key-vault-retrieve-secrets"
+                Octopus.ProcessTemplate.Version = "2.1.2"
+                OctopusUseBundledTooling = "False"
+            }
+            worker_pool_variable = "#{KeyVault.Template.Worker.Pool}"
+
+            community_action_template_snapshot {
+                id = "CommunityActionTemplates-62"
+                version = 2
+
+                parameter "Azure.KeyVault.RetrieveSecrets.Account" {
+                    display_settings = {
+                        Octopus.ControlType = "AzureAccount"
+                    }
+                    help_text = "An Azure account with permissions to retrieve secrets from the Azure Key Vault."
+                    label = "Azure Account"
+                    default_value = ""
+                }
+
+                parameter "Azure.KeyVault.RetrieveSecrets.VaultName" {
+                    display_settings = {
+                        Octopus.ControlType = "SingleLineText"
+                    }
+                    help_text = "The name of the Azure Key Vault to retrieve secrets from."
+                    label = "Vault Name"
+                    default_value = ""
+                }
+
+                parameter "Azure.KeyVault.RetrieveSecrets.VaultSecrets" {
+                    display_settings = {
+                        Octopus.ControlType = "MultiLineText"
+                    }
+                    help_text = <<-EOT
+                            Specify the names of the Secrets to be returned from Azure Key Vault, in the format `SecretName SecretVersion | OutputVariableName` where:
+                            
+                            - `SecretName` is the name of the Secret to retrieve.
+                            - `SecretVersion` is the _optional_ version of the Secret to retrieve. *If this value isn't specified, the latest version will be retrieved*.
+                            - `OutputVariableName` is the _optional_ Octopus [output variable](https://octopus.com/docs/projects/variables/output-variables) name to store the secret's value in. *If this value isn't specified, an output name will be generated dynamically*.
+                            
+                            **Note:** Multiple fields can be retrieved by entering each one on a new line.
+                            EOT
+                    label = "Vault Secrets to retrieve"
+                    default_value = ""
+                }
+
+                parameter "Azure.KeyVault.RetrieveSecrets.PrintVariableNames" {
+                    display_settings = {
+                        Octopus.ControlType = "Checkbox"
+                    }
+                    help_text = "Write out the Octopus [output variable](https://octopus.com/docs/projects/variables/output-variables) names to the task log. Default: `False`."
+                    label = "Print output variable names"
+                    default_value = "False"
+                }
+
+                parameter "Azure.KeyVault.RetrieveSecrets.AzModule.SpecificVersion" {
+                    display_settings = {
+                        Octopus.ControlType = "SingleLineText"
+                    }
+                    help_text = <<-EOT
+                            If you wish to use a specific version of the `Az` PowerShell module (rather than the default), enter the version number here. e.g. `5.9.0`.
+                            
+                            **Note:** The version specified must exist on the machine.
+                            
+                            EOT
+                    label = "Az PowerShell Module version (optional)"
+                    default_value = ""
+                }
+
+                parameter "Azure.KeyVault.RetrieveSecrets.AzModule.CustomInstallLocation" {
+                    display_settings = {
+                        Octopus.ControlType = "SingleLineText"
+                    }
+                    help_text = <<-EOT
+                            If you wish to provide a custom path to the `Az` PowerShell module (rather than the default), enter the value here.
+                            
+                            **Note:** The Module must exist at the specified location on the machine. This step template will not download the Module.
+                            
+                            EOT
+                    label = "Az PowerShell Install Location (optional)"
+                    default_value = ""
+                }
+            }
+
+            container {
+                feed = "#{KeyVault.Template.ExecutionContainer.Feed}"
+                image = "octopuslabs/azure-workertools:2.69.0"
+            }
+        }
+    }
+
+    step "key-vault-set-output-variables" {
+        name = "Key Vault-Set Output Variables"
+
+        action {
+            action_type = "Octopus.Script"
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Sets the appropriate output variables based on which step ran earlier
+                    EOT
+            properties = {
+                KeyVault.Template.ExecutionContainer.Feed = "Feeds-1283"
+                KeyVault.Template.Secrets.List = "#{KeyVault.Azure.Secrets.List}"
+                KeyVault.Template.Vault.Name = "#{KeyVault.Azure.Name}"
+                KeyVault.Template.Worker.Pool = "#{Core.Worker.Pool}"
+                Octopus.Action.Blueprint.ConsumingAction.Name = "Key Vault"
+                Octopus.Action.Script.ScriptBody = <<-EOT
+                    $IsAirGappedInstance = $OctopusParameters["KeyVault.Template.Instance.AirGapped"]
+                    $IsAirGappedInstance = $IsAirGappedInstance.ToLower()
+                    $VaultSecretNames = $OctopusParameters["KeyVault.Template.Secrets.List"]
+                    
+                    $Secrets = @()
+                    Write-Host "Pulling the list of secret names and variable names so we can set the appropriate output parameters"
+                    @(($VaultSecretNames -Split "`n").Trim()) | ForEach-Object {
+                        if (![string]::IsNullOrWhiteSpace($_)) {
+                            
+                            Write-Verbose "Working on: '$_'"
+                            $secretDefinition = ($_ -Split "\|")
+                            $secretName = $secretDefinition[0].Trim()
+                            $secretNameAndVersion = ($secretName -Split " ")
+                            $secretVersion = $null
+                            
+                            if($secretNameAndVersion.Count -gt 1) {
+                            	$secretName = $secretNameAndVersion[0].Trim()
+                                $secretVersion = $secretNameAndVersion[1].Trim()
+                            }
+                    
+                            if([string]::IsNullOrWhiteSpace($secretName)) {
+                                throw "Unable to establish secret name from: '$($_)'"
+                            }
+                            $secret = [PsCustomObject]@{
+                                Name         = $secretName
+                                SecretVersion= $secretVersion
+                                VariableName = if (![string]::IsNullOrWhiteSpace($secretDefinition[1])) { $secretDefinition[1].Trim() } else { "" }
+                                DefaultValue = if (![string]::IsNullOrWhiteSpace($secretDefinition[2])) { $secretDefinition[2].Trim() } else { "" }
+                            }
+                            $Secrets += $secret
+                        }
+                    }
+                    
+                    $VariablesCreated = 0
+                    $StepName = $OctopusParameters["Octopus.Step.Name"]
+                    
+                    foreach($secret in $secrets) {
+                      $variableName = $secret.VariableName
+                      
+                      if ($IsAirGappedInstance -eq "true")
+                      {
+                        Write-Host "Running in an Airgapped Environment - setting $variableName to the default value"
+                        $parameterValue = $secret.DefaultValue    
+                      }
+                      else
+                      {
+                        Write-Host "Running in an Online Environment - setting to the key vault value"
+                        $parameterName = "Octopus.ProcessTemplate.Action[Azure Key Vault - Retrieve Secrets].Output.$variableName"
+                        $parameterValue = $OctopusParameters[$parameterName]
+                      }
+                      
+                      Set-OctopusVariable -Name $variableName -Value $parameterValue -Sensitive
+                    
+                      Write-Host "Created output variable: ##{Octopus.Action[$StepName].Output.$variableName}" 
+                      
+                      $variablesCreated += 1
+                    }
+                    EOT
+                Octopus.Action.Script.ScriptSource = "Inline"
+                Octopus.Action.Script.Syntax = "PowerShell"
+                Octopus.ProcessTemplate.Slug = "key-vault-retrieve-secrets"
+                Octopus.ProcessTemplate.Version = "2.1.2"
+                OctopusUseBundledTooling = "False"
+            }
+            worker_pool_variable = "#{Template.Worker.Pool}"
+        }
+    }
+
+    step "run-adhoc-data-update-script-send-email-confirmation-to-requester" {
+        name = "Run AdHoc Data Update Script-Send email confirmation to requester"
+
+        action {
+            action_type = "Octopus.Email"
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Sends an email confirmation to the requester
+                    EOT
+            properties = {
+                Octopus.Action.Blueprint.ConsumingAction.Name = "Run AdHoc Data Update Script"
+                Octopus.Action.Email.Body = <<-EOT
+                    Thank you for submitting a request to update #{Project.Database.Name} in #{Octopus.Environment.Name}.  The script you submitted was:
+                    
+                    #{Template.ScriptToRun.Text}
+                    
+                    This process will attempt to auto-approve the script.  This process will automatically notify you of any changes.
+                    EOT
+                Octopus.Action.Email.Subject = "AdHoc Data Change Script for #{Project.Database.Name} in #{Octopus.Environment.Name} has been submitted"
+                Octopus.Action.Email.To = "#{Octopus.Deployment.CreatedBy.EmailAddress}"
+                Octopus.ProcessTemplate.Slug = "runbook-run-adhoc-data-update-script"
+                Octopus.ProcessTemplate.Version = "1.0.0"
+                Template.ScriptToRun.Text = "Select 1 from table"
+                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
+                Template.SQLServer.Name = "#{KeyVault.SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{KeyVault.SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{KeyVault.SQLServer.User.Password}"
+                Template.WorkerPool = "#{Core.Worker.Pool}"
+            }
+            worker_pool_variable = ""
+        }
+    }
+
+    step "run-adhoc-data-update-script-check-script-for-auto-approval" {
+        name = "Run AdHoc Data Update Script-Check Script For Auto Approval"
+
+        action {
+            action_type = "Octopus.Script"
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Checks the script for commands with forbidden keywords and ensures the update doesn't update more than 1 row.
+                    EOT
+            properties = {
+                Octopus.Action.Blueprint.ConsumingAction.Name = "Run AdHoc Data Update Script"
+                Octopus.Action.Script.ScriptBody = <<-EOT
+                    $scriptToRun = $OctopusParameters["Template.ScriptToRun.Text"]
+                    $commandsToLookFor = "Create Table,Alter Table,Drop Table,Drop View,Create View,Create Function,Drop Function,sp_addrolemember,sp_droprolemember,alter role,Merge,Create Schema"
+                    $databaseName = $OctopusParameters["Template.SQLServer.Database.Name"]
+                    $databaseServer = $OctopusParameters["Template.SQLServer.Name"]
+                    $userName = $OctopusParameters["Template.SQLServer.User.Name"]
+                    $userPassword = $OctopusParameters["Template.SQLServer.User.Password"]
+                    $environmentName = $OctopusParameters["Octopus.Environment.Name"]
+                    
+                    Write-Highlight "The script to run is:"
+                    Write-Highlight "$scriptToRun"
+                    
+                    if ([string]::IsNullOrWhiteSpace($userName) -eq $true){
+                    	Write-Host "No username found, using integrated security"
+                        $connectionString = "Server=$databaseServer;Database=$databaseName;integrated security=true;"
+                    }
+                    else {
+                    	Write-Host "Username found, using SQL Authentication"
+                        $connectionString = "Server=$databaseServer;Database=$databaseName;User ID=$userName;Password=$userPassword;"
+                    }
+                    
+                    $approvalRequired = $false
+                    $messages = ""
+                    
+                    Write-Highlight "Looping through the script to look for schema change commands"
+                    $commandsToCheck = $CommandsToLookFor -split ","
+                    foreach ($command in $commandsToCheck)
+                    {
+                    	Write-Host "Checking for command $command"
+                        $foundCommand = $scriptToRun -match "$command"
+                    
+                        if ($foundCommand)
+                        {
+                        	$warningMessage = "A '$command' SQL Statement was found, approval by DBA is required."
+                            $messages += $warningMessage + "`r`n"
+                            Write-Highlight $warningMessage
+                            $approvalRequired = $true        
+                        }
+                    }
+                    
+                    Write-Highlight "Attempting test run of script in a transaction"
+                    $sqlConnection = New-Object System.Data.SqlClient.SqlConnection
+                    $sqlConnection.ConnectionString = $connectionString
+                    
+                    $command = $sqlConnection.CreateCommand()
+                    $command.CommandType = [System.Data.CommandType]'Text'
+                    $command.CommandText = $scriptToRun
+                    
+                    Write-Host "Opening the connection to $databaseName"
+                    
+                    $sqlConnection.Open()   
+                    
+                    try
+                    {
+                    	Write-Host "Creating transaction"
+                    	$command.Transaction = $sqlConnection.BeginTransaction()
+                        
+                        Write-Host "Running query now"
+                    	$rowsChanged = $command.ExecuteNonQuery()
+                    }
+                    catch
+                    {
+                    	throw $_
+                    }
+                    finally 
+                    {
+                    	$command.Transaction.Rollback()
+                    }
+                    
+                    if ($rowsChanged -gt 10)
+                    {
+                    	$warningMessage = "The number of rows which will changed is $rowsChanged, approval by DBA is required."
+                        $messages += $warningMessage + "`r`n"
+                        Write-Highlight $warningMessage
+                        
+                        $approvalRequired = $true
+                    }
+                    
+                    if ($approvalRequired -eq $false)
+                    {
+                    	Write-Highlight "Script passes requirements, auto approving" 
+                        $messageSubject = "No intervention required for script to be run on $databaseName in $environmentName"
+                        $messageBody = "Script contained no schema change commands and will update between 1 and 10 rows of data"
+                    }
+                    else 
+                    {
+                    	$messageSubject = "DBA intervention required for script to be run on $databaseName in $environmentName"
+                        $messageBody = $messages
+                    }
+                    
+                    Set-OctopusVariable -name "ApprovalRequired" -value $approvalRequired
+                    Set-OctopusVariable -name "MessageSubject" -value $messageSubject
+                    Set-OctopusVariable -name "MessageBody" -value $messageBody
+                    EOT
+                Octopus.Action.Script.ScriptSource = "Inline"
+                Octopus.Action.Script.Syntax = "PowerShell"
+                Octopus.ProcessTemplate.Slug = "runbook-run-adhoc-data-update-script"
+                Octopus.ProcessTemplate.Version = "1.0.0"
+                OctopusUseBundledTooling = "False"
+                Template.ScriptToRun.Text = "Select 1 from table"
+                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
+                Template.SQLServer.Name = "#{KeyVault.SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{KeyVault.SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{KeyVault.SQLServer.User.Password}"
+                Template.WorkerPool = "#{Core.Worker.Pool}"
+            }
+            worker_pool_variable = "#{Template.WorkerPool}"
+        }
+    }
+
+    step "run-adhoc-data-update-script-notify-requester-of-approval-status" {
+        name = "Run AdHoc Data Update Script-Notify Requester of Approval Status"
+
+        action {
+            action_type = "Octopus.Email"
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Will send out a notification to the requester informing them of the auto-approval status.
+                    EOT
+            properties = {
+                Octopus.Action.Blueprint.ConsumingAction.Name = "Run AdHoc Data Update Script"
+                Octopus.Action.Email.Body = "#{Octopus.Action[Check Script For Auto Approval].Output.MessageBody}"
+                Octopus.Action.Email.Subject = "#{Octopus.Action[Check Script For Auto Approval].Output.MessageSubject}"
+                Octopus.Action.Email.To = "#{Octopus.Deployment.CreatedBy.EmailAddress}"
+                Octopus.ProcessTemplate.Slug = "runbook-run-adhoc-data-update-script"
+                Octopus.ProcessTemplate.Version = "1.0.0"
+                Template.ScriptToRun.Text = "Select 1 from table"
+                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
+                Template.SQLServer.Name = "#{KeyVault.SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{KeyVault.SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{KeyVault.SQLServer.User.Password}"
+                Template.WorkerPool = "#{Core.Worker.Pool}"
+            }
+            worker_pool_variable = ""
+        }
+    }
+
+    step "run-adhoc-data-update-script-notify-dbas-of-pending-changes" {
+        condition = "Variable"
+        name = "Run AdHoc Data Update Script-Notify DBAs of Pending Changes"
+        properties = {
+            Octopus.Step.ConditionVariableExpression = "#{Octopus.Action[Check Script For Auto Approval].Output.ApprovalRequired}"
+        }
+        start_trigger = "StartWithPrevious"
+
+        action {
+            action_type = "Octopus.Email"
+            notes = <<-EOT
+                    **Only Runs When Auto Approval Fails**
+                    
+                    Sends a notification to the DBAs that they need to review the script before approving it.
+                    EOT
+            properties = {
+                Octopus.Action.Blueprint.ConsumingAction.Name = "Run AdHoc Data Update Script"
+                Octopus.Action.Email.Body = <<-EOT
+                    The following script failed validation.  Please review and approve it.
+                    
+                    #{Template.ScriptToRun.Text}
+                    
+                    Click here to approve or reject: #{Octopus.Web.ServerUri}/app#/#{Octopus.Space.Id}/tasks/#{Octopus.Task.Id}
+                    EOT
+                Octopus.Action.Email.Subject = "Data Update Script Requires Approval"
+                Octopus.Action.Email.ToTeamIds = "global/octopus-managers"
+                Octopus.ProcessTemplate.Slug = "runbook-run-adhoc-data-update-script"
+                Octopus.ProcessTemplate.Version = "1.0.0"
+                Template.ScriptToRun.Text = "Select 1 from table"
+                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
+                Template.SQLServer.Name = "#{KeyVault.SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{KeyVault.SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{KeyVault.SQLServer.User.Password}"
+                Template.WorkerPool = "#{Core.Worker.Pool}"
+            }
+            worker_pool_variable = ""
+        }
+    }
+
+    step "run-adhoc-data-update-script-manual-intervention-required" {
+        condition = "Variable"
+        name = "Run AdHoc Data Update Script-DBA Approve Script"
+        properties = {
+            Octopus.Step.ConditionVariableExpression = "#{Octopus.Action[Check Script For Auto Approval].Output.ApprovalRequired}"
+        }
+
+        action {
+            action_type = "Octopus.Manual"
+            notes = <<-EOT
+                    **Only Runs When Auto Approval Fails**
+                    
+                    Pauses the deployment and requires a DBA to approve the script before proceeding.
+                    EOT
+            properties = {
+                Octopus.Action.Blueprint.ConsumingAction.Name = "Run AdHoc Data Update Script"
+                Octopus.Action.Manual.BlockConcurrentDeployments = "False"
+                Octopus.Action.Manual.Instructions = <<-EOT
+                    Please approve the following script to be run on the database #{Template.SQLServer.Database.Name} in #{Octopus.Environment.Name}
+                    
+                    #{Project.ScriptToRun.Text}
+                    EOT
+                Octopus.ProcessTemplate.Slug = "runbook-run-adhoc-data-update-script"
+                Octopus.ProcessTemplate.Version = "1.0.0"
+                Template.ScriptToRun.Text = "Select 1 from table"
+                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
+                Template.SQLServer.Name = "#{KeyVault.SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{KeyVault.SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{KeyVault.SQLServer.User.Password}"
+                Template.WorkerPool = "#{Core.Worker.Pool}"
+            }
+            worker_pool_variable = ""
+        }
+    }
+
+    step "run-adhoc-data-update-script-run-adhoc-script" {
+        name = "Run AdHoc Data Update Script-Run AdHoc Script"
+
+        action {
+            action_type = "Octopus.Script"
+            notes = <<-EOT
+                    **Always Runs**
+                    
+                    Runs the script that the requester submitted.
+                    EOT
+            properties = {
+                Octopus.Action.Blueprint.ConsumingAction.Name = "Run AdHoc Data Update Script"
+                Octopus.Action.Script.ScriptBody = <<-EOT
+                    $scriptToRun = $OctopusParameters["Template.ScriptToRun.Text"]
+                    $databaseName = $OctopusParameters["Template.SQLServer.Database.Name"]
+                    $databaseServer = $OctopusParameters["Template.SQLServer.Name"]
+                    $userName = $OctopusParameters["Template.SQLServer.User.Name"]
+                    $userPassword = $OctopusParameters["Template.SQLServer.User.Password"]
+                    
+                    Write-Host "Database Server: $databaseServer"
+                    Write-Host "Database Name: $databaseName"
+                    
+                    if ([string]::IsNullOrWhiteSpace($userName) -eq $true){
+                    	Write-Host "No username found, using integrated security"
+                        $connectionString = "Server=$databaseServer;Database=$databaseName;integrated security=true;"
+                    }
+                    else {
+                    	Write-Host "Username found, using SQL Authentication"
+                        $connectionString = "Server=$databaseServer;Database=$databaseName;User ID=$userName;Password=$userPassword;"
+                    }
+                    
+                    $sqlConnection = New-Object System.Data.SqlClient.SqlConnection
+                    $sqlConnection.ConnectionString = $connectionString
+                    
+                    $command = $sqlConnection.CreateCommand()
+                    $command.CommandType = [System.Data.CommandType]'Text'
+                    $command.CommandText = $scriptToRun
+                    
+                    Write-Host "Opening the connection to $databaseName on $databaseServer"
+                    
+                    $sqlConnection.Open()   
+                    
+                    try
+                    {
+                    	Write-Highlight "Creating transaction"
+                    	$command.Transaction = $sqlConnection.BeginTransaction()
+                        
+                        Write-Highlight "Running query now"
+                    	$rowsChanged = $command.ExecuteNonQuery()
+                        
+                        Write-Highlight "Committing Transaction"
+                        $command.Transaction.Commit()
+                    }
+                    catch
+                    {
+                    	Write-Highlight "Exception with running script, rolling back transaction"
+                    	$command.Transaction.Rollback()
+                    	throw $_
+                    }
+                    EOT
+                Octopus.Action.Script.ScriptSource = "Inline"
+                Octopus.Action.Script.Syntax = "PowerShell"
+                Octopus.ProcessTemplate.Slug = "runbook-run-adhoc-data-update-script"
+                Octopus.ProcessTemplate.Version = "1.0.0"
+                OctopusUseBundledTooling = "False"
+                Template.ScriptToRun.Text = "Select 1 from table"
+                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
+                Template.SQLServer.Name = "#{KeyVault.SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{KeyVault.SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{KeyVault.SQLServer.User.Password}"
+                Template.WorkerPool = "#{Core.Worker.Pool}"
+            }
+            worker_pool_variable = "#{Template.WorkerPool}"
+        }
+    }
+
+    step "run-adhoc-data-update-script-notify-dbas-and-requester" {
+        condition = "Always"
+        name = "Run AdHoc Data Update Script-Notify DBAs and Requester"
+
+        action {
+            action_type = "Octopus.Email"
+            notes = <<-EOT
+                    **Always Runs (even after failures)**
+                    
+                    Sends out a notification to the requester and DBAs letting them know the status of the script run.
+                    EOT
+            properties = {
+                Octopus.Action.Blueprint.ConsumingAction.Name = "Run AdHoc Data Update Script"
+                Octopus.Action.Email.Body = <<-EOT
+                    The request to update #{Template.SQLServer.Database.Name} in #{Octopus.Environment.Name}.  That following script has finished running.  The script you submitted was:
+                    
+                    #{Project.ScriptToRun.Text}
+                    
+                    The status was: #{Octopus.Step.Status.Error}
+                    EOT
+                Octopus.Action.Email.Subject = "AdHoc Data Change Script for #{Project.Database.Name} in #{Octopus.Environment.Name} has finished running"
+                Octopus.Action.Email.To = "#{Octopus.Deployment.CreatedBy.EmailAddress};"
+                Octopus.Action.Email.ToTeamIds = "global/octopus-managers"
+                Octopus.ProcessTemplate.Slug = "runbook-run-adhoc-data-update-script"
+                Octopus.ProcessTemplate.Version = "1.0.0"
+                Template.ScriptToRun.Text = "Select 1 from table"
+                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
+                Template.SQLServer.Name = "#{KeyVault.SQLServer.Server.Name}"
+                Template.SQLServer.User.Name = "#{KeyVault.SQLServer.User.Name}"
+                Template.SQLServer.User.Password = "#{KeyVault.SQLServer.User.Password}"
+                Template.WorkerPool = "#{Core.Worker.Pool}"
+            }
+            worker_pool_variable = ""
+        }
+    }
+}
