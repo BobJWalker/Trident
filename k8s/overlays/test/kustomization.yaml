@@ -3,11 +3,11 @@ kind: Kustomization
 resources:
 - ../../base
 
+images:
+- name: bobjwalker99/trident
+  newName: bobjwalker99/trident
+  newTag: "7.0.7"
+
 patches:
- - target:
-    kind: Ingress
-    name: trident-ingress-nginx
-   patch: |-
-    - op: replace
-      path: /spec/rules/0/host
-      value: tridenttest.local
+  - path: networking-patch.yaml
+  - path: deployment-patch.yaml

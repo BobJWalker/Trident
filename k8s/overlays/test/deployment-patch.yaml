@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trident-deployment
+spec:
+  template:
+    spec:
+      containers:
+        - name: trident-web
+          env:
+            - name: TRIDENT_ENVIRONMENT
+              value: test
