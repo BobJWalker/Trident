@@ -18,607 +18,65 @@ run_retention_policy {
 }
 
 process {
-    step "key-vault-azure-key-vault-retrieve-secrets" {
-        condition = "Variable"
-        name = "Key Vault-Azure Key Vault - Retrieve Secrets"
-        properties = {
-            Octopus.Step.ConditionVariableExpression = "#{KeyVault.Template.Instance.AirGapped | ToLower | Match false}"
+    process_template "key-vault" {
+        name = "Key Vault"
+        process_template_slug = "key-vault-retrieve-secrets"
+        version_mask = "2.X"
+
+        parameter "KeyVault.Template.Vault.Name" {
+            value = "#{KeyVault.Azure.Name}"
         }
 
-        action {
-            action_type = "Octopus.AzurePowerShell"
-            notes = <<-EOT
-                    **Runs when in an online environment**
-                    
-                    Pulls the specified secrets from Azure Key Vault
-                    EOT
-            properties = {
-                Azure.KeyVault.RetrieveSecrets.Account = "KeyVault.Template.Azure.Account"
-                Azure.KeyVault.RetrieveSecrets.PrintVariableNames = "False"
-                Azure.KeyVault.RetrieveSecrets.VaultName = "#{KeyVault.Template.Vault.Name}"
-                Azure.KeyVault.RetrieveSecrets.VaultSecrets = "#{KeyVault.Template.Secrets.List}"
-                KeyVault.Template.ExecutionContainer.Feed = "Feeds-1283"
-                KeyVault.Template.Secrets.List = "#{KeyVault.Azure.Secrets.List}"
-                KeyVault.Template.Vault.Name = "#{KeyVault.Azure.Name}"
-                KeyVault.Template.Worker.Pool = "#{Core.Worker.Pool}"
-                Octopus.Action.Azure.AccountId = "#{Azure.KeyVault.RetrieveSecrets.Account}"
-                Octopus.Action.Blueprint.ConsumingAction.Name = "Key Vault"
-                Octopus.Action.Script.ScriptBody = <<-EOT
-                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-                    $ErrorActionPreference = 'Stop'
-                    
-                    # Variables
-                    $AzVaultModuleName = "Az.KeyVault"
-                    $AzureKeyVaultName = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.VaultName"]
-                    $VaultSecretNames = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.VaultSecrets"]
-                    $AzVaultModuleSpecificVersion = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.AzModule.SpecificVersion"]
-                    $AzVaultModuleCustomInstallLocation = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.AzModule.CustomInstallLocation"]
-                    $PrintVariableNames = $OctopusParameters["Azure.KeyVault.RetrieveSecrets.PrintVariableNames"]
-                    
-                    # Validation
-                    if ([string]::IsNullOrWhiteSpace($AzureKeyVaultName)) {
-                        throw "Required parameter Azure.KeyVault.RetrieveSecrets.VaultName not specified"
-                    }
-                    if ([string]::IsNullOrWhiteSpace($VaultSecretNames)) {
-                        throw "Required parameter Azure.KeyVault.RetrieveSecrets.VaultSecrets not specified"
-                    }
-                    
-                    if ([string]::IsNullOrWhiteSpace($AzVaultModuleSpecificVersion) -eq $False) {
-                        $requiredVersion = [Version]$AzVaultModuleSpecificVersion
-                    }
-                    
-                    # Cross-platform bits
-                    $WindowsPowerShell = $True
-                    if ($PSEdition -eq "Core") {
-                        $WindowsPowerShell = $False
-                    }
-                    
-                    ### Helper functions
-                    function Get-Module-CrossPlatform {
-                        [CmdletBinding()]
-                        Param(
-                            [Parameter(Mandatory = $true, Position = 0)]
-                            [string] $Name
-                        )
-                    
-                        $module = Get-Module -Name $Name -ListAvailable
-                        if($WindowsPowerShell -eq $True -and $null -eq $module) {
-                            $module = Get-InstalledModule -Name $Name
-                        }
-                    
-                        return $module
-                    }
-                    
-                    $PowerShellModuleName = $AzVaultModuleName
-                    
-                    # Check for Custom install location specified for AzVaultModule
-                    if ([string]::IsNullOrWhiteSpace($AzVaultModuleCustomInstallLocation) -eq $false) {
-                        if ((Test-Path $AzVaultModuleCustomInstallLocation -IsValid) -eq $false) {
-                            throw "The path $AzVaultModuleCustomInstallLocation is not valid, please use a relative or absolute path."
-                        }
-                        
-                        $AzVaultModulesFolder = [System.IO.Path]::GetFullPath($AzVaultModuleCustomInstallLocation)            
-                        $LocalModules = (New-Item "$AzVaultModulesFolder" -ItemType Directory -Force).FullName
-                        $env:PSModulePath = $LocalModules + [System.IO.Path]::PathSeparator + $env:PSModulePath
-                    
-                        # Check to see if there
-                        if ((Test-Path -Path "$LocalModules/$AzVaultModuleName") -eq $true)
-                        {
-                            # Use specific location
-                            $PowerShellModuleName = "$LocalModules/$PowerShellModuleName"
-                        }
-                    }
-                    
-                    # Import module
-                    if([string]::IsNullOrWhiteSpace($AzVaultModuleSpecificVersion)) {
-                        Write-Host "Importing module $PowerShellModuleName ..."
-                        Import-Module -Name $PowerShellModuleName
-                    }
-                    else {
-                        Write-Host "Importing module $PowerShellModuleName ($AzVaultModuleSpecificVersion)..."
-                        Import-Module -Name $PowerShellModuleName -RequiredVersion $requiredVersion
-                    }
-                    
-                    # Check if Az.Vault Module is installed.
-                    $azVaultModule = Get-Module-CrossPlatform -Name $AzVaultModuleName	
-                    if ($null -eq $azVaultModule) {
-                        throw "Cannot find the '$AzVaultModuleName' module on the machine. If you think it is installed, try restarting the Tentacle service for it to be detected."	
-                    }
-                    
-                    $Secrets = @()
-                    $VariablesCreated = 0
-                    $StepName = $OctopusParameters["Octopus.Step.Name"]
-                    
-                    # Extract secret names+versions 
-                    @(($VaultSecretNames -Split "`n").Trim()) | ForEach-Object {
-                        if (![string]::IsNullOrWhiteSpace($_)) {
-                            Write-Verbose "Working on: '$_'"
-                            $secretDefinition = ($_ -Split "\|")
-                            $secretName = $secretDefinition[0].Trim()
-                            $secretNameAndVersion = ($secretName -Split " ")
-                            $secretVersion = $null
-                            if($secretNameAndVersion.Count -gt 1) {
-                            	$secretName = $secretNameAndVersion[0].Trim()
-                                $secretVersion = $secretNameAndVersion[1].Trim()
-                            }
-                            if([string]::IsNullOrWhiteSpace($secretName)) {
-                                throw "Unable to establish secret name from: '$($_)'"
-                            }
-                            $secret = [PsCustomObject]@{
-                                Name         = $secretName
-                                SecretVersion= $secretVersion
-                                VariableName = if (![string]::IsNullOrWhiteSpace($secretDefinition[1])) { $secretDefinition[1].Trim() } else { "" }
-                            }
-                            $Secrets += $secret
-                        }
-                    }
-                    
-                    Write-Verbose "Vault Name: $AzureKeyVaultName"
-                    Write-Verbose "Print variables: $PrintVariableNames"
-                    Write-Verbose "Secrets to retrieve: $($Secrets.Count)"
-                    Write-Verbose "Az Version specified: $AzVaultModuleSpecificVersion"
-                    Write-Verbose "Az Custom Install Dir: $AzVaultModuleCustomInstallLocation"
-                    
-                    # Retrieve Secrets
-                    foreach($secret in $secrets) {
-                        $name = $secret.Name
-                        $secretVersion = $secret.SecretVersion
-                        $variableName = $secret.VariableName
-                        if ([string]::IsNullOrWhiteSpace($variableName)) {
-                            $variableName = "$($AzureKeyVaultName.Trim()).$($name.Trim())"
-                        }
-                        
-                        if ([string]::IsNullOrWhiteSpace($secretVersion)) {
-                        	$azSecretValue = Get-AzKeyVaultSecret -VaultName $AzureKeyVaultName -Name $name -AsPlainText    
-                        }
-                        else {
-                        	$azSecretValue = Get-AzKeyVaultSecret -VaultName $AzureKeyVaultName -Name $name -Version $secretVersion -AsPlainText
-                        }
-                        
-                        Set-OctopusVariable -Name $variableName -Value $azSecretValue -Sensitive
-                    
-                        if($PrintVariableNames -eq $True) {
-                            Write-Host "Created output variable: ##{Octopus.Action[$StepName].Output.$variableName}"
-                        }
-                        $VariablesCreated += 1
-                    }
-                    
-                    Write-Host "Created $variablesCreated output variables"
-                    EOT
-                Octopus.Action.Script.ScriptSource = "Inline"
-                Octopus.Action.Script.Syntax = "PowerShell"
-                Octopus.ProcessTemplate.Slug = "key-vault-retrieve-secrets"
-                Octopus.ProcessTemplate.Version = "2.1.2"
-                OctopusUseBundledTooling = "False"
-            }
-            worker_pool_variable = "#{KeyVault.Template.Worker.Pool}"
+        parameter "KeyVault.Template.Secrets.List" {
+            value = "#{KeyVault.Azure.Secrets.List}"
+        }
 
-            community_action_template_snapshot {
-                id = "CommunityActionTemplates-62"
-                version = 2
+        parameter "KeyVault.Template.Worker.Pool" {
+            value = "#{Core.Worker.Pool}"
+        }
 
-                parameter "Azure.KeyVault.RetrieveSecrets.Account" {
-                    display_settings = {
-                        Octopus.ControlType = "AzureAccount"
-                    }
-                    help_text = "An Azure account with permissions to retrieve secrets from the Azure Key Vault."
-                    label = "Azure Account"
-                    default_value = ""
-                }
-
-                parameter "Azure.KeyVault.RetrieveSecrets.VaultName" {
-                    display_settings = {
-                        Octopus.ControlType = "SingleLineText"
-                    }
-                    help_text = "The name of the Azure Key Vault to retrieve secrets from."
-                    label = "Vault Name"
-                    default_value = ""
-                }
-
-                parameter "Azure.KeyVault.RetrieveSecrets.VaultSecrets" {
-                    display_settings = {
-                        Octopus.ControlType = "MultiLineText"
-                    }
-                    help_text = <<-EOT
-                            Specify the names of the Secrets to be returned from Azure Key Vault, in the format `SecretName SecretVersion | OutputVariableName` where:
-                            
-                            - `SecretName` is the name of the Secret to retrieve.
-                            - `SecretVersion` is the _optional_ version of the Secret to retrieve. *If this value isn't specified, the latest version will be retrieved*.
-                            - `OutputVariableName` is the _optional_ Octopus [output variable](https://octopus.com/docs/projects/variables/output-variables) name to store the secret's value in. *If this value isn't specified, an output name will be generated dynamically*.
-                            
-                            **Note:** Multiple fields can be retrieved by entering each one on a new line.
-                            EOT
-                    label = "Vault Secrets to retrieve"
-                    default_value = ""
-                }
-
-                parameter "Azure.KeyVault.RetrieveSecrets.PrintVariableNames" {
-                    display_settings = {
-                        Octopus.ControlType = "Checkbox"
-                    }
-                    help_text = "Write out the Octopus [output variable](https://octopus.com/docs/projects/variables/output-variables) names to the task log. Default: `False`."
-                    label = "Print output variable names"
-                    default_value = "False"
-                }
-
-                parameter "Azure.KeyVault.RetrieveSecrets.AzModule.SpecificVersion" {
-                    display_settings = {
-                        Octopus.ControlType = "SingleLineText"
-                    }
-                    help_text = <<-EOT
-                            If you wish to use a specific version of the `Az` PowerShell module (rather than the default), enter the version number here. e.g. `5.9.0`.
-                            
-                            **Note:** The version specified must exist on the machine.
-                            
-                            EOT
-                    label = "Az PowerShell Module version (optional)"
-                    default_value = ""
-                }
-
-                parameter "Azure.KeyVault.RetrieveSecrets.AzModule.CustomInstallLocation" {
-                    display_settings = {
-                        Octopus.ControlType = "SingleLineText"
-                    }
-                    help_text = <<-EOT
-                            If you wish to provide a custom path to the `Az` PowerShell module (rather than the default), enter the value here.
-                            
-                            **Note:** The Module must exist at the specified location on the machine. This step template will not download the Module.
-                            
-                            EOT
-                    label = "Az PowerShell Install Location (optional)"
-                    default_value = ""
-                }
-            }
-
-            container {
-                feed = "#{KeyVault.Template.ExecutionContainer.Feed}"
-                image = "octopuslabs/azure-workertools:2.69.0"
-            }
+        parameter "KeyVault.Template.ExecutionContainer.Feed" {
+            value = "Feeds-1283"
         }
     }
 
-    step "key-vault-set-output-variables" {
-        name = "Key Vault-Set Output Variables"
+    process_template "create-database" {
+        name = "Create Database"
+        process_template_slug = "runbook-create-database-infrastructure"
+        version_mask = "1.X"
 
-        action {
-            action_type = "Octopus.Script"
-            notes = <<-EOT
-                    **Always Runs**
-                    
-                    Sets the appropriate output variables based on which step ran earlier
-                    EOT
-            properties = {
-                KeyVault.Template.ExecutionContainer.Feed = "Feeds-1283"
-                KeyVault.Template.Secrets.List = "#{KeyVault.Azure.Secrets.List}"
-                KeyVault.Template.Vault.Name = "#{KeyVault.Azure.Name}"
-                KeyVault.Template.Worker.Pool = "#{Core.Worker.Pool}"
-                Octopus.Action.Blueprint.ConsumingAction.Name = "Key Vault"
-                Octopus.Action.Script.ScriptBody = <<-EOT
-                    $IsAirGappedInstance = $OctopusParameters["KeyVault.Template.Instance.AirGapped"]
-                    $IsAirGappedInstance = $IsAirGappedInstance.ToLower()
-                    $VaultSecretNames = $OctopusParameters["KeyVault.Template.Secrets.List"]
-                    
-                    $Secrets = @()
-                    Write-Host "Pulling the list of secret names and variable names so we can set the appropriate output parameters"
-                    @(($VaultSecretNames -Split "`n").Trim()) | ForEach-Object {
-                        if (![string]::IsNullOrWhiteSpace($_)) {
-                            
-                            Write-Verbose "Working on: '$_'"
-                            $secretDefinition = ($_ -Split "\|")
-                            $secretName = $secretDefinition[0].Trim()
-                            $secretNameAndVersion = ($secretName -Split " ")
-                            $secretVersion = $null
-                            
-                            if($secretNameAndVersion.Count -gt 1) {
-                            	$secretName = $secretNameAndVersion[0].Trim()
-                                $secretVersion = $secretNameAndVersion[1].Trim()
-                            }
-                    
-                            if([string]::IsNullOrWhiteSpace($secretName)) {
-                                throw "Unable to establish secret name from: '$($_)'"
-                            }
-                            $secret = [PsCustomObject]@{
-                                Name         = $secretName
-                                SecretVersion= $secretVersion
-                                VariableName = if (![string]::IsNullOrWhiteSpace($secretDefinition[1])) { $secretDefinition[1].Trim() } else { "" }
-                                DefaultValue = if (![string]::IsNullOrWhiteSpace($secretDefinition[2])) { $secretDefinition[2].Trim() } else { "" }
-                            }
-                            $Secrets += $secret
-                        }
-                    }
-                    
-                    $VariablesCreated = 0
-                    $StepName = $OctopusParameters["Octopus.Step.Name"]
-                    
-                    foreach($secret in $secrets) {
-                      $variableName = $secret.VariableName
-                      
-                      if ($IsAirGappedInstance -eq "true")
-                      {
-                        Write-Host "Running in an Airgapped Environment - setting $variableName to the default value"
-                        $parameterValue = $secret.DefaultValue    
-                      }
-                      else
-                      {
-                        Write-Host "Running in an Online Environment - setting to the key vault value"
-                        $parameterName = "Octopus.ProcessTemplate.Action[Azure Key Vault - Retrieve Secrets].Output.$variableName"
-                        $parameterValue = $OctopusParameters[$parameterName]
-                      }
-                      
-                      Set-OctopusVariable -Name $variableName -Value $parameterValue -Sensitive
-                    
-                      Write-Host "Created output variable: ##{Octopus.Action[$StepName].Output.$variableName}" 
-                      
-                      $variablesCreated += 1
-                    }
-                    EOT
-                Octopus.Action.Script.ScriptSource = "Inline"
-                Octopus.Action.Script.Syntax = "PowerShell"
-                Octopus.ProcessTemplate.Slug = "key-vault-retrieve-secrets"
-                Octopus.ProcessTemplate.Version = "2.1.2"
-                OctopusUseBundledTooling = "False"
-            }
-            worker_pool_variable = "#{Template.Worker.Pool}"
+        parameter "Template.SQLServer.Name" {
+            value = "#{KeyVault.SQLServer.Server.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Name" {
+            value = "#{KeyVault.SQLServer.User.Name}"
+        }
+
+        parameter "Template.SQLServer.User.Password" {
+            value = "#{KeyVault.SQLServer.User.Password}"
+        }
+
+        parameter "Template.SQLServer.Database.Name" {
+            value = "#{Standards.Database.Name}"
+        }
+
+        parameter "Template.WorkerPool" {
+            value = "#{Core.Worker.Pool}"
         }
     }
 
-    step "create-database-infrastructure-azure-sql-create-database-if-not-exists" {
-        name = "Create Database Infrastructure-SQL - Create Database If Not Exists - Azure or Local"
+    process_template "create-container-infra" {
+        name = "Create Container Infra"
+        process_template_slug = "create-container-infrastructure"
+        version_mask = "1.X"
 
-        action {
-            action_type = "Octopus.Script"
-            is_required = true
-            notes = <<-EOT
-                    **Always Runs**
-                    
-                    Runs a script on a local or Azure Sql Server to ensure the database exists and is configured as a serverless general purpose database with 1 vCore.
-                    EOT
-            properties = {
-                Octopus.Action.AutoRetry.MaximumCount = "3"
-                Octopus.Action.AutoRetry.MinimumBackoff = "15"
-                Octopus.Action.Blueprint.ConsumingAction.Name = "Create Database Infrastructure"
-                Octopus.Action.Script.ScriptBody = <<-EOT
-                    $createSQLServer = $OctopusParameters["Template.SQLServer.Name"]
-                    $createSqlLoginUserWhoHasCreateUserRights = $OctopusParameters["Template.SQLServer.User.Name"]
-                    $createSqlLoginPasswordWhoHasRights = $OctopusParameters["Template.SQLServer.User.Password"]
-                    $createDatabaseName = $OctopusParameters["Template.SQLServer.Database.Name"]
-                    $createCommandTimeout = 60
-                    $createSqlDatabaseRetryAttempts = 3
-                    
-                    if ([string]::IsNullOrWhiteSpace($createSqlLoginUserWhoHasCreateUserRights) -eq $true) {
-                        Write-Output "No username found, using integrated security"
-                        $connectionString = "Server=$createSqlServer;Database=master;integrated security=true;"
-                    }
-                    else {
-                        Write-Output "Username found, using SQL Authentication"
-                        $connectionString = "Server=$createSqlServer;Database=master;User ID=$createSqlLoginUserWhoHasCreateUserRights;Password=$createSqlLoginPasswordWhoHasRights;"
-                    }
-                    
-                    
-                    function Retry-Command {
-                        [CmdletBinding()]
-                        Param(
-                            [Parameter(Position = 0, Mandatory = $true)]
-                            [scriptblock]$ScriptBlock,
-                     
-                            [Parameter(Position = 1, Mandatory = $false)]
-                            [int]$Maximum = 1,
-                    
-                            [Parameter(Position = 2, Mandatory = $false)]
-                            [int]$Delay = 100
-                        )
-                    
-                        Begin {
-                            $count = 0
-                        }
-                    
-                        Process {
-                            $ex = $null
-                            do {
-                                $count++
-                                
-                                try {
-                                    Write-Verbose "Attempt $count of $Maximum"
-                                    $ScriptBlock.Invoke()
-                                    return
-                                }
-                                catch {
-                                    $ex = $_
-                                    Write-Warning "Error occurred executing command (on attempt $count of $Maximum): $($ex.Exception.Message)"
-                                    Start-Sleep -Milliseconds $Delay
-                                }
-                            } while ($count -lt $Maximum)
-                    
-                            # Throw an error after $Maximum unsuccessful invocations. Doesn't need
-                            # a condition, since the function returns upon successful invocation.
-                            throw "Execution failed (after $count attempts): $($ex.Exception.Message)"
-                        }
-                    }
-                    
-                    [int]$maximum = 0
-                    [int]$delay = 100
-                    
-                    if (-not [int]::TryParse($createSqlDatabaseRetryAttempts, [ref]$maximum)) { $maximum = 0 }
-                    
-                    # We add 1 here as if retry attempts is 1, this means we make 2 attempts overall
-                    $maximum = $maximum + 1
-                    
-                    Retry-Command -Maximum $maximum -Delay $delay -ScriptBlock {
-                    	
-                        $sqlConnection = New-Object System.Data.SqlClient.SqlConnection
-                        $sqlConnection.ConnectionString = $connectionString
-                        try {
-                            
-                            $command = $sqlConnection.CreateCommand()
-                            $command.CommandType = [System.Data.CommandType]'Text'
-                            $command.CommandTimeout = $createCommandTimeout
-                    
-                            Write-Output "Opening the connection to $createSqlServer"
-                            $sqlConnection.Open()
-                    
-                            $escapedDatabaseName = $createDatabaseName.Replace("'", "''")
-                    
-                            Write-Output "Running the if not exists then create for $createDatabaseName"
-                            $command.CommandText = "IF NOT EXISTS (select Name from sys.databases where Name = '$escapedDatabaseName')
-                            create database [$createDatabaseName]"
-                            
-                            if ($createSqlServer -like '*.database.windows.net')
-                            {
-                              Write-Host "The SQL Server is an azure sql server, adding Azure SQL Syntax"
-                              $createAzureEdition = "GeneralPurpose"        
-                              Write-Verbose "Specifying Azure SqlDb Edition: $($createAzureEdition)"
-                              $command.CommandText += ("`r`n (EDITION = '{0}'" -f $createAzureEdition)
-                            
-                              $createAzureServiceObjective = "GP_S_Gen5_1"
-                              Write-Verbose "Specifying Azure SqlDb Service Objective to: $($createAzureEdition)"
-                              $command.CommandText += (", SERVICE_OBJECTIVE = '{0}')" -f $createAzureServiceObjective)
-                            
-                    		  $createAzureBackupStorageRedundancy = "LOCAL"
-                    		  Write-Verbose "Specifying Azure Backup storage redundancy: $($createAzureBackupStorageRedundancy)"
-                              $command.CommandText += ("`r`n WITH BACKUP_STORAGE_REDUNDANCY='{0}'" -f $createAzureBackupStorageRedundancy)
-                            }
-                            else
-                            {
-                              Write-Host "The SQL Server appears to be local, skipping the Azure SQL Syntax."
-                            }
-                    
-                            $command.CommandText += ";"
-                            Write-Host "Executing $($command.CommandText)"
-                    
-                            $result = $command.ExecuteNonQuery()
-                            Write-Verbose "ExecuteNonQuery result: $result"
-                    
-                            Write-Output "Successfully executed the database creation script for $createDatabaseName"
-                        }
-                    
-                        finally {
-                            if ($null -ne $sqlConnection) {
-                                Write-Output "Closing the connection to $createSqlServer"
-                                $sqlConnection.Dispose()
-                            }
-                        }
-                    }
-                    EOT
-                Octopus.Action.Script.ScriptSource = "Inline"
-                Octopus.Action.Script.Syntax = "PowerShell"
-                Octopus.ProcessTemplate.Slug = "runbook-create-database-infrastructure"
-                Octopus.ProcessTemplate.Version = "1.0.0"
-                OctopusUseBundledTooling = "False"
-                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
-                Template.SQLServer.Name = "#{KeyVault.SQLServer.Server.Name}"
-                Template.SQLServer.User.Name = "#{KeyVault.SQLServer.User.Name}"
-                Template.SQLServer.User.Password = "#{KeyVault.SQLServer.User.Password}"
-                Template.WorkerPool = "#{Core.Worker.Pool}"
-            }
-            worker_pool_variable = "#{Template.WorkerPool}"
-        }
-    }
-
-    step "create-database-infrastructure-verify-database-creation" {
-        name = "Create Database Infrastructure-Verify Database Creation"
-
-        action {
-            action_type = "Octopus.Script"
-            notes = <<-EOT
-                    **Always Runs**
-                    
-                    Runs a script on the database to make sure it was successfully created.
-                    EOT
-            properties = {
-                Octopus.Action.AutoRetry.MaximumCount = "3"
-                Octopus.Action.AutoRetry.MinimumBackoff = "15"
-                Octopus.Action.Blueprint.ConsumingAction.Name = "Create Database Infrastructure"
-                Octopus.Action.Script.ScriptBody = <<-EOT
-                    $scriptToRun = "Select 1 as Number"
-                    $databaseName = $OctopusParameters["Template.SQLServer.Database.Name"]
-                    $databaseServer = $OctopusParameters["Template.SQLServer.Name"]
-                    $userName = $OctopusParameters["Template.SQLServer.User.Name"]
-                    $userPassword = $OctopusParameters["Template.SQLServer.User.Password"]
-                    
-                    Write-Host "Database Server: $databaseServer"
-                    Write-Host "Database Name: $databaseName"
-                    
-                    if ([string]::IsNullOrWhiteSpace($userName) -eq $true){
-                    	Write-Host "No username found, using integrated security"
-                        $connectionString = "Server=$databaseServer;Database=$databaseName;integrated security=true;"
-                    }
-                    else {
-                    	Write-Host "Username found, using SQL Authentication"
-                        $connectionString = "Server=$databaseServer;Database=$databaseName;User ID=$userName;Password=$userPassword;"
-                    }
-                    
-                    $sqlConnection = New-Object System.Data.SqlClient.SqlConnection
-                    $sqlConnection.ConnectionString = $connectionString
-                    
-                    $command = $sqlConnection.CreateCommand()
-                    $command.CommandType = [System.Data.CommandType]'Text'
-                    $command.CommandText = $scriptToRun
-                    
-                    Write-Host "Opening the connection to $databaseName on $databaseServer"
-                    
-                    $sqlConnection.Open()   
-                    
-                    try
-                    {
-                    	Write-Highlight "Creating transaction"
-                    	$command.Transaction = $sqlConnection.BeginTransaction()
-                        
-                        Write-Highlight "Running query now"
-                    	$rowsChanged = $command.ExecuteNonQuery()
-                        
-                        Write-Highlight "Committing Transaction"
-                        $command.Transaction.Commit()
-                    }
-                    catch
-                    {
-                    	Write-Highlight "Exception with running script, rolling back transaction"
-                    	$command.Transaction.Rollback()
-                    	throw $_
-                    }
-                    EOT
-                Octopus.Action.Script.ScriptSource = "Inline"
-                Octopus.Action.Script.Syntax = "PowerShell"
-                Octopus.ProcessTemplate.Slug = "runbook-create-database-infrastructure"
-                Octopus.ProcessTemplate.Version = "1.0.0"
-                OctopusUseBundledTooling = "False"
-                Template.SQLServer.Database.Name = "#{Standards.Database.Name}"
-                Template.SQLServer.Name = "#{KeyVault.SQLServer.Server.Name}"
-                Template.SQLServer.User.Name = "#{KeyVault.SQLServer.User.Name}"
-                Template.SQLServer.User.Password = "#{KeyVault.SQLServer.User.Password}"
-                Template.WorkerPool = "#{Core.Worker.Pool}"
-            }
-            worker_pool_variable = "#{Template.WorkerPool}"
-        }
-    }
-
-    step "create-container-infrastructure-create-application-namespace" {
-        name = "Create Container Infrastructure-Create Application Namespace"
-        properties = {
-            Octopus.Action.TargetRoles = "#{Template.Kubernetes.TargetTags}"
+        parameter "Template.Kubernetes.Namespace.Name" {
+            value = "#{Standards.K8s.Namespace}"
         }
 
-        action {
-            action_type = "Octopus.KubernetesRunScript"
-            notes = <<-EOT
-                    **Always Runs**
-                    
-                    Applies the manifest file to ensure the namespace exists for this particular tenant.
-                    EOT
-            properties = {
-                Octopus.Action.Blueprint.ConsumingAction.Name = "Create Container Infrastructure"
-                Octopus.Action.Script.ScriptBody = <<-EOT
-                    $namespace = $OctopusParameters["Template.Kubernetes.Namespace.Name"]
-                    
-                    kubectl create namespace $namespace --dry-run=client -o yaml | kubectl apply -f -
-                    EOT
-                Octopus.Action.Script.ScriptSource = "Inline"
-                Octopus.Action.Script.Syntax = "PowerShell"
-                Octopus.ProcessTemplate.Slug = "create-container-infrastructure"
-                Octopus.ProcessTemplate.Version = "1.0.1"
-                Template.Kubernetes.Namespace.Name = "#{Standards.K8s.Namespace}"
-                Template.Kubernetes.TargetTags = "trident-web"
-            }
-            worker_pool_variable = ""
+        parameter "Template.Kubernetes.TargetTags" {
+            value = "trident-web"
         }
     }
 
@@ -681,24 +139,6 @@ process {
                 git_credential_type = "GitHub"
                 github_connection_id = "GitHubAppConnections-1"
                 repository_uri = "https://github.com/BobJWalker/OctopusBlueprints.git"
-            }
-        }
-    }
-
-    step "notify-team-of-successful-completion-send-email-notification" {
-        condition = "Always"
-        name = "Notify Team of Successful Completion-Send Email Notification"
-
-        action {
-            action_type = "Octopus.Email"
-            properties = {
-                Octopus.Action.Blueprint.ConsumingAction.Name = "Notify Team of Successful Completion"
-                Octopus.Action.Email.Body = "You can view the task here: #{Octopus.Web.ServerUri}/app#/#{Octopus.Space.Id}/tasks/#{Octopus.Task.Id}"
-                Octopus.Action.Email.Subject = "#{Octopus.Project.Name} #{if Octopus.Runbook.Id}#{Octopus.Runbook.Name}#{else}#{Octopus.Release.Number}#{/if} to #{Octopus.Environment.Name}#{if Octopus.Deployment.Tenant.Name} for #{Octopus.Deployment.Tenant.Name}#{else}#{if Octopus.Runbook.Tenant.Name} for #{Octopus.Runbook.Tenant.Name}#{/if}#{/if} has #{if Template.ManualIntervention}paused and waiting intervention#{else}#{if Octopus.Deployment.Error}failed#{else}completed successfully#{/if}#{/if}"
-                Octopus.Action.Email.ToTeamIds = "#{Template.EmailTeam}"
-                Octopus.ProcessTemplate.Slug = "notification-emails"
-                Octopus.ProcessTemplate.Version = "1.0.1"
-                Template.EmailTeam = "Teams-81"
             }
         }
     }
