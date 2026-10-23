@@ -12,7 +12,7 @@ process_template "key-vault" {
     }
 
     parameter "KeyVault.Template.Worker.Pool" {
-        value = "#{Standards.Worker.Pool}"
+        value = "#{Core.Worker.Pool}"
     }
 
     parameter "KeyVault.Template.ExecutionContainer.Feed" {
@@ -31,7 +31,7 @@ process_template "verify-build-artifacts" {
     }
 
     parameter "Template.Verify.WorkerPool" {
-        value = "#{Standards.Worker.Pool}"
+        value = "#{Core.Worker.Pool}"
     }
 
     parameter "Template.Verify.ExecutionContainerFeed" {
@@ -57,12 +57,8 @@ process_template "deploy-databases" {
         value = "Trident.Database.DbUp"
     }
 
-    parameter "Template.Database.ChangeReportDirectory" {
-        value = "#{Standards.Database.ChangeReport.Path}"
-    }
-
     parameter "Template.WorkerPool" {
-        value = "#{Standards.Worker.Pool}"
+        value = "#{Core.Worker.Pool}"
     }
 
     parameter "Template.Approval.Environments" {
@@ -109,7 +105,7 @@ process_template "deploy-application" {
     }
 
     parameter "K8sTemplate.Workerpool" {
-        value = "#{Standards.Worker.Pool}"
+        value = "#{Core.Worker.Pool}"
     }
 }
 
