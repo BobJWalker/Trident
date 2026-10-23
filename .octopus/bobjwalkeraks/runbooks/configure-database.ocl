@@ -30,7 +30,7 @@ process {
         }
 
         parameter "KeyVault.Template.Worker.Pool" {
-            value = "#{Standards.Worker.Pool}"
+            value = "#{Core.Worker.Pool}"
         }
 
         parameter "KeyVault.Template.ExecutionContainer.Feed" {
@@ -48,7 +48,7 @@ process {
         }
 
         parameter "Template.WorkerPool" {
-            value = "#{Standards.Worker.Pool}"
+            value = "#{Core.Worker.Pool}"
         }
 
         parameter "Template.SQLServer.Name" {
@@ -100,7 +100,7 @@ process {
                 ssn_Title = "#{Notification.RunbookStatus.Subject.Text}"
                 ssn_Username = "Octopus Deploy"
             }
-            worker_pool_variable = "Standards.Worker.Pool"
+            worker_pool_variable = "Core.Worker.Pool"
         }
     }
 }
