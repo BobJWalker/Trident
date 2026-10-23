@@ -33,10 +33,7 @@ spec:
            - name: TRIDENT_FILE_NAME
              value: utah
            - name: TRIDENT_ENVIRONMENT
-             valueFrom:
-               secretKeyRef:
-                 name: trident-credentials
-                 key: environment
+             value: development
            - name: TRIDENT_OPEN_FEATURE_CLIENT_ID
              valueFrom:
                secretKeyRef:
@@ -58,8 +55,7 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: trident-ingress-http-route
-  namespace: trident
+  name: trident-ingress-http-route  
 spec:
   parentRefs:
   - name: public-gateway
