@@ -130,14 +130,15 @@ namespace Trident.Web
         }
 
         private static async Task ConfigureOpenFeature(WebApplicationBuilder builder)
-        {            
-            if (builder.Environment.IsDevelopment())
+        {
+            var clientIdentifier = Environment.GetEnvironmentVariable("TRIDENT_OPEN_FEATURE_CLIENT_ID");
+
+            if (builder.Environment.IsDevelopment() || clientIdentifier?.ToLower().Trim() == "blah")
             {
                 await OpenFeature.Api.Instance.SetProviderAsync(new EnvVarProvider("FeatureToggle_"));
             }
             else
-            {
-                var clientIdentifier = Environment.GetEnvironmentVariable("TRIDENT_OPEN_FEATURE_CLIENT_ID");
+            {                
                 var version = Assembly.GetExecutingAssembly().GetName().Version;
                 var productMetaData = new ProductMetadata("Trident", version?.ToString());
 
