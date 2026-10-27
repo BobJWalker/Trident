@@ -4,6 +4,7 @@ using OpenFeature;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Trident.Web.Core.Configuration;
 using Trident.Web.Core.Constants;
 using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.ViewModels;
@@ -14,12 +15,12 @@ namespace Trident.Web.HostedServices
     public class SyncJobHostedService(
             ILogger<SyncJobHostedService> logger,
             ITridentDataAdapter tridentDataAdapter,            
-            IFeatureClient featureClient) 
+            ITridentFeatureFlag tridentFeatureFlag) 
         : BackgroundService, IDisposable
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var isEnabled = await featureClient.GetBooleanValueAsync("BackgroundSyncJob", false);
+            var isEnabled = await tridentFeatureFlag.IsEnabledAsync(TridentFeatureFlagList.BackgroundSyncJob);
 
             if (isEnabled == false)
             {

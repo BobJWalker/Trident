@@ -91,7 +91,11 @@ namespace Trident.Web
 
                     autofacBuilder.RegisterGeneric(typeof(Logger<>))
                         .As(typeof(ILogger<>))
-                        .InstancePerLifetimeScope();                    
+                        .InstancePerLifetimeScope();
+
+                    autofacBuilder.RegisterType<TridentFeatureFlag>()
+                        .As<ITridentFeatureFlag>()
+                        .InstancePerLifetimeScope();
                 });
         }
 

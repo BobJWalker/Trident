@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Trident.Web.BusinessLogic.Factories;
+using Trident.Web.Core.Configuration;
 using Trident.Web.Core.Models;
 using Trident.Web.Core.Models.ViewModels;
 using Trident.Web.DataAccess;
@@ -14,12 +15,13 @@ namespace Trident.Web.Controllers
         ITridentDataAdapter tridentDataAdapter, 
         ISyncModelFactory syncModelFactory,
         IFeedListFactory feedListFactory,
-        IFeatureClient featureClient)
+        ITridentFeatureFlag tridentFeatureFlag)
         : Controller
     {        
         public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "Id", bool isAsc = false)
         {
-            var showFeedList = await featureClient.GetBooleanValueAsync("view-feed-list", false);
+
+            var showFeedList = await tridentFeatureFlag.IsEnabledAsync(TridentFeatureFlagList.ViewFeedList);
 
             var pagedArticles = await tridentDataAdapter.GetAllAsync<ArticleModel>(currentPage, rowsPerPage, sortColumn, isAsc);
 
@@ -34,7 +36,7 @@ namespace Trident.Web.Controllers
 
         public async Task<IActionResult> Feed()
         {
-            var showFeedList = await featureClient.GetBooleanValueAsync("view-feed-list", false);
+            var showFeedList = await tridentFeatureFlag.IsEnabledAsync(TridentFeatureFlagList.ViewFeedList);
             var allFeeds = showFeedList ? feedListFactory.GetFeedList() : new List<FeedModel>();
 
             return View(allFeeds);
