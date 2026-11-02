@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: test-taka
+  namespace: argocd
+  annotations:
+    argo.octopus.com/environment: "test"
+    argo.octopus.com/project: "taka"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/BobJWalker/Trident.git
+    path: k8s/overlays/test
+    targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: taka-test
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: staging-taka
+  namespace: argocd
+  annotations:
+    argo.octopus.com/environment: "staging"
+    argo.octopus.com/project: "taka"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/BobJWalker/Trident.git
+    path: k8s/overlays/staging
+    targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: taka-staging
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
