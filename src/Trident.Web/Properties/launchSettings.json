@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "Trident.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "TRIDENT_CONNECTION_STRING": "Server=127.0.0.1;Integrated Security=True;Database=Trident;trustServerCertificate=true;Encrypt=True;",        
+        "TRIDENT_OPEN_FEATURE_CLIENT_ID": "blah",
+        "TRIDENT_FILE_NAME": "utah",
+        "FeatureToggle_view-feed-list": "True",
+        "FeatureToggle_FeatureBackgroundSyncJob": "True"
+      },
+      "applicationUrl": "https://localhost:57512;http://localhost:57513"
+    }
+  }
+}

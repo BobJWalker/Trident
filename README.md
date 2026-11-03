@@ -55,32 +55,68 @@ The purpose of this application is to demonstrate common software delivery techn
 
 ## Running Locally
 
-Follow these steps to run locally:
+The application can run directly using the .NET runtime or as a container.
 
-1. Clone the repository: `git clone https://github.com/bobjwalker/Trident.git`
-2. Open the project in your preferred .NET IDE.
-3. You can run the application locally, or as a container.  
-4. You will need to create the database.  
-   1. You can do this by running `/src/Trident.Database.DbUp` and providing a connection string in the `/src/Trident.Database.DbUp/properties/launchSettings.json` file. 
-   2. OR, you can go to `/src/Trident.Database.DbUp/DeploymentScripts` and running them all in order
-5. Once the database is created, you'll need to set the connection string in the environment variable `TRIDENT_CONNECTION_STRING`.
+### Create Database
+
+The application requires a database running on SQL Server.  
+
+1. Download and install SQL Server Developer 2022+ or SQL Server Express 2022+ using [one of these quick links](https://www.mssqltips.com/sqlservertip/6429/sql-server-download-quick-links/)
+2. Launch the .NET IDE of your choice (VS Code or Visual Studio)
+   1. Modify the connection string in `/src/Trident.Database.DbUp/Properties/launchsettings.json` to point to your database.
+   2. Build and Run the `/src/Trident.Database.DbUp/` application in your IDE of choice.
+
+### Run the application
+
+1. Launch the .NET IDE of your choice
+   1. Modify the connection string in `/src/Trident.Web/Properties/launchSettings.json` to point to your database.
+   2. Run `/src/Trident.Web` application
+
+#### Understanding Launch Settings
+
+The file `/src/Trident.Web/Properties/launchSettings.json` is used to control the application locally.  It makes it easy to pass in environment variables that would've been passed in when launching the application in Production.
+
+```json
+{
+  "profiles": {
+    "Trident.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "TRIDENT_CONNECTION_STRING": "Server=127.0.0.1;Integrated Security=True;Database=Trident;trustServerCertificate=true;Encrypt=True;",        
+        "TRIDENT_OPEN_FEATURE_CLIENT_ID": "blah",
+        "TRIDENT_FILE_NAME": "utah",
+        "FeatureToggle_view-feed-list": "True",
+        "FeatureToggle_FeatureBackgroundSyncJob": "True"
+      },
+      "applicationUrl": "https://localhost:57512;http://localhost:57513"
+    }
+  }
+}
+```
+
+- Items prefixed with `FeatureToggle_` are how you can test feature toggles locally, they hae a simple setting of True or False.  
+- `blah` is the default values for items such as Open Feature Client Id, SumoLogic URL, and more.  That phrase was chosen as it is unique and stands out.
+- `TRIDENT_FILE_NAME` indicates the configuration file to load from `src/Trident.Web/wwwroot/data`
+
 
 ## Forking
 
-If you want to fork this repository, please feel free to do so!  
+This application is designed for anyone to fork.  Once you fork this application you'll need to set the following repository secrets for the build.yml to work correctly.
 
-Once you fork this application you'll need to set the following repository secrets for the build.yml to work correctly.
-
-1. `DOCKERHUB_PAT`
-2. `DOCKERHUB_USERNAME`
-3. `OCTOPUSSERVERAPIKEY`
-4. `OCTOPUS_SERVER_URL`
+1. `DOCKERHUB_PAT` - The PAT to log into Docker Hub
+2. `DOCKERHUB_USERNAME` - The Username to log into Docker Hub
+3. `OCTOPUS_OIDC_SERVICE_ACCOUNT_ID` - The [Service Account Unique ID](https://octopus.com/docs/api/authentication/openid-connect) to login via OIDC
 
 You'll need to set the following repo variables for the build.yml to work correctly.
 
-1. `DOCKER_HUB_REPO`
-2. `OCTOPUS_PROJECT_NAME`
-3. `OCTOPUS_SPACE`
+1. `DOCKER_HUB_REPO` - The dockerhub repo to push the container to, IE `bobjwalker99/trident`.
+2. `OCTOPUS_SERVER_URL` - The URL of the Octopus instance, IE `https://bobjwalker.octopus.app`.
+3. `OCTOPUS_SPACE` - The space name that hosts the Octopus Project, IE `Default`.
+4. `OCTOPUS_PROJECT_NAME` - The Octopus Deploy project name, IE `Trident`.
+5. `OCTOPUS_FEATURE_BRANCH_CHANNEL` - The channel to use when running the build on branches or PRs, IE `Branches`.
+6. `OCTOPUS_RELEASE_CHANNEL` - The channel to use when running the build on the main branch, IE `Release`.
 
 The `build.yml` file expects you to have two channels in your project in Octopus Deploy.
 
@@ -89,7 +125,7 @@ The `build.yml` file expects you to have two channels in your project in Octopus
 
 ## Contributing
 
-Please see the [Contribution Guidelines](https://github.com/bobjwalker/trident?tab=contributing-ov-file)
+Please see the [Contribution Guidelines](https://github.com/bobjwalker/trident?tab=contributing-ov-file) on how to contribute to this project.
 
 ## License
 
