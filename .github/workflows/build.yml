@@ -41,9 +41,9 @@ jobs:
 
           # No leading zeros, 2-digit year, minute-of-day (e.g. 09:30 -> 570)
           YY=$(( 10#$YEAR % 100 ))
-          MM=$(( 10#$MONTH ))
-          DD=$(( 10#$DAY ))
-          MINUTE_OF_DAY=$(( 10#$HOUR * 60 + 10#$MINUTE ))
+          MM=$(printf "%02d" $(( 10#$MONTH )))
+          DD=$(printf "%02d" $(( 10#$DAY )))
+          MINUTE_OF_DAY=$(printf "%04d" $(( 10#$HOUR * 60 + 10#$MINUTE )))
 
           ASSEMBLY_SEMVER="${YY}.${MM}.${DD}.${MINUTE_OF_DAY}"
 
