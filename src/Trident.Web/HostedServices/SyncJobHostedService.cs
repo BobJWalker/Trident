@@ -4,6 +4,7 @@ using OpenFeature;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Trident.Web.BusinessLogic.Syncers;
 using Trident.Web.Core.Configuration;
 using Trident.Web.Core.Constants;
 using Trident.Web.Core.Models;
@@ -15,7 +16,8 @@ namespace Trident.Web.HostedServices
     public class SyncJobHostedService(
             ILogger<SyncJobHostedService> logger,
             ITridentDataAdapter tridentDataAdapter,            
-            ITridentFeatureFlag tridentFeatureFlag) 
+            ITridentFeatureFlag tridentFeatureFlag,
+            IFeedSyncer feedSyncer) 
         : BackgroundService, IDisposable
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -48,7 +50,17 @@ namespace Trident.Web.HostedServices
 
             foreach (var syncJob in recordsToProcess.Items)
             {
-                
+                syncJob.Started = DateTime.UtcNow;
+                syncJob.State = SyncState.Started;
+
+                await tridentDataAdapter.UpdateAsync(syncJob);
+
+                await feedSyncer.SyncAllFeedsAsync(syncJob);
+
+                syncJob.Completed = DateTime.UtcNow;
+                syncJob.State = SyncState.Completed;
+
+                await tridentDataAdapter.UpdateAsync(syncJob);
             }
         }
 

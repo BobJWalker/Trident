@@ -26,6 +26,12 @@
           "Dapper": "2.0.78"
         }
       },
+      "HtmlAgilityPack": {
+        "type": "Direct",
+        "requested": "[1.13.1, )",
+        "resolved": "1.13.1",
+        "contentHash": "wkKKu0oltLJQRBf862+O0yqBAvo+RVisLXFFTlThWCuw1gjATkna1ZKQBcwHUyJUUZhkPUvyxFJcyqXSAvNkag=="
+      },
       "Microsoft.Data.SqlClient": {
         "type": "Direct",
         "requested": "[7.1.1, )",

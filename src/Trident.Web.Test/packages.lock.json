@@ -8,6 +8,12 @@
         "resolved": "10.1.0",
         "contentHash": "SlYCIHnBYxINSUpR75SiM5JEmnx11pqT+Ac/C/fUqTTA0dLPl9eYzmFXKKuxmQhL3ZdTQl4PBD3YdAxAauaKLQ=="
       },
+      "HtmlAgilityPack": {
+        "type": "Direct",
+        "requested": "[1.13.1, )",
+        "resolved": "1.13.1",
+        "contentHash": "wkKKu0oltLJQRBf862+O0yqBAvo+RVisLXFFTlThWCuw1gjATkna1ZKQBcwHUyJUUZhkPUvyxFJcyqXSAvNkag=="
+      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[18.11.0, )",
@@ -448,6 +454,7 @@
           "Autofac.Extensions.DependencyInjection": "[11.0.2, )",
           "Dapper": "[2.1.89, )",
           "Dapper.SimpleCRUD": "[2.3.0, )",
+          "HtmlAgilityPack": "[1.13.1, )",
           "Microsoft.Data.SqlClient": "[7.1.1, )",
           "NLog.Web.AspNetCore": "[6.2.2, )",
           "Newtonsoft.Json": "[13.0.4, )",
