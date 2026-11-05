@@ -49,7 +49,7 @@ jobs:
             echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
             echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}-{EscapedBranchName}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
           fi
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
         with:
           fetch-depth: '0'            
       - name: Install GitVersion
@@ -67,7 +67,7 @@ jobs:
 
     steps:
       - name: Checkout code for unit tests
-        uses: actions/checkout@v1        
+        uses: actions/checkout@v4        
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -118,17 +118,16 @@ jobs:
       contents: write
     steps:   
       - name: Checkout Code to build website
-        uses: actions/checkout@v1   
+        uses: actions/checkout@v4
 
       - name: Create Release for GitHub
         id: create_release
-        uses: ncipollo/release-action@v1 
-        if: github.ref == 'refs/heads/main'       
+        uses: ncipollo/release-action@v1       
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag: "${{ needs.prep.outputs.sem_Ver }}"
-          name: Release ${{ needs.prep.outputs.sem_Ver }}
+          tag: "${{ needs.prep.outputs.sem_ver }}"
+          name: Release ${{ needs.prep.outputs.sem_ver }}
           body: |
             Automatic Release creation by GitHub Action
             Commit Message: ${{ github.event.head_commit.message }}
@@ -145,7 +144,7 @@ jobs:
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy      
     steps:      
       - name: Checkout code for database schema 
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
 
@@ -207,7 +206,7 @@ jobs:
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy      
     steps:      
       - name: Checkout code for website schema 
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
 
@@ -268,7 +267,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code to build website
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -338,7 +337,7 @@ jobs:
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy
     steps:      
       - name: Checkout the code for SBOM
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'  
             
