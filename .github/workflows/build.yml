@@ -60,6 +60,8 @@ jobs:
             SEMVER="${ASSEMBLY_SEMVER}-${ESCAPED_BRANCH}"
           fi
 
+          echo "The new version is $SEMVER"
+
           echo "SemVer=$SEMVER" >> "$GITHUB_OUTPUT"
           echo "AssemblySemVer=$ASSEMBLY_SEMVER" >> "$GITHUB_OUTPUT"
           echo "EscapedBranchName=$ESCAPED_BRANCH" >> "$GITHUB_OUTPUT"
