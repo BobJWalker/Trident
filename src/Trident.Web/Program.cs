@@ -111,7 +111,7 @@ namespace Trident.Web
                 return;
             }
 
-            if (sumoUrl == "blah")
+            if (sumoUrl.ToLower().Trim() == "blah")
             {
                 return;
             }
