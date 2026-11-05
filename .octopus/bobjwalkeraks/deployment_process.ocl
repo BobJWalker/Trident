@@ -73,27 +73,24 @@ process_template "deploy-databases" {
 process_template "deploy-application" {
     name = "Deploy Application"
     process_template_slug = "deploy-process-k8s-via-helm"
-    version_mask = "1.X"
+    version_mask = "2.X"
 
     package_parameter "K8sTemplate.Container" {
         feed = "dockerhub"
         package_id = "bobjwalker99/trident"
     }
 
+    package_parameter "K8sTemplate.Helm.Package" {
+        feed = "gh-repo"
+        package_id = "BobJWalker/Trident"
+    }
+
     parameter "K8sTemplate.Target.tag" {
         value = "trident-web"
     }
 
-    parameter "K8sTemplate.Git.Repo" {
-        value = "https://github.com/bobjwalker/trident.git"
-    }
-
     parameter "K8sTemplate.Namespace" {
         value = "#{Standards.K8s.Namespace}"
-    }
-
-    parameter "K8sTemplate.Helm.AdditionalArguments" {
-        value = "--set trident.configurationFileName=utah"
     }
 
     parameter "K8sTemplate.SumoLogicUrl" {
@@ -106,6 +103,10 @@ process_template "deploy-application" {
 
     parameter "K8sTemplate.Workerpool" {
         value = "#{Core.Worker.Pool}"
+    }
+
+    parameter "K8sTemplate.Helm.ValuesFile" {
+        value = "k8s/chart-values-files/utah-values.yaml"
     }
 }
 
