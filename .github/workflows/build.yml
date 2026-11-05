@@ -47,8 +47,11 @@ jobs:
 
           ASSEMBLY_SEMVER="${YY}.${MM}.${DD}.${MINUTE_OF_DAY}"
 
-          # PRs expose the source branch in GITHUB_HEAD_REF; pushes use GITHUB_REF_NAME
-          BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          # Derive the name from GITHUB_REF so pull requests are handled:
+          #   push: refs/heads/feature/helm-chart -> feature/helm-chart
+          #   PR:   refs/pull/171/merge           -> pull/171/merge
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          BRANCH="${BRANCH#refs/}"
 
           # Escape: replace anything not [A-Za-z0-9] with "-", collapse repeats, trim edges
           ESCAPED_BRANCH=$(echo "$BRANCH" | sed -E 's/[^A-Za-z0-9]+/-/g; s/^-+//; s/-+$//')
