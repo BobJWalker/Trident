@@ -130,6 +130,7 @@ jobs:
         with:
           tag: "${{ needs.prep.outputs.sem_ver }}"
           name: Release ${{ needs.prep.outputs.sem_ver }}
+          commit: ${{ github.sha }}
           body: |
             Automatic Release creation by GitHub Action
             Commit Message: ${{ github.event.head_commit.message }}
