@@ -4,7 +4,29 @@ An application to skewer the news you care about from across the web by loading 
 
 ## Introduction
 
-Welcome to the Trident Application! This application is written in .NET with the goal of demonstrating how to build an application using GitHub Actions and deploy it using Octopus Deploy.  
+Welcome to the Trident Application! This application is written in .NET with the goal of demonstrating all the various features and functionality in Octopus Deploy.  
+
+## What the application does
+
+This application was created because I am a Utah Mammoth fan and there isn't a great website that aggregates all the articles from the various news organizations that cover the Mammoth.  
+
+Instead I'm forced to go to:
+
+- KSL Sports
+- Deseret News
+- Salt Lake Tribune
+- NHL
+- ESPN
+
+Most of those sites don't have great RSS support, so instead I needed a way to scrape the website for titles, images, and links.  It doesn't scrape the website for article content, just links to the stories.  The inspiration was [49erswebzone](https://49erswebzone.com) and how they aggregate articles about the 49ers.
+
+## How it works
+
+This application is designed to be multi-tenanted, with a sports team being the tenant.  You add a team configuration file containing websites to `src/Trident.Web/wwwroot/data` and set the environment variable `TRIDENT_FILE_NAME` to that file name.  The application will read and load the news from those provided websites.  
+
+The application can run in single tenant mode.  The default sports team is the Utah Mammoth.
+
+By default the load job is disabled.  You'll need to set the environment variable `FeatureToggle_BackgroundSyncJob` to `True`.  Or, create an Octopus Feature Flag named `BackgroundSyncJob` and turn that on for the environment.
 
 ## Application Components
 
