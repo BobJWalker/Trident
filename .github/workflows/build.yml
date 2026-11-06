@@ -1,7 +1,7 @@
 name: Build CI
 
 on:
-  push:
+  push:    
     branches: 
       - main
       - 'feature/**'
@@ -13,6 +13,8 @@ on:
       - 'db/**'      
       - '.github/workflows/build.yml'      
   workflow_dispatch:   
+  schedule:
+    - cron: "30 4 * * *"
   pull_request:
     branches:
       - main
@@ -28,46 +30,53 @@ jobs:
     runs-on: ubuntu-latest
     name: Determine version
     outputs:       
-      sem_ver: ${{ steps.determine_version.outputs.AssemblySemFileVer }}
+      sem_ver: ${{ steps.determine_version.outputs.SemVer }}
       escaped_branch_name: ${{ steps.determine_version.outputs.EscapedBranchName }}
       assembly_sem_ver: ${{ steps.determine_version.outputs.AssemblySemVer }}
     steps:      
-      - name: Set environment variable based on branch
-        id: set_env_var
-        run: |
-          echo "GITHUB_REF: $GITHUB_REF"
-          echo "GITHUB_HEAD_REF: $GITHUB_HEAD_REF"
-          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          echo "Branch detected: $BRANCH_NAME"
-          
-          if [ "$BRANCH_NAME" = "main" ]; then         
-            echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV            
-            echo "GIT_VERSION_MODE=ContinuousDeployment" >> $GITHUB_ENV 
-            echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}" >> $GITHUB_ENV        
-          else            
-            echo "GIT_VERSION_INCREMENT=Patch" >> $GITHUB_ENV            
-            echo "GIT_VERSION_MODE=ContinuousDelivery" >> $GITHUB_ENV
-            echo "GIT_VERSION_FORMAT={Major}.{Minor}.{Patch}-{EscapedBranchName}.{CommitsSinceVersionSource}" >> $GITHUB_ENV
-          fi
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: '0'            
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v1
-        with:
-            versionSpec: 6.0.5
       - id: determine_version
         name: Determine Version
-        uses: gittools/actions/gitversion/execute@v1
-        with:
-            additionalArguments: /overrideconfig assembly-file-versioning-format=${{ env.GIT_VERSION_FORMAT }} /overrideconfig increment=${{ env.GIT_VERSION_INCREMENT }} /overrideconfig mode=${{ env.GIT_VERSION_MODE }} /overrideconfig update-build-number=true
+        run: |
+          # Use UTC (runner default). To use local time, prefix the date calls with TZ=America/Chicago
+          NOW=$(date -u +"%Y %m %d %H %M")
+          read -r YEAR MONTH DAY HOUR MINUTE <<< "$NOW"
+
+          # No leading zeros, 2-digit year, minute-of-day (e.g. 09:30 -> 570)
+          YY=$(( 10#$YEAR % 100 ))
+          MM=$(printf "%02d" $(( 10#$MONTH )))
+          DD=$(printf "%02d" $(( 10#$DAY )))
+          MINUTE_OF_DAY=$(printf "%04d" $(( 10#$HOUR * 60 + 10#$MINUTE )))
+
+          ASSEMBLY_SEMVER="${YY}.${MM}.${DD}.${MINUTE_OF_DAY}"
+
+          # Derive the name from GITHUB_REF so pull requests are handled:
+          #   push: refs/heads/feature/helm-chart -> feature/helm-chart
+          #   PR:   refs/pull/171/merge           -> pull/171/merge
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          BRANCH="${BRANCH#refs/}"
+
+          # Escape: replace anything not [A-Za-z0-9] with "-", collapse repeats, trim edges
+          ESCAPED_BRANCH=$(echo "$BRANCH" | sed -E 's/[^A-Za-z0-9]+/-/g; s/^-+//; s/-+$//')
+
+          # No suffix for the main branch
+          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+            SEMVER="$ASSEMBLY_SEMVER"
+          else
+            SEMVER="${ASSEMBLY_SEMVER}-${ESCAPED_BRANCH}"
+          fi
+
+          echo "The new version is $SEMVER"
+
+          echo "SemVer=$SEMVER" >> "$GITHUB_OUTPUT"
+          echo "AssemblySemVer=$ASSEMBLY_SEMVER" >> "$GITHUB_OUTPUT"
+          echo "EscapedBranchName=$ESCAPED_BRANCH" >> "$GITHUB_OUTPUT"
   test:
     name: Run Unit Tests
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code for unit tests
-        uses: actions/checkout@v1        
+        uses: actions/checkout@v4        
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -118,17 +127,17 @@ jobs:
       contents: write
     steps:   
       - name: Checkout Code to build website
-        uses: actions/checkout@v1   
+        uses: actions/checkout@v4
 
       - name: Create Release for GitHub
         id: create_release
-        uses: ncipollo/release-action@v1 
-        if: github.ref == 'refs/heads/main'       
+        uses: ncipollo/release-action@v1       
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag: "${{ needs.prep.outputs.sem_Ver }}"
-          name: Release ${{ needs.prep.outputs.sem_Ver }}
+          tag: "${{ needs.prep.outputs.sem_ver }}"
+          name: Release ${{ needs.prep.outputs.sem_ver }}
+          commit: ${{ github.sha }}
           body: |
             Automatic Release creation by GitHub Action
             Commit Message: ${{ github.event.head_commit.message }}
@@ -145,7 +154,7 @@ jobs:
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy      
     steps:      
       - name: Checkout code for database schema 
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
 
@@ -207,7 +216,7 @@ jobs:
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy      
     steps:      
       - name: Checkout code for website schema 
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
 
@@ -268,7 +277,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code to build website
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -338,7 +347,7 @@ jobs:
       id-token: write # This is required to obtain the OIDC Token for Octopus Deploy
     steps:      
       - name: Checkout the code for SBOM
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'  
             
