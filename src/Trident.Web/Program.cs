@@ -78,13 +78,7 @@ namespace Trident.Web
                     autofacBuilder.RegisterInstance(GetFeedListFactory())
                         .As<IFeedListFactory>()
                         .SingleInstance();
-
-                    var assembly = Assembly.GetExecutingAssembly();
-
-                    autofacBuilder.RegisterAssemblyTypes(assembly)
-                        .Where(type => !type.IsAssignableTo<IHostedService>())
-                        .AsImplementedInterfaces();
-
+                    
                     autofacBuilder.RegisterType<LoggerFactory>()
                         .As<ILoggerFactory>()
                         .InstancePerLifetimeScope();
@@ -95,6 +89,13 @@ namespace Trident.Web
 
                     autofacBuilder.RegisterType<TridentFeatureFlag>()
                         .As<ITridentFeatureFlag>()
+                        .InstancePerLifetimeScope();
+
+                    var assembly = Assembly.GetExecutingAssembly();
+
+                    autofacBuilder.RegisterAssemblyTypes(assembly)
+                        .Where(type => !type.IsAssignableTo<IHostedService>())
+                        .AsImplementedInterfaces()
                         .InstancePerLifetimeScope();
                 });
         }

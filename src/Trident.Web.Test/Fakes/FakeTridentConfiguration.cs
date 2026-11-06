@@ -16,8 +16,8 @@ namespace Trident.Web.Test.Fakes
         {
             ConnectionString = "blah";
             EnvironmentName = "blah";
-            ConfigurationFileName = "blah";
-            ConfigurationFilePath = "blah";
+            ConfigurationFilePath = Path.Combine(Directory.GetCurrentDirectory());
+            ConfigurationFileName = "utah";
         }
 
         public string GetConfigurationFile()

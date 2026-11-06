@@ -42,4 +42,10 @@
     <ProjectReference Include="..\Trident.Web\Trident.Web.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="KSLExample.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

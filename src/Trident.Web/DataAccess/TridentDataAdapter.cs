@@ -16,7 +16,7 @@ namespace Trident.Web.DataAccess
         Task<T> GetByIdAsync<T>(int id) where T : BaseModel;        
         Task<PagedViewModel<T>> GetAllByParentIdAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc, string whereColumn, int parentId) where T : BaseModel;
         Task<PagedViewModel<T>> GetAllAsync<T>(int currentPageNumber, int rowsPerPage, string sortColumn, bool isAsc, string whereClause) where T : BaseModel;
-        Task<T> GetFirstRecordAsync<T>(string whereClause, string sortColumn, bool isAsc) where T : BaseModel;
+        Task<T> GetFirstRecordAsync<T>(string query, object param) where T : BaseModel;
         Task<IEnumerable<T>> QueryAsync<T>(string sqlStatement, object param);
         Task<T> InsertAsync<T>(T model) where T : BaseModel;
         Task<T> UpdateAsync<T>(T model) where T : BaseModel;
@@ -33,13 +33,11 @@ namespace Trident.Web.DataAccess
             }
         }
 
-        public async Task<T> GetFirstRecordAsync<T>(string whereClause, string sortColumn, bool isAsc) where T : BaseModel
+        public async Task<T> GetFirstRecordAsync<T>(string query, object param) where T : BaseModel
         {
             using (var connection = new SqlConnection(metricConfiguration.ConnectionString))
             {
-                var orderClause = GetOrderByClause(sortColumn, isAsc);
-
-                return (await connection.GetListPagedAsync<T>(1, 1, whereClause, orderClause)).FirstOrDefault();
+                return await connection.QuerySingleAsync<T>(query, param);
             }
         }
 

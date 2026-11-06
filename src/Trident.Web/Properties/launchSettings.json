@@ -9,7 +9,7 @@
         "TRIDENT_OPEN_FEATURE_CLIENT_ID": "blah",
         "TRIDENT_FILE_NAME": "utah",
         "FeatureToggle_view-feed-list": "True",
-        "FeatureToggle_FeatureBackgroundSyncJob": "True"
+        "FeatureToggle_BackgroundSyncJob": "True"
       },
       "applicationUrl": "https://localhost:57512;http://localhost:57513"
     }
