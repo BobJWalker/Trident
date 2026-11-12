@@ -6,7 +6,7 @@ resources:
 images:
 - name: bobjwalker99/trident
   newName: bobjwalker99/trident
-  newTag: "26.11.11.1288"
+  newTag: "26.11.12.0786"
 
 patches:
   - path: networking-patch.yaml
