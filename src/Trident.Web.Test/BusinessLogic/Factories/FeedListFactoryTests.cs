@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Trident.Web.BusinessLogic.Factories;
-using Trident.Web.Core.Configuration;
-using Trident.Web.Core.Constants;
-using Trident.Web.Core.Models;
+﻿using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Test.Fakes;
 
 namespace Trident.Web.Test.BusinessLogic.Factories
@@ -18,11 +12,7 @@ namespace Trident.Web.Test.BusinessLogic.Factories
         [SetUp]
         public void SetUp()
         {
-            _tridentConfiguration = new FakeTridentConfiguration
-            {
-                ConfigurationFilePath = Path.Combine(Directory.GetCurrentDirectory()),
-                ConfigurationFileName = "utah"
-            };
+            _tridentConfiguration = new FakeTridentConfiguration();
 
             _feedListFactory = new FeedListFactory(_tridentConfiguration);
         }

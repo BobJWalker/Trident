@@ -16,7 +16,8 @@ namespace Trident.Web.BusinessLogic.Factories
             return new SyncModel
             {                
                 Created = DateTime.Now,                
-                State = SyncState.Queued,                
+                State = SyncState.Queued, 
+                RetryAttempts = 0
             };
         }
     }

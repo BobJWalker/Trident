@@ -23,10 +23,7 @@
       <Content Include="DeploymentScripts\002_CreateSyncTable.sql">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
-      <Content Include="DeploymentScripts\003_CreateSyncLogTable.sql">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-      <Content Include="DeploymentScripts\004_CreateWebUserRole.sql">
+      <Content Include="DeploymentScripts\003_CreateWebUserRole.sql">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
       <Content Include="PostDeploymentScripts\001_GrantWebUserRolePermissions.sql">
@@ -37,7 +34,7 @@
     <ItemGroup>
       <PackageReference Include="dbup-core" Version="6.1.1" />
       <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
-      <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+      <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.2" />
       <PackageReference Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
     </ItemGroup>
 

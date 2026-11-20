@@ -8,5 +8,6 @@ namespace Trident.Web.Core.Models
         public string Name { get; set; }
         public string Url { get; set; }
         public List<string> ArticleBaseUrls { get; set; }
+        public string Format { get; set; }
     }
 }

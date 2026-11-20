@@ -6,14 +6,13 @@ using System.Threading.Tasks;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Configuration;
 using Trident.Web.Core.Models;
-using Trident.Web.Core.Models.ViewModels;
+using Trident.Web.Core.ViewModels;
 using Trident.Web.DataAccess;
 
 namespace Trident.Web.Controllers
 {
     public class HomeController (
         ITridentDataAdapter tridentDataAdapter, 
-        ISyncModelFactory syncModelFactory,
         IFeedListFactory feedListFactory,
         ITridentFeatureFlag tridentFeatureFlag)
         : Controller
@@ -40,16 +39,7 @@ namespace Trident.Web.Controllers
             var allFeeds = showFeedList ? feedListFactory.GetFeedList() : new List<FeedModel>();
 
             return View(allFeeds);
-        }
-
-        public async Task<IActionResult> StartSync()
-        {            
-            var newSync = syncModelFactory.CreateModel(string.Empty);
-
-            await tridentDataAdapter.InsertAsync(newSync);
-
-            return RedirectToAction("Index", "Sync");
-        }        
+        }      
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

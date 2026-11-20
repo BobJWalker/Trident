@@ -1,16 +1,18 @@
 [
   {
-      "name": "KSL Sports",
-      "url": "https://sports.ksl.com/utah-mammoth",
-      "articleBaseUrls": [
-        "https://sports.ksl.com/nhl/utah-mammoth/"
-      ]
+    "name": "KSL Sports",
+    "url": "https://search.bobjwalker.com/search?q=site%3Asports.ksl.com+mammoth&format=json",
+    "articleBaseUrls": [
+      "https://sports.ksl.com/nhl/utah-mammoth/"
+    ],
+    "format": "searxng"
   },
   {
     "name": "Deseret News",
-    "url": "https://www.deseret.com/sports/utah-hockey/",
+    "url": "https://search.bobjwalker.com/search?q=site%3Adeseret.com+mammoth&format=json",
     "articleBaseUrls": [
       "https://www.deseret.com/sports/"
-    ]
+    ],
+    "format": "searxng"
   }
 ]
