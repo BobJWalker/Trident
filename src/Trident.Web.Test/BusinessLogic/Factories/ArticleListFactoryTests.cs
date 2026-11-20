@@ -44,7 +44,7 @@ namespace Trident.Web.Test.BusinessLogic.Factories
             // Assert
             Assert.That(result.Count, Is.GreaterThan(1));
             Assert.That(result[0].Url.ToLowerInvariant(), Is.EqualTo("https://sports.ksl.com/nhl/utah-mammoth/utah-mammoth-sweep-toronto-maple-leafs/578717"));
-            Assert.That(result[0].ImageUrl.ToLowerInvariant(), Is.EqualTo("https://img.ksl.com/slc/3207/320779/32077973.jpeg"));
+            Assert.That(result[0].Thumbnail.ToLowerInvariant(), Is.EqualTo("https://img.ksl.com/slc/3207/320779/32077973.jpeg"));
             Assert.That(result[0].Title.ToLowerInvariant, Is.EqualTo("new lines spark offense as utah mammoth sweep toronto maple leafs to bounce back"));
         }
     }

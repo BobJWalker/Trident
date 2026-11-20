@@ -10,6 +10,7 @@ namespace Trident.Web.BusinessLogic.Factories
     public interface IArticleListFactory
     {
         List<ArticleModel> MakeArticleModelListFromWebContent(FeedModel feedModel, string webContent);
+        List<ArticleModel> MakeArticleModelListFromWebContent(FeedModel feedModel, List<ArticleModel> articleList);
     }
 
     public class ArticleListFactory(ILogger<ArticleListFactory> logger) : IArticleListFactory
@@ -47,7 +48,7 @@ namespace Trident.Web.BusinessLogic.Factories
                 if(tmpArticleList.ContainsKey(href.ToLowerInvariant()))
                 {
                     logger.LogInformation($"tmpArticleList already contains ${href}, updating existing item");
-                    tmpArticleList[href].ImageUrl = string.IsNullOrWhiteSpace(tmpArticleList[href].ImageUrl) ? articleModel.ImageUrl : tmpArticleList[href].ImageUrl;
+                    tmpArticleList[href].Thumbnail = string.IsNullOrWhiteSpace(tmpArticleList[href].Thumbnail) ? articleModel.Thumbnail : tmpArticleList[href].Thumbnail;
                     tmpArticleList[href].Title = string.IsNullOrWhiteSpace(tmpArticleList[href].Title) ? articleModel.Title : tmpArticleList[href].Title;
                 }
                 else
@@ -58,6 +59,25 @@ namespace Trident.Web.BusinessLogic.Factories
             }
 
             return tmpArticleList.Values.ToList();
+        }
+
+        public List<ArticleModel> MakeArticleModelListFromWebContent(FeedModel feedModel, List<ArticleModel> articleList)
+        {
+            var returnList = new List<ArticleModel>();
+
+            foreach (var article in articleList)
+            {
+                if (MatchesFeedFilter(feedModel, article.Url) == false)
+                {
+                    logger.LogInformation($"{article.Url} does not match the filters for the feed, excluding it");
+                    continue;
+                }
+
+                article.FeedName = feedModel.Name;
+                returnList.Add(article);
+            }
+
+            return returnList;
         }
 
         private bool MatchesFeedFilter(FeedModel feedModel, string href)
@@ -93,7 +113,7 @@ namespace Trident.Web.BusinessLogic.Factories
                 var src = HtmlEntity.DeEntitize(img.GetAttributeValue("src", ""));
                 logger.LogInformation($"Found the image url title in the anchor tag ${anchor.InnerText} as ${src}");
 
-                articleModel.ImageUrl = src.IndexOf("?") > 0 ? src.Substring(0, src.IndexOf("?")) : src;
+                articleModel.Thumbnail = src.IndexOf("?") > 0 ? src.Substring(0, src.IndexOf("?")) : src;
 
                 return articleModel;
             }

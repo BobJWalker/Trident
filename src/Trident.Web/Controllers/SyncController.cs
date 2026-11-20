@@ -7,7 +7,7 @@ namespace Trident.Web.Controllers
 {
     public class SyncController(ITridentDataAdapter tridentDataAdapter) : Controller
     {
-        public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "ID", bool isAsc = true)
+        public async Task<IActionResult> Index(int currentPage = 1, int rowsPerPage = 10, string sortColumn = "ID", bool isAsc = false)
         {
             var pagedSyncView = await tridentDataAdapter.GetAllAsync<SyncModel>(currentPage, rowsPerPage, sortColumn, isAsc);
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Models;
@@ -29,9 +30,7 @@ namespace Trident.Web.BusinessLogic.Syncers
             foreach (var feed in feedList)
             {
                 logger.LogInformation($"Getting the contents of ${feed.Url}");
-                var results = await tridentWebAdapter.GetWebResponseAsync(feed.Url);
-
-                var articleList = articleListFactory.MakeArticleModelListFromWebContent(feed, results);
+                var articleList = await GetArticlesFromFeedAsync(feed);
 
                 logger.LogInformation($"Pulled ${articleList.Count} article(s) off the page");
                 foreach (var article in articleList)
@@ -43,7 +42,7 @@ namespace Trident.Web.BusinessLogic.Syncers
                         logger.LogInformation($"Article ${article.Title} already exists, skipping");
                         continue;
                     }
-
+                    
                     logger.LogInformation($"Adding article ${article.Title} to the database");
                     await tridentDataAdapter.InsertAsync(article);
                 }
@@ -67,6 +66,23 @@ namespace Trident.Web.BusinessLogic.Syncers
             }
 
             return existingArticle;
+        }
+
+        private async Task<List<ArticleModel>> GetArticlesFromFeedAsync(FeedModel feed)
+        {
+            if (feed.Format.ToLowerInvariant().Trim() == "searxng")
+            {
+                logger.LogInformation($"The feed {feed.Name} is querying searxng, using the JSON endpoints instead");
+
+                var listResults = await tridentWebAdapter.GetArticleListFromSearXNGAsync(feed.Url);
+
+                return articleListFactory.MakeArticleModelListFromWebContent(feed, listResults);
+            }
+
+            logger.LogInformation($"The feed {feed.Name} is a regular web scrape");
+            var results = await tridentWebAdapter.GetWebResponseAsync(feed.Url);
+
+            return articleListFactory.MakeArticleModelListFromWebContent(feed, results);
         }
     }
 }

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Trident.Web.Core.Configuration;
 using Trident.Web.Core.Models;
-using Trident.Web.Core.Models.ViewModels;
+using Trident.Web.Core.ViewModels;
 
 namespace Trident.Web.DataAccess
 {

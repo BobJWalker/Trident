@@ -1,4 +1,4 @@
-namespace Trident.Web.Core.Models.ViewModels
+namespace Trident.Web.Core.ViewModels
 {
     public class ErrorViewModel
     {

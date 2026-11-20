@@ -1,14 +1,18 @@
-﻿using RestSharp;
+﻿using Newtonsoft.Json;
+using RestSharp;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Trident.Web.Core.Models;
 
 namespace Trident.Web.DataAccess
 {
     public interface ITridentWebAdapter
     {
         Task<string> GetWebResponseAsync(string url);
+        Task<List<ArticleModel>> GetArticleListFromSearXNGAsync(string url);
     }
 
     public class TridentWebAdapter : ITridentWebAdapter
@@ -49,5 +53,18 @@ namespace Trident.Web.DataAccess
                 }                   
             }                
         }
+
+        public async Task<List<ArticleModel>> GetArticleListFromSearXNGAsync(string url)
+        {
+            using (var client = new RestClient())
+            {
+                var request = new RestRequest(url);
+
+                var response = await client.ExecuteGetAsync(request);
+                var searXNGResult = JsonConvert.DeserializeObject<SearXNGResultModel>(response.Content);
+
+                return searXNGResult.results;
+            }
+        }        
     }
 }

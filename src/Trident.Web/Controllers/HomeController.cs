@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Trident.Web.BusinessLogic.Factories;
 using Trident.Web.Core.Configuration;
 using Trident.Web.Core.Models;
-using Trident.Web.Core.Models.ViewModels;
+using Trident.Web.Core.ViewModels;
 using Trident.Web.DataAccess;
 
 namespace Trident.Web.Controllers
