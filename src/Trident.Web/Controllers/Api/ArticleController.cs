@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Trident.Web.Core.Models;
-using Trident.Web.Core.Models.ViewModels;
+using Trident.Web.Core.ViewModels;
 using Trident.Web.DataAccess;
 
 namespace Trident.Web.Controllers.Api

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Trident.Web.Core.Models.ViewModels
+namespace Trident.Web.Core.ViewModels
 {
     public class PagedViewModel<T> where T : class
     {

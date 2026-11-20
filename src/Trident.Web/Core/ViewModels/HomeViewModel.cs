@@ -1,4 +1,6 @@
-﻿namespace Trident.Web.Core.Models.ViewModels
+﻿using Trident.Web.Core.Models;
+
+namespace Trident.Web.Core.ViewModels
 {
     public class HomeViewModel
     {

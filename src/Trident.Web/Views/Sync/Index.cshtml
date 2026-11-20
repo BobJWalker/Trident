@@ -1,9 +1,12 @@
-﻿@model Trident.Web.Core.Models.ViewModels.PagedViewModel<Trident.Web.Core.Models.SyncModel>
+﻿@model Trident.Web.Core.ViewModels.PagedViewModel<Trident.Web.Core.Models.SyncModel>
 @{
     ViewData["Title"] = "Sync Jobs";
 }
 
 <div class="text-center">
+    <div class="text-right">
+        <a class="navbar-text" asp-action="Start Sync">Start Sync</a>
+    </div>
     @if (Model.Items.Count > 0)
     {
         <table class='table table-striped'>
@@ -11,7 +14,9 @@
             <tr>                
                 <th>Created</th>
                 <th>State</th>
-                <th>&nbsp;</th>
+                <th>Started Date</th>
+                <th>Completed Date</th>
+                <th>Retry Attempts</th>
             </tr>
             </thead>
             <tbody>
@@ -19,8 +24,10 @@
             {
                 <tr>                    
                     <td>@item.Created</td>
-                    <td>@item.State</td>
-                    <td>Details</td>
+                    <td>@item.State</td>                    
+                    <td>@item.Started</td>
+                    <td>@item.Completed</td>
+                    <td>@item.RetryAttempts</td>                    
                 </tr>
             }
             </tbody>
