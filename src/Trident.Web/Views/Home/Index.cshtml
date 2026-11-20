@@ -4,8 +4,7 @@
 }
 
 <div class="text-center">
-    <div class="text-right"> 
-        <a class="text-dark" asp-action="StartSync">Sync</a>&nbsp;&nbsp;
+    <div class="text-right">         
         @if (Model.ShowFeedList == true)
         {            
             <a class="text-dark" asp-action="Feed">Show Feeds</a>            
@@ -25,7 +24,9 @@
                 @foreach (var article in Model.ArticleList.Items)
             {
                 <tr>                    
-                    <td><a href="@article.Url" target="_blank">@article.Title</a></td>
+                    <td>
+                        <a href="@article.Url" target="_blank">@article.Title</a>
+                    </td>
                 </tr>
             }
             </tbody>
